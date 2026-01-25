@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Full Calculus — Profile</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap" rel="stylesheet" />
+
+  <!-- Material Symbols -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700&display=swap"
+    rel="stylesheet" />
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#135bec",
+            "background-light": "#f6f6f8",
+            "background-dark": "#101622",
+            "surface-light": "#ffffff",
+            "surface-dark": "#1a2230",
+          },
+          fontFamily: {
+            display: ["Lexend", "sans-serif"],
+          },
+          borderRadius: {
+            DEFAULT: "1rem",
+            lg: "2rem",
+            xl: "3rem",
+            full: "9999px",
+          },
+          boxShadow: {
+            soft: "0 4px 20px -2px rgba(0,0,0,0.06)",
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    body {
+      font-family: "Lexend", sans-serif;
+      min-height: max(884px, 100dvh);
+    }
+
+    .material-symbols-outlined {
+      font-variation-settings: "FILL" 1, "wght" 450, "GRAD" 0, "opsz" 24;
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    .press:active {
+      transform: translateY(4px);
+      box-shadow: none !important;
+    }
+  </style>
+</head>
+
+<body data-step="profile"
+  class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 antialiased selection:bg-primary selection:text-white min-h-screen flex justify-center">
+  <!-- Mobile shell -->
+  <div
+    class="relative w-full max-w-md h-[100dvh] sm:min-h-screen overflow-hidden bg-background-light dark:bg-background-dark shadow-2xl flex flex-col border-x border-slate-200/50 dark:border-slate-800/50">
+    <!-- Sticky Header -->
+    <header
+      class="sticky top-0 z-40 flex items-center justify-between px-4 py-3 bg-background-light/90 dark:bg-background-dark/90 backdrop-blur-md border-b border-slate-200/60 dark:border-slate-800/60">
+      <button id="backBtn" type="button"
+        class="press flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-200 dark:hover:bg-surface-dark transition-colors"
+        aria-label="Back">
+        <span class="material-symbols-outlined text-slate-800 dark:text-slate-200">arrow_back</span>
+      </button>
+
+      <h2 class="text-lg font-extrabold tracking-tight">Profile</h2>
+
+      <div class="flex items-center gap-2">
+        <button id="darkToggle" type="button"
+          class="text-xs font-extrabold px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-surface-dark/70 backdrop-blur">
+          DARK
+        </button>
+
+        <button id="settingsBtn" type="button"
+          class="press flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-200 dark:hover:bg-surface-dark transition-colors"
+          aria-label="Settings">
+          <span class="material-symbols-outlined text-slate-800 dark:text-slate-200">settings</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Scrollable content -->
+    <main class="flex-1 overflow-y-auto no-scrollbar pb-10">
+      <!-- Hero -->
+      <section class="flex flex-col items-center px-6 pt-4 pb-8">
+        <div class="relative mb-5 group">
+          <!-- Glow -->
+          <div
+            class="absolute -inset-1 bg-gradient-to-r from-primary to-sky-400 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-700">
+          </div>
+
+          <div id="avatar"
+            class="relative w-28 h-28 rounded-full bg-slate-200 border-4 border-white dark:border-background-dark shadow-xl overflow-hidden bg-cover bg-center"
+            style="background-image:url('https://lh3.googleusercontent.com/aida-public/AB6AXuD90igZQPrpcib-AZfNF2ZDdOYbxb_Vcu_Y_4mx4VZyu9-4xomdRnfi4yhKHymx3b20GZbb-qmy3igr4zrexRQk8l45J1-7J7UaVd3-gxuVrHXT1_3hrdaDp-spamN6OgLdoHWWM-5hgpMyXfuo_Dl5vyod6u2ZIEllT4FWE5vm80Qv1mKoZBwtYZqirO9sfE15WtWjUcg6m6phdIdXU-rK0a0TWDBa52StV52lPgjrFV5TZb_kOid5jcK9sY8tDMVQ-VyYots1RRk');">
+          </div>
+
+          <!-- Edit badge -->
+          <button id="editAvatarBtn"
+            class="press absolute bottom-0 right-0 bg-primary text-white p-2 rounded-full border-[3px] border-background-light dark:border-background-dark flex items-center justify-center hover:bg-blue-600 transition-colors shadow-sm"
+            aria-label="Edit avatar" type="button">
+            <span class="material-symbols-outlined text-[16px]">edit</span>
+          </button>
+        </div>
+
+        <h1 id="nameText" class="text-2xl font-extrabold text-center mb-1">Student</h1>
+
+        <div class="flex items-center gap-1 opacity-70">
+          <span class="material-symbols-outlined text-[16px]">calendar_month</span>
+          <p class="text-sm font-medium" id="joinedText">Joined —</p>
+        </div>
+
+        <!-- Meta chips -->
+        <div class="mt-4 flex items-center gap-2">
+          <div
+            class="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-surface-dark rounded-full border border-slate-200 dark:border-slate-700 shadow-sm">
+            <span class="material-symbols-outlined text-yellow-500 text-[18px]">bolt</span>
+            <span class="text-sm font-extrabold text-yellow-600 dark:text-yellow-400" id="xpChip">0</span>
+            <span class="text-xs font-bold text-slate-400">XP</span>
+          </div>
+
+          <div
+            class="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-surface-dark rounded-full border border-slate-200 dark:border-slate-700 shadow-sm">
+            <span class="material-symbols-outlined text-orange-500 text-[18px]">local_fire_department</span>
+            <span class="text-sm font-extrabold text-orange-500" id="streakChip">0</span>
+            <span class="text-xs font-bold text-slate-400">streak</span>
+          </div>
+
+          <div
+            class="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-surface-dark rounded-full border border-slate-200 dark:border-slate-700 shadow-sm">
+            <span class="material-symbols-outlined text-red-500 text-[18px]">favorite</span>
+            <span class="text-sm font-extrabold text-red-500" id="livesChip">0</span>
+            <span class="text-xs font-bold text-slate-400">lives</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Stats Grid -->
+      <section class="px-4 mb-8">
+        <div class="grid grid-cols-2 gap-3">
+          <!-- Streak Card -->
+          <div
+            class="group flex flex-col p-4 bg-white dark:bg-surface-dark rounded-2xl shadow-soft hover:shadow-lg transition-all duration-300 border border-slate-100 dark:border-white/5">
+            <div class="flex items-center justify-between mb-3">
+              <div class="p-2 bg-orange-50 dark:bg-orange-900/20 rounded-full">
+                <span class="material-symbols-outlined text-orange-500 text-[20px]">local_fire_department</span>
+              </div>
+            </div>
+            <p class="text-sm font-semibold text-slate-500 dark:text-slate-400">Streak</p>
+            <p class="text-2xl font-extrabold group-hover:text-primary transition-colors">
+              <span id="streakVal">0</span>
+              <span class="text-base font-normal text-slate-400">Days</span>
+            </p>
+          </div>
+
+          <!-- XP Card -->
+          <div
+            class="group flex flex-col p-4 bg-white dark:bg-surface-dark rounded-2xl shadow-soft hover:shadow-lg transition-all duration-300 border border-slate-100 dark:border-white/5">
+            <div class="flex items-center justify-between mb-3">
+              <div class="p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-full">
+                <span class="material-symbols-outlined text-yellow-500 text-[20px]">bolt</span>
+              </div>
+            </div>
+            <p class="text-sm font-semibold text-slate-500 dark:text-slate-400">Total XP</p>
+            <p class="text-2xl font-extrabold group-hover:text-primary transition-colors" id="xpVal">0</p>
+          </div>
+
+          <!-- Lessons Completed (wide) -->
+          <div
+            class="col-span-2 flex items-center justify-between p-5 bg-primary/5 dark:bg-primary/10 rounded-2xl shadow-sm border border-primary/10 dark:border-primary/20">
+            <div class="flex flex-col gap-1">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">school</span>
+                <span class="text-sm font-extrabold text-primary">Lessons Completed</span>
+              </div>
+              <p class="text-3xl font-extrabold text-slate-900 dark:text-white mt-1" id="lessonsVal">0</p>
+            </div>
+
+            <div class="flex items-end gap-1.5 h-12" aria-hidden="true">
+              <div class="w-2 bg-primary/20 h-[40%] rounded-full"></div>
+              <div class="w-2 bg-primary/30 h-[60%] rounded-full"></div>
+              <div class="w-2 bg-primary/50 h-[50%] rounded-full"></div>
+              <div class="w-2 bg-primary h-[90%] rounded-full"></div>
+              <div class="w-2 bg-primary/80 h-[75%] rounded-full"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Achievements -->
+      <section class="px-4 mb-8">
+        <div class="flex items-center justify-between mb-4 px-1">
+          <h3 class="text-lg font-extrabold">Achievements</h3>
+          <button id="viewAllAchievements" class="text-primary text-sm font-extrabold hover:underline" type="button">
+            View all
+          </button>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div
+            class="flex flex-col items-center gap-3 p-3 bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-white/5 shadow-soft">
+            <div
+              class="flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-yellow-100 to-orange-100 dark:from-yellow-900/40 dark:to-orange-900/40 border-2 border-yellow-400/30 text-yellow-600 dark:text-yellow-400 shadow-inner">
+              <span class="material-symbols-outlined text-2xl">emoji_events</span>
+            </div>
+            <span class="text-[11px] font-extrabold text-center leading-tight">Chain Rule<br />Champion</span>
+          </div>
+
+          <div
+            class="flex flex-col items-center gap-3 p-3 bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-white/5 shadow-soft">
+            <div
+              class="flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700/40 dark:to-slate-600/40 border-2 border-slate-300 dark:border-slate-500 text-slate-500 dark:text-slate-200 shadow-inner">
+              <span class="material-symbols-outlined text-2xl">military_tech</span>
+            </div>
+            <span class="text-[11px] font-extrabold text-center leading-tight">Limit<br />Legend</span>
+          </div>
+
+          <div
+            class="flex flex-col items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-white/5 opacity-70">
+            <div
+              class="flex items-center justify-center w-14 h-14 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-dashed border-slate-300 dark:border-slate-600 text-slate-400">
+              <span class="material-symbols-outlined text-2xl">lock</span>
+            </div>
+            <span class="text-[11px] font-medium text-center leading-tight text-slate-400">Integral<br />Master</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Friends -->
+      <section class="px-4 mb-10">
+        <div class="flex items-center justify-between mb-4 px-1">
+          <h3 class="text-lg font-extrabold">Friends</h3>
+          <button id="addFriendBtn" type="button"
+            class="press flex items-center gap-1 text-primary text-sm font-extrabold bg-primary/10 px-3 py-1.5 rounded-full hover:bg-primary/20 transition-colors">
+            <span class="material-symbols-outlined text-[16px]">person_add</span>
+            Add
+          </button>
+        </div>
+
+        <div class="flex flex-col gap-3">
+          <div
+            class="flex items-center gap-3 p-3 bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-white/5 shadow-soft">
+            <div class="relative">
+              <div class="w-12 h-12 rounded-full bg-cover bg-center bg-indigo-100"
+                style="background-image:url('https://lh3.googleusercontent.com/aida-public/AB6AXuCgrcMJmEWQnfCh3JDhY83MfjPzUypjNpNdPKHiX3haNkY1694oYERR78c9JqLV6eui2Dv1OcLn8r4zLq1w1vU_mfA7KsWKqPPwaw2JNyd0OQ50kLzC_c8ZizPYgjxidzw6nG6GKgmDy0_YnEVh09Tq1cQ-X13bApwUW3oDUizXfLpV0wiDifu6QMmBv7u8eMqWufLwuGNKS6eMPz5II1xxo4SmzdbIXz1I8ws7D3Gz3-8Ue5lL2HSu8AkH85odZcbj49Yw015QN6I');">
+              </div>
+              <div
+                class="absolute -bottom-1 -right-1 bg-green-500 w-4 h-4 border-2 border-white dark:border-surface-dark rounded-full">
+              </div>
+            </div>
+
+            <div class="flex-1 min-w-0">
+              <div class="flex justify-between items-center">
+                <h4 class="font-extrabold text-sm truncate">Sarah D.</h4>
+                <span class="text-[10px] font-extrabold text-slate-400">2m ago</span>
+              </div>
+              <p class="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">Completed Derivatives Unit 1</p>
+            </div>
+          </div>
+
+          <div
+            class="flex items-center gap-3 p-3 bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-white/5 shadow-soft">
+            <div class="relative">
+              <div class="w-12 h-12 rounded-full bg-cover bg-center bg-green-100"
+                style="background-image:url('https://lh3.googleusercontent.com/aida-public/AB6AXuAco0rwNMFrp7LOXeTMuud5MYY9Lzwy2aYtqXbF94ocxPWl-ZlKHnJ86YDU66a7iIIHk4B64s62GdHJhXVxSUeJfr_DX5hUVqxisdmGyBAL95ERowgVTjt8vgQvFwARFkD_ejIubXembNDOzhnfAVejS_vwgXoIYAdzGXiZfgAmvbwsm4UXAUOr6hkP_99rbUQfoNqf57qrIYAIROcOHpPWigo5qVUJ3p5qchktCrJkJ2PUE2tTzEENFXBCcc8Ot0Ri7xHu7N5OiqQ');">
+              </div>
+              <div
+                class="absolute -bottom-1 -right-1 bg-amber-400 w-4 h-4 border-2 border-white dark:border-surface-dark rounded-full">
+              </div>
+            </div>
+
+            <div class="flex-1 min-w-0">
+              <div class="flex justify-between items-center">
+                <h4 class="font-extrabold text-sm truncate">Mike R.</h4>
+                <span class="text-[10px] font-extrabold text-slate-400">1h ago</span>
+              </div>
+              <p class="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">Just earned 50 XP in Limits</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Shared state -->
+  <script src="state.js"></script>
+  <script src="progress.js"></script>
+
+  <script>
+    // Navigation
+    document.getElementById("backBtn")?.addEventListener("click", () => {
+      window.location.href = "path.html";
+    });
+
+    // Dark toggle
+    document.getElementById("darkToggle")?.addEventListener("click", () => {
+      document.documentElement.classList.toggle("dark");
+      document.documentElement.classList.toggle("light");
+    });
+
+    // Hydrate from FC state
+    (function hydrate() {
+      // XP/streak/lives live in fc_meta (state.js)
+      const meta = window.FC?.get ? FC.get() : { xp: 0, streak: 0, lives: 0 };
+
+      // name/avatar live in fc_state (app.js onboarding)
+      let s = {};
+      try {
+        s = JSON.parse(localStorage.getItem("fc_state") || "{}");
+      } catch {
+        s = {};
+      }
+
+      const DEFAULT_AVATAR =
+        "https://lh3.googleusercontent.com/aida-public/AB6AXuD90igZQPrpcib-AZfNF2ZDdOYbxb_Vcu_Y_4mx4VZyu9-4xomdRnfi4yhKHymx3b20GZbb-qmy3igr4zrexRQk8l45J1-7J7UaVd3-gxuVrHXT1_3hrdaDp-spamN6OgLdoHWWM-5hgpMyXfuo_Dl5vyod6u2ZIEllT4FWE5vm80Qv1mKoZBwtYZqirO9sfE15WtWjUcg6m6phdIdXU-rK0a0TWDBa52StV52lPgjrFV5TZb_kOid5jcK9sY8tDMVQ-VyYots1RRk";
+
+      const name = (s.name && String(s.name).trim()) || "CalcHero";
+      const avatarUrl = s.avatarUrl || DEFAULT_AVATAR;
+
+      document.getElementById("nameText").textContent = name;
+
+      const avatarEl = document.getElementById("avatar");
+      if (avatarEl) avatarEl.style.backgroundImage = `url('${avatarUrl}')`;
+
+      // chips/cards from meta (fc_meta)
+      document.getElementById("xpChip").textContent = String(meta.xp ?? 0);
+      document.getElementById("streakChip").textContent = String(meta.streak ?? 0);
+      document.getElementById("livesChip").textContent = String(meta.lives ?? 0);
+
+      document.getElementById("xpVal").textContent = String(meta.xp ?? 0);
+      document.getElementById("streakVal").textContent = String(meta.streak ?? 0);
+
+      // lessons completed (your existing local fallback)
+      const lessons = Number(localStorage.getItem("fc_lessons_completed") || "0");
+      document.getElementById("lessonsVal").textContent = String(lessons);
+
+      // joined date (keep your existing approach)
+      const joinedKey = "fc_joined_date";
+      let joined = localStorage.getItem(joinedKey);
+      if (!joined) {
+        joined = new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(new Date());
+        localStorage.setItem(joinedKey, joined);
+      }
+      document.getElementById("joinedText").textContent = `Joined ${joined}`;
+    })();
+
+
+    // Demo interactions
+    document.getElementById("settingsBtn")?.addEventListener("click", () => {
+      location.href = "settings.html";
+    });
+    document.getElementById("editAvatarBtn")?.addEventListener("click", () => {
+      alert("Avatar picker (coming soon).");
+    });
+    document.getElementById("addFriendBtn")?.addEventListener("click", () => {
+      alert("Friend system (coming soon).");
+    });
+    document.getElementById("viewAllAchievements")?.addEventListener("click", () => {
+      alert("All achievements (coming soon).");
+    });
+  </script>
+</body>
+
+</html>

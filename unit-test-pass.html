@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Full Calculus — Test Passed</title>
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#0d59f2",
+              gold: "#facc15",
+              bgDark: "#0f172a",
+              panelDark: "#111b2e",
+              borderDark: "#314368",
+            },
+            fontFamily: {
+              display: ["Lexend", "sans-serif"],
+            },
+            borderRadius: {
+              DEFAULT: "1rem",
+              lg: "1.5rem",
+              xl: "2rem",
+              full: "9999px",
+            },
+            boxShadow: {
+              soft: "0 10px 30px rgba(0,0,0,0.25)",
+            },
+          },
+        },
+      };
+    </script>
+
+    <style>
+      body {
+        font-family: "Lexend", sans-serif;
+        min-height: max(884px, 100dvh);
+      }
+      .material-symbols-outlined {
+        font-variation-settings: "FILL" 1, "wght" 600, "opsz" 24;
+      }
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      .press:active {
+        transform: translateY(4px);
+      }
+    </style>
+  </head>
+
+  <!-- lock body scroll -->
+  <body class="bg-bgDark text-white overflow-hidden">
+    <!-- app shell -->
+    <div class="w-full max-w-md mx-auto h-[100dvh] flex flex-col overflow-hidden shadow-2xl">
+
+      <!-- header -->
+      <header class="sticky top-0 z-30 bg-bgDark/95 backdrop-blur border-b border-borderDark px-4 py-3">
+        <div class="flex items-center justify-between">
+          <button
+            type="button"
+            onclick="location.href='path.html'"
+            class="press p-2 rounded-xl hover:bg-white/5 transition-colors"
+            aria-label="Close"
+          >
+            <span class="material-symbols-outlined">close</span>
+          </button>
+
+          <span class="text-sm font-extrabold uppercase tracking-wider text-gold">
+            Test Complete
+          </span>
+
+          <div class="w-10"></div>
+        </div>
+      </header>
+
+      <!-- scrollable content -->
+      <main class="flex-1 overflow-y-auto no-scrollbar px-4 py-8 pb-safe">
+        <div class="w-full flex flex-col items-center text-center">
+
+          <!-- trophy -->
+          <div class="relative mb-6">
+            <div class="absolute inset-0 bg-gold/20 blur-3xl rounded-full scale-150"></div>
+            <span class="material-symbols-outlined text-[96px] text-gold relative drop-shadow-lg">
+              emoji_events
+            </span>
+          </div>
+
+          <!-- title -->
+          <h1 id="unitMasteredTitle" class="text-3xl font-extrabold tracking-tight mb-2">
+            Unit 1 Mastered!
+          </h1>
+          <p class="text-slate-400 font-medium mb-8">
+            Outstanding work — you’re ready for the next challenge.
+          </p>
+
+          <!-- stats -->
+          <div class="w-full bg-panelDark rounded-2xl p-6 shadow-soft border border-borderDark mb-8">
+            <div class="grid grid-cols-2 divide-x divide-borderDark/70">
+              <div class="px-2">
+                <p class="text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-1">
+                  Final Score
+                </p>
+                <p id="scoreText" class="text-2xl font-extrabold text-white">—%</p>
+              </div>
+              <div class="px-2">
+                <p class="text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-1">
+                  XP Gained
+                </p>
+                <p id="xpText" class="text-2xl font-extrabold text-white">+—</p>
+              </div>
+            </div>
+
+            <div id="unlockRow" class="mt-4 pt-4 border-t border-borderDark/70">
+              <p class="text-sm text-slate-300 flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-gold">lock_open</span>
+                <span id="unlockText">Unit 2 unlocked: <strong>Derivatives</strong></span>
+              </p>
+            </div>
+          </div>
+
+          <!-- actions -->
+          <div class="w-full flex flex-col gap-4">
+            <button
+              id="continueBtn"
+              class="press w-full h-14 bg-primary hover:bg-primary/90 text-white rounded-2xl font-extrabold text-lg shadow-lg shadow-primary/20 transition-all active:scale-95"
+              type="button"
+            >
+              Continue Learning
+            </button>
+
+            <button
+              id="reviewBtn"
+              class="press w-full h-14 bg-slate-900/20 hover:bg-slate-900/30 border border-borderDark rounded-2xl font-extrabold text-lg transition-all active:scale-95"
+              type="button"
+            >
+              Review Notes
+            </button>
+          </div>
+
+          <div class="h-10"></div>
+        </div>
+      </main>
+    </div>
+
+    <script src="state.js"></script>
+    <script src="progress.js"></script>
+    <script src="content-structure.js"></script>
+    <script src="content-tests.js"></script>
+    <script src="content.js"></script>
+
+    <!-- logic -->
+    <script>
+      const result = (() => {
+        try {
+          return JSON.parse(localStorage.getItem("fc_last_test") || "{}");
+        } catch {
+          return {};
+        }
+      })();
+
+      const score = Number(result.score ?? 0);
+      const xp = Number(result.xp ?? 0);
+      const testId = result.testBlueprintId || "";
+
+      const masteredTitle = document.getElementById("unitMasteredTitle");
+      const unlockRow = document.getElementById("unlockRow");
+      const unlockText = document.getElementById("unlockText");
+
+      if (window.FCContent && testId) {
+        const blueprint = FCContent.getTestBlueprint(testId);
+        const chapter = blueprint ? FCContent.getChapter(blueprint.chapterId) : null;
+        const module = chapter ? FCContent.getModule(chapter.moduleId) : null;
+
+        if (module && masteredTitle) {
+          masteredTitle.textContent = `Unit ${module.order || 1} Mastered!`;
+        }
+
+        const courseId = module?.courseId || localStorage.getItem("fc_course") || "calc-1";
+        const courseModules = FCContent.getCourseModules(courseId);
+        const moduleIndex = module ? courseModules.findIndex((m) => m.id === module.id) : -1;
+        const nextModule =
+          moduleIndex >= 0 && moduleIndex < courseModules.length - 1
+            ? courseModules[moduleIndex + 1]
+            : null;
+        const moduleChapters = module ? FCContent.getModuleChapters(module.id) : [];
+        const chapterIndex = chapter ? moduleChapters.findIndex((c) => c.id === chapter.id) : -1;
+        const nextChapter =
+          chapterIndex >= 0 && chapterIndex < moduleChapters.length - 1
+            ? moduleChapters[chapterIndex + 1]
+            : null;
+
+        if (unlockRow && unlockText) {
+          if (nextChapter) {
+            unlockText.innerHTML = `Next up: <strong>${nextChapter.title}</strong>`;
+          } else if (nextModule) {
+            unlockText.innerHTML = `Unit ${nextModule.order || moduleIndex + 2} unlocked: <strong>${nextModule.title}</strong>`;
+          } else {
+            unlockText.textContent = "All units completed. Great work.";
+          }
+        }
+      }
+
+      document.getElementById("scoreText").textContent = `${score}%`;
+      document.getElementById("xpText").textContent = `+${xp}`;
+
+      document.getElementById("continueBtn").addEventListener("click", () => {
+        window.location.href = "path.html";
+      });
+
+      document.getElementById("reviewBtn").addEventListener("click", () => {
+        window.location.href = "notes.html";
+      });
+    </script>
+  </body>
+</html>

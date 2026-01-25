@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Full Calculus - Learn Calculus I, II, and III</title>
+    <meta
+      name="description"
+      content="Full Calculus is a complete learning path for Calculus I, II, and III with guided lessons, targeted practice, and unit tests."
+    />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700;900&family=Manrope:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #0b1b15;
+        --ink-soft: #3a4f48;
+        --paper: #f4fbf7;
+        --surface: #ffffff;
+        --surface-muted: #eef7f1;
+        --mint: #0bbd54;
+        --mint-dark: #079746;
+        --sage: #78d18b;
+        --evergreen: #0f6a4a;
+        --shadow: rgba(7, 18, 14, 0.08);
+        --shadow-strong: rgba(7, 18, 14, 0.2);
+        --page-bg: radial-gradient(circle at 15% 20%, #e4ffe9, transparent 55%),
+          radial-gradient(circle at 85% 15%, #dbf5ff, transparent 45%),
+          linear-gradient(180deg, #fbfff9 0%, #edf6f0 40%, #f4fbf7 100%);
+        --mint-glow: rgba(11, 189, 84, 0.22);
+        --evergreen-glow: rgba(15, 106, 74, 0.22);
+        --btn-primary-bg: linear-gradient(135deg, #0bbd54, #0f6a4a);
+        --btn-primary-text: #f2fff7;
+        --btn-secondary-border: #0b1b15;
+        --tag-mint-bg: rgba(11, 189, 84, 0.14);
+        --tag-mint-text: #0f6a4a;
+        --tag-amber-bg: rgba(120, 209, 139, 0.18);
+        --tag-amber-text: #0a6a3f;
+        --tag-ocean-bg: rgba(15, 106, 74, 0.15);
+        --tag-ocean-text: #0b4f37;
+        --cta-bg: linear-gradient(120deg, #0b1b15, #0f3a2b);
+        --cta-text: rgba(255, 255, 255, 0.75);
+        --link-soft: #1c4736;
+        --toggle-border: rgba(11, 27, 21, 0.12);
+      }
+
+      html.dark {
+        color-scheme: dark;
+        --ink: #e8f7ee;
+        --ink-soft: #b7cbbf;
+        --paper: #09120e;
+        --surface: #0f1d16;
+        --surface-muted: #13261d;
+        --mint: #34d987;
+        --mint-dark: #1fb070;
+        --sage: #7fe2a1;
+        --evergreen: #30a377;
+        --shadow: rgba(0, 0, 0, 0.35);
+        --shadow-strong: rgba(0, 0, 0, 0.55);
+        --page-bg: radial-gradient(circle at 10% 20%, rgba(20, 63, 43, 0.7), transparent 55%),
+          radial-gradient(circle at 80% 10%, rgba(13, 44, 33, 0.8), transparent 50%),
+          linear-gradient(180deg, #08110d 0%, #0c1913 60%, #0a1511 100%);
+        --mint-glow: rgba(52, 217, 135, 0.18);
+        --evergreen-glow: rgba(52, 217, 135, 0.2);
+        --btn-primary-bg: linear-gradient(135deg, #34d987, #1f7f5b);
+        --btn-primary-text: #05130c;
+        --btn-secondary-border: #e8f7ee;
+        --tag-mint-bg: rgba(52, 217, 135, 0.2);
+        --tag-mint-text: #bdf7d6;
+        --tag-amber-bg: rgba(127, 226, 161, 0.22);
+        --tag-amber-text: #d7ffe6;
+        --tag-ocean-bg: rgba(48, 163, 119, 0.22);
+        --tag-ocean-text: #d4f7e2;
+        --cta-bg: linear-gradient(120deg, #0b2217, #134431);
+        --cta-text: rgba(232, 247, 238, 0.7);
+        --link-soft: #a8e6c5;
+        --toggle-border: rgba(232, 247, 238, 0.18);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Manrope", sans-serif;
+        color: var(--ink);
+        background: var(--page-bg);
+        min-height: 100vh;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      img {
+        max-width: 100%;
+        display: block;
+      }
+
+      .page {
+        position: relative;
+        overflow: hidden;
+      }
+
+      .page::before,
+      .page::after {
+        content: "";
+        position: absolute;
+        width: 320px;
+        height: 320px;
+        border-radius: 50%;
+        filter: blur(0px);
+        opacity: 0.6;
+        z-index: 0;
+        background: radial-gradient(circle, var(--mint-glow), transparent 60%);
+        animation: float 8s ease-in-out infinite;
+      }
+
+      .page::before {
+        top: -120px;
+        right: -100px;
+      }
+
+      .page::after {
+        bottom: -160px;
+        left: -120px;
+        background: radial-gradient(circle, var(--evergreen-glow), transparent 65%);
+        animation-delay: 1.5s;
+      }
+
+      .container {
+        width: min(1120px, 92%);
+        margin: 0 auto;
+        position: relative;
+        z-index: 1;
+      }
+
+      nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 28px 0;
+      }
+
+      .brand {
+        font-family: "Fraunces", serif;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        font-size: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .brand-badge {
+        width: 36px;
+        height: 36px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--mint), var(--ocean));
+        display: grid;
+        place-items: center;
+        color: #fff;
+        font-weight: 700;
+        box-shadow: 0 10px 18px -10px var(--shadow-strong);
+      }
+
+      .nav-links {
+        display: flex;
+        gap: 20px;
+        font-weight: 600;
+        color: var(--ink-soft);
+      }
+
+      .nav-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .nav-links a:hover {
+        color: var(--ink);
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 26px;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 1rem;
+        border: none;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .btn-primary {
+        background: var(--btn-primary-bg);
+        color: var(--btn-primary-text);
+        box-shadow: 0 18px 32px -18px var(--shadow-strong);
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+      }
+
+      .btn-secondary {
+        background: transparent;
+        border: 2px solid var(--btn-secondary-border);
+        color: var(--ink);
+      }
+
+      .theme-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--ink-soft);
+        background: var(--surface);
+        border: 1px solid var(--toggle-border);
+        padding: 10px 16px;
+        border-radius: 999px;
+        box-shadow: 0 10px 24px -18px var(--shadow);
+        cursor: pointer;
+      }
+
+      .theme-toggle:hover {
+        color: var(--ink);
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 48px;
+        padding: 24px 0 80px;
+        align-items: center;
+      }
+
+      .eyebrow {
+        text-transform: uppercase;
+        font-weight: 700;
+        letter-spacing: 0.22em;
+        font-size: 0.75rem;
+        color: var(--ocean);
+      }
+
+      h1 {
+        font-family: "Fraunces", serif;
+        font-size: clamp(2.6rem, 4vw, 4.4rem);
+        margin: 14px 0 18px;
+        line-height: 1.05;
+      }
+
+      .hero p {
+        font-size: 1.1rem;
+        color: var(--ink-soft);
+        line-height: 1.7;
+      }
+
+      .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-top: 28px;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+        margin-top: 30px;
+      }
+
+      .stat-card {
+        background: var(--surface);
+        border-radius: 18px;
+        padding: 16px 18px;
+        box-shadow: 0 18px 40px -30px var(--shadow);
+      }
+
+      .stat-value {
+        font-family: "Fraunces", serif;
+        font-size: 1.8rem;
+        margin-bottom: 4px;
+      }
+
+      .stat-label {
+        color: var(--ink-soft);
+        font-weight: 600;
+        font-size: 0.9rem;
+      }
+
+      .hero-visual {
+        position: relative;
+      }
+
+      .path-card {
+        background: var(--surface);
+        border-radius: 28px;
+        padding: 28px;
+        box-shadow: 0 30px 60px -40px var(--shadow-strong);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .path-card::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 80% 20%, rgba(245, 165, 36, 0.15), transparent 60%);
+        pointer-events: none;
+      }
+
+      .path-line {
+        position: absolute;
+        top: 40px;
+        bottom: 40px;
+        left: 40px;
+        width: 4px;
+        background: linear-gradient(180deg, var(--mint), var(--evergreen));
+        border-radius: 999px;
+      }
+
+      .path-node {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        margin-bottom: 20px;
+        position: relative;
+        padding-left: 24px;
+      }
+
+      .path-node:last-child {
+        margin-bottom: 0;
+      }
+
+      .node-dot {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--surface);
+        border: 4px solid var(--mint);
+        margin-left: -2px;
+      }
+
+      .node-dot.alt {
+        border-color: var(--sage);
+      }
+
+      .node-dot.deep {
+        border-color: var(--evergreen);
+      }
+
+      .node-card {
+        background: var(--surface-muted);
+        padding: 12px 14px;
+        border-radius: 14px;
+        font-weight: 600;
+        color: var(--ink);
+        flex: 1;
+      }
+
+      .node-card span {
+        display: block;
+        font-weight: 500;
+        color: var(--ink-soft);
+        font-size: 0.85rem;
+      }
+
+      .section {
+        padding: 80px 0;
+      }
+
+      .section-title {
+        font-family: "Fraunces", serif;
+        font-size: clamp(2rem, 3.2vw, 3rem);
+        margin-bottom: 16px;
+      }
+
+      .section-subtitle {
+        color: var(--ink-soft);
+        max-width: 680px;
+        line-height: 1.7;
+      }
+
+      .grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 24px;
+        margin-top: 40px;
+      }
+
+      .topic-card {
+        background: var(--surface);
+        border-radius: 22px;
+        padding: 24px;
+        box-shadow: 0 26px 45px -38px var(--shadow);
+        border: 1px solid rgba(11, 27, 31, 0.05);
+      }
+
+      .topic-tag {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 0.75rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 16px;
+      }
+
+      .topic-tag.mint {
+        background: var(--tag-mint-bg);
+        color: var(--tag-mint-text);
+      }
+
+      .topic-tag.amber {
+        background: var(--tag-amber-bg);
+        color: var(--tag-amber-text);
+      }
+
+      .topic-tag.ocean {
+        background: var(--tag-ocean-bg);
+        color: var(--tag-ocean-text);
+      }
+
+      .topic-card ul {
+        margin: 0;
+        padding-left: 18px;
+        color: var(--ink-soft);
+        line-height: 1.7;
+      }
+
+      .feature-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 24px;
+        margin-top: 40px;
+      }
+
+      .feature {
+        background: linear-gradient(130deg, var(--surface), var(--surface-muted));
+        border-radius: 20px;
+        padding: 22px;
+        border: 1px solid rgba(11, 27, 31, 0.06);
+      }
+
+      .feature h3 {
+        margin-top: 0;
+        margin-bottom: 8px;
+        font-size: 1.2rem;
+      }
+
+      .feature p {
+        margin: 0;
+        color: var(--ink-soft);
+        line-height: 1.6;
+      }
+
+      .cta {
+        background: var(--cta-bg);
+        border-radius: 32px;
+        padding: 50px;
+        color: #fff;
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 24px;
+        align-items: center;
+        box-shadow: 0 40px 60px -40px var(--shadow-strong);
+      }
+
+      .cta h2 {
+        font-family: "Fraunces", serif;
+        font-size: clamp(2rem, 3vw, 2.8rem);
+        margin: 0 0 12px;
+      }
+
+      .cta p {
+        margin: 0;
+        color: var(--cta-text);
+        line-height: 1.7;
+      }
+
+      .cta .btn-primary {
+        background: linear-gradient(135deg, #78d18b, #34d987);
+        color: #052010;
+        box-shadow: 0 18px 40px -24px rgba(120, 209, 139, 0.6);
+      }
+
+      footer {
+        padding: 40px 0 30px;
+        color: var(--ink-soft);
+        font-size: 0.9rem;
+      }
+
+      .reveal {
+        animation: fadeUp 0.8s ease forwards;
+        opacity: 0;
+      }
+
+      .reveal.delay-1 {
+        animation-delay: 0.1s;
+      }
+
+      .reveal.delay-2 {
+        animation-delay: 0.2s;
+      }
+
+      .reveal.delay-3 {
+        animation-delay: 0.3s;
+      }
+
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(18px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-12px);
+        }
+      }
+
+      @media (max-width: 960px) {
+        .hero,
+        .cta,
+        .feature-row {
+          grid-template-columns: 1fr;
+        }
+
+        .stats {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .grid-3 {
+          grid-template-columns: 1fr;
+        }
+
+        .nav-links {
+          display: none;
+        }
+
+        .cta {
+          padding: 36px;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .stats {
+          grid-template-columns: 1fr;
+        }
+
+        .hero {
+          padding-bottom: 48px;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .reveal,
+        .page::before,
+        .page::after {
+          animation: none;
+        }
+        .reveal {
+          opacity: 1;
+          transform: none;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="page">
+      <div class="container">
+        <nav>
+          <div class="brand">
+            <span class="brand-badge">FC</span>
+            Full Calculus
+          </div>
+          <div class="nav-links">
+            <a href="#curriculum">Curriculum</a>
+            <a href="#features">Features</a>
+            <a href="#approach">Approach</a>
+          </div>
+          <div class="nav-actions">
+            <button id="themeToggle" class="theme-toggle" type="button" aria-label="Toggle dark mode">
+              Theme
+            </button>
+            <a class="btn btn-secondary" href="skill.html">Start Learning</a>
+          </div>
+        </nav>
+      </div>
+
+      <main>
+        <section class="container hero">
+          <div>
+            <div class="eyebrow reveal">Full Calculus Path</div>
+            <h1 class="reveal delay-1">Learn calculus with structure, practice, and momentum.</h1>
+            <p class="reveal delay-2">
+              Full Calculus is a guided path across Calculus I, II, and III. Build intuition with short lessons,
+              tackle targeted practice, and prove mastery with unit tests. Everything is sequenced so you always
+              know what comes next.
+            </p>
+            <div class="hero-actions reveal delay-3">
+              <a class="btn btn-primary" href="skill.html">Start Learning</a>
+              <a class="btn btn-secondary" href="#curriculum">Explore Curriculum</a>
+            </div>
+            <div class="stats">
+              <div class="stat-card reveal delay-2">
+                <div class="stat-value">3</div>
+                <div class="stat-label">Complete courses</div>
+              </div>
+              <div class="stat-card reveal delay-3">
+                <div class="stat-value">100+</div>
+                <div class="stat-label">Topic sections</div>
+              </div>
+              <div class="stat-card reveal delay-3">
+                <div class="stat-value">Daily</div>
+                <div class="stat-label">Quests and streaks</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-visual reveal delay-1">
+            <div class="path-card">
+              <div class="path-line"></div>
+              <div class="path-node">
+                <div class="node-dot"></div>
+                <div class="node-card">
+                  Unit 1: Limits and derivatives
+                  <span>Fast wins, deep foundations</span>
+                </div>
+              </div>
+              <div class="path-node">
+                <div class="node-dot alt"></div>
+                <div class="node-card">
+                  Unit 2: Integration toolkit
+                  <span>Methods, applications, and intuition</span>
+                </div>
+              </div>
+              <div class="path-node">
+                <div class="node-dot deep"></div>
+                <div class="node-card">
+                  Unit 3: Multivariable world
+                  <span>Vectors, fields, and 3D thinking</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="curriculum" class="section">
+          <div class="container">
+            <h2 class="section-title">One product, three full courses.</h2>
+            <p class="section-subtitle">
+              Each course is organized into units with lessons, practice, and a final mastery test. The path
+              adapts so you always see your next step.
+            </p>
+            <div class="grid-3">
+              <div class="topic-card">
+                <div class="topic-tag mint">Calculus I</div>
+                <h3>Foundations and change</h3>
+                <ul>
+                  <li>Limits, continuity, and rate of change</li>
+                  <li>Differentiation rules and applications</li>
+                  <li>Curve sketching and optimization</li>
+                </ul>
+              </div>
+              <div class="topic-card">
+                <div class="topic-tag amber">Calculus II</div>
+                <h3>Integration and series</h3>
+                <ul>
+                  <li>Techniques of integration</li>
+                  <li>Applications: area, volume, work</li>
+                  <li>Sequences, series, and power series</li>
+                </ul>
+              </div>
+              <div class="topic-card">
+                <div class="topic-tag ocean">Calculus III</div>
+                <h3>Multivariable thinking</h3>
+                <ul>
+                  <li>Vectors, geometry, and space curves</li>
+                  <li>Partial derivatives and multiple integrals</li>
+                  <li>Vector calculus and theorems</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="features" class="section">
+          <div class="container">
+            <h2 class="section-title">Built for the way you actually learn.</h2>
+            <p class="section-subtitle">
+              You get the structure of a course with the focus of targeted practice. Lessons are short, tests
+              are rigorous, and progress is visible from day one.
+            </p>
+            <div class="feature-row">
+              <div class="feature">
+                <h3>Lesson flow that keeps moving</h3>
+                <p>
+                  Small chunks, clear hints, and a fast feedback loop. Finish a lesson, unlock the next node, and
+                  keep the chain moving down the path.
+                </p>
+              </div>
+              <div class="feature">
+                <h3>Practice that targets your gaps</h3>
+                <p>
+                  Mixed item types and difficulty tiers help build fluency. Your progress per topic shapes what
+                  you see next.
+                </p>
+              </div>
+              <div class="feature">
+                <h3>Unit tests that feel earned</h3>
+                <p>
+                  Test after completing a unit and earn a mastery badge. Results unlock the next unit so your path
+                  stays intentional.
+                </p>
+              </div>
+              <div class="feature">
+                <h3>Motivation that stays grounded</h3>
+                <p>
+                  Daily quests, streaks, and XP keep things lively without turning the math into noise.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="approach" class="section">
+          <div class="container">
+            <h2 class="section-title">A clear path from onboarding to mastery.</h2>
+            <p class="section-subtitle">
+              Start with a short onboarding to set your level and goals. Then your home path keeps your next lesson
+              visible and your completed units organized.
+            </p>
+            <div class="grid-3">
+              <div class="topic-card">
+                <h3>1. Onboard in minutes</h3>
+                <p>
+                  Choose your skill level, set a goal, and create your profile. We shape your starting point so the
+                  lessons match you from day one.
+                </p>
+              </div>
+              <div class="topic-card">
+                <h3>2. Learn with momentum</h3>
+                <p>
+                  Each lesson adds to a visible chain. Finish a unit and the next set of topics appears directly
+                  below, ready to continue.
+                </p>
+              </div>
+              <div class="topic-card">
+                <h3>3. Prove mastery</h3>
+                <p>
+                  Unit tests confirm understanding. Pass them to unlock your next unit and keep the path moving.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="container section">
+          <div class="cta">
+            <div>
+              <h2>Ready to start your calculus journey?</h2>
+              <p>
+                Start with onboarding, then head straight to your learning path. Every lesson builds the chain.
+              </p>
+            </div>
+            <div>
+              <a class="btn btn-primary" href="skill.html">Start Learning</a>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <div class="container">
+          <strong>Full Calculus</strong> - Structured learning for Calculus I, II, and III.
+        </div>
+      </footer>
+    </div>
+
+    <script>
+      (function () {
+        const html = document.documentElement;
+        const saved = localStorage.getItem("fc_dark") === "1";
+        if (saved) html.classList.add("dark");
+
+        const toggle = document.getElementById("themeToggle");
+        if (!toggle) return;
+
+        const syncLabel = () => {
+          toggle.textContent = html.classList.contains("dark") ? "Light" : "Dark";
+        };
+
+        syncLabel();
+
+        toggle.addEventListener("click", () => {
+          html.classList.toggle("dark");
+          const isDark = html.classList.contains("dark");
+          localStorage.setItem("fc_dark", isDark ? "1" : "0");
+          syncLabel();
+        });
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Full Calculus — Skill Level</title>
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&family=Noto+Sans:wght@400;500;700&display=swap"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+    />
+
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#0df26c",
+              "primary-dark": "#0bbd54",
+              "background-light": "#ffffff",
+              "background-dark": "#102217",
+              "text-main": "#0d1c13",
+            },
+            fontFamily: {
+              display: ["Lexend", "sans-serif"],
+              body: ["Noto Sans", "sans-serif"],
+            },
+          },
+        },
+      };
+    </script>
+
+    <style>
+      /* Custom radio styling */
+      .peer:checked ~ .custom-radio-border {
+        border-color: #0df26c;
+        background-color: #f0fdf4;
+        box-shadow: 0 0 0 2px #0df26c inset;
+      }
+      .peer:checked ~ .custom-radio-border .radio-indicator {
+        background-color: #0df26c;
+        border-color: #0df26c;
+      }
+      /* Dark mode overrides */
+      .dark .peer:checked ~ .custom-radio-border {
+        border-color: #0df26c;
+        background-color: rgba(13, 242, 108, 0.1);
+      }
+      body {
+        min-height: max(884px, 100dvh);
+      }
+    </style>
+  </head>
+
+  <body
+    data-step="skill"
+    class="bg-background-light dark:bg-background-dark text-text-main dark:text-white font-display antialiased overflow-x-hidden selection:bg-primary selection:text-black"
+  >
+    <div
+      class="relative flex h-screen w-full max-w-md mx-auto flex-col overflow-hidden bg-background-light dark:bg-background-dark"
+    >
+      <!-- Top Bar -->
+      <div class="flex items-center justify-between px-6 pt-6 pb-2 shrink-0">
+        <!-- Progress Bar -->
+        <div class="flex-1 h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mr-4">
+          <div
+            id="progressFill"
+            class="h-full bg-primary rounded-full"
+            style="width: 20%"
+          ></div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button
+            id="darkToggle"
+            type="button"
+            class="text-xs font-bold px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-800/70 backdrop-blur"
+          >
+            DARK
+          </button>
+          <button
+            id="loginBtn"
+            type="button"
+            class="text-sm font-bold text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+          >
+            LOG IN
+          </button>
+        </div>
+      </div>
+
+      <!-- Scrollable Content Area -->
+      <div class="flex-1 overflow-y-auto px-6 pb-24 scrollbar-hide">
+        <!-- Mascot Area -->
+        <div class="flex flex-col items-center justify-center py-6">
+          <div class="relative w-40 h-40 mb-2">
+            <!-- Speech Bubble -->
+            <div
+              class="absolute -top-4 -right-8 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-2xl p-3 shadow-sm z-10 animate-bounce"
+              style="animation-duration: 3s"
+            >
+              <p class="text-sm font-bold text-text-main dark:text-white">Hi! I'm Cal.</p>
+              <div
+                class="absolute bottom-0 left-0 -mb-2 ml-4 w-4 h-4 bg-white dark:bg-gray-800 border-b-2 border-r-2 border-gray-200 dark:border-gray-700 transform rotate-45"
+              ></div>
+            </div>
+
+            <!-- Mascot Image -->
+            <div
+              class="w-full h-full bg-contain bg-center bg-no-repeat"
+              style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCnhFai7qanUDDZLP6t2VofGaBOCbfmZVWnJ889uQrLL3WzhS1QWDlM0jerWDNbJ1hVWZSxqilsTDFpjaFkPgfvjfpSkYyosbudyEcAz1h2RkSs_Kd6msgvEXbICSqOKuj679pqsmyhqnXijamUmbqkpmJECsu5AL2In2NRQlSEJnmFP1J3XvyYu6c6-oMv85ZGhq6GqSeEA0h4w8LLrWai_OjS3dB9q7QfB26ubvH3l4uc7HLORp6RxEZIx3SUFwH2y4SizfQAjrY')"
+            ></div>
+          </div>
+        </div>
+
+        <!-- Headline -->
+        <div class="mb-8 text-center">
+          <h1
+            id="skill-level-label"
+            class="text-2xl md:text-3xl font-extrabold text-text-main dark:text-white leading-tight mb-2"
+          >
+            How much Calculus do you know?
+          </h1>
+          <p class="text-gray-500 dark:text-gray-400 font-medium">
+            We'll customize your learning path.
+          </p>
+        </div>
+
+        <!-- Selection Cards -->
+        <div class="flex flex-col gap-4" role="radiogroup" aria-labelledby="skill-level-label">
+          <!-- Option 1 -->
+          <label class="group relative cursor-pointer">
+            <input class="peer sr-only" name="skill-level" type="radio" value="beginner" />
+            <div
+              class="custom-radio-border flex items-center p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-[0_4px_0_0_rgba(229,231,235,1)] dark:shadow-[0_4px_0_0_rgba(55,65,81,1)] active:shadow-none active:translate-y-[4px] transition-all hover:bg-gray-50 dark:hover:bg-gray-750"
+            >
+              <div
+                class="flex items-center justify-center w-12 h-12 bg-blue-100 text-blue-500 rounded-xl mr-4 shrink-0 dark:bg-blue-900/30 dark:text-blue-400"
+              >
+                <span class="material-symbols-outlined text-3xl">psychology_alt</span>
+              </div>
+              <div class="flex-1">
+                <h3 class="font-bold text-lg text-text-main dark:text-white leading-tight">
+                  I am new to Calculus
+                </h3>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Start from Calc 1</p>
+              </div>
+              <div
+                class="radio-indicator w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-600 ml-2 group-hover:border-primary transition-colors"
+              ></div>
+            </div>
+          </label>
+
+          <!-- Option 2 -->
+          <label class="group relative cursor-pointer">
+            <input class="peer sr-only" name="skill-level" type="radio" value="intermediate" />
+            <div
+              class="custom-radio-border flex items-center p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-[0_4px_0_0_rgba(229,231,235,1)] dark:shadow-[0_4px_0_0_rgba(55,65,81,1)] active:shadow-none active:translate-y-[4px] transition-all hover:bg-gray-50 dark:hover:bg-gray-750"
+            >
+              <div
+                class="flex items-center justify-center w-12 h-12 bg-purple-100 text-purple-500 rounded-xl mr-4 shrink-0 dark:bg-purple-900/30 dark:text-purple-400"
+              >
+                <span class="material-symbols-outlined text-3xl">school</span>
+              </div>
+              <div class="flex-1">
+                <h3 class="font-bold text-lg text-text-main dark:text-white leading-tight">
+                  I know some basics
+                </h3>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Jump to Calc 2</p>
+              </div>
+              <div
+                class="radio-indicator w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-600 ml-2 group-hover:border-primary transition-colors"
+              ></div>
+            </div>
+          </label>
+
+          <!-- Option 3 -->
+          <label class="group relative cursor-pointer">
+            <input class="peer sr-only" name="skill-level" type="radio" value="advanced" />
+            <div
+              class="custom-radio-border flex items-center p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-[0_4px_0_0_rgba(229,231,235,1)] dark:shadow-[0_4px_0_0_rgba(55,65,81,1)] active:shadow-none active:translate-y-[4px] transition-all hover:bg-gray-50 dark:hover:bg-gray-750"
+            >
+              <div
+                class="flex items-center justify-center w-12 h-12 bg-orange-100 text-orange-500 rounded-xl mr-4 shrink-0 dark:bg-orange-900/30 dark:text-orange-400"
+              >
+                <span class="material-symbols-outlined text-3xl">rocket_launch</span>
+              </div>
+              <div class="flex-1">
+                <h3 class="font-bold text-lg text-text-main dark:text-white leading-tight">
+                  I am advanced
+                </h3>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Challenge Calc 3</p>
+              </div>
+              <div
+                class="radio-indicator w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-600 ml-2 group-hover:border-primary transition-colors"
+              ></div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Sticky Footer -->
+      <div
+        class="absolute bottom-0 left-0 w-full bg-background-light dark:bg-background-dark border-t border-gray-100 dark:border-gray-800 p-4 pb-8 z-20"
+      >
+        <div class="flex items-center gap-3">
+          <button
+            id="backBtn"
+            type="button"
+            aria-label="Back"
+            class="h-12 w-12 rounded-full border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-[0_4px_0_0_rgba(229,231,235,1)] dark:shadow-[0_4px_0_0_rgba(55,65,81,1)] active:shadow-none active:translate-y-[4px] transition-all flex items-center justify-center"
+          >
+            <span class="material-symbols-outlined text-2xl">chevron_left</span>
+          </button>
+
+          <button
+            id="continueBtn"
+            type="button"
+            class="w-full h-12 bg-primary hover:bg-primary-dark text-text-main text-lg font-bold tracking-wide uppercase rounded-2xl shadow-[0_4px_0_0_#0bbd54] active:shadow-none active:translate-y-[4px] transition-all flex items-center justify-center"
+          >
+            <span id="continueLabel">Continue</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Gradient Overlay -->
+      <div
+        class="absolute bottom-[88px] left-0 w-full h-8 bg-gradient-to-t from-background-light dark:from-background-dark to-transparent pointer-events-none z-10"
+      ></div>
+    </div>
+
+    <script src="./app.js"></script>
+    <script src="state.js"></script>
+    <script src="progress.js"></script>
+
+  </body>
+</html>

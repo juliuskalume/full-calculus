@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Create Your Calculus Profile</title>
+
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    />
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#0df26c",
+              "background-light": "#f5f8f7",
+              "background-dark": "#102217",
+              "text-main": "#0d1c13",
+              "text-light": "#499c6c",
+            },
+            fontFamily: {
+              display: ["Plus Jakarta Sans", "sans-serif"],
+            },
+            borderRadius: {
+              DEFAULT: "1rem",
+              lg: "1.5rem",
+              xl: "3rem",
+              full: "9999px",
+            },
+          },
+        },
+      };
+    </script>
+
+    <style>
+      .form-input::placeholder {
+        color: #9abfab;
+        opacity: 1;
+      }
+      /* Hide scrollbar for cleaner mobile feel */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      body {
+        min-height: max(884px, 100dvh);
+      }
+    </style>
+  </head>
+
+  <body
+    data-step="account"
+    class="bg-background-light dark:bg-background-dark font-display antialiased text-text-main dark:text-white transition-colors duration-300"
+  >
+    <div
+      class="relative flex min-h-screen w-full flex-col overflow-x-hidden max-w-md mx-auto shadow-2xl bg-background-light dark:bg-background-dark"
+    >
+      <!-- Top Navigation -->
+      <div
+        class="flex items-center p-4 justify-between sticky top-0 z-10 bg-background-light/90 dark:bg-background-dark/90 backdrop-blur-sm"
+      >
+        <button
+          id="backBtn"
+          type="button"
+          class="flex size-10 shrink-0 items-center justify-center rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors text-text-main dark:text-white"
+          aria-label="Back"
+        >
+          <span class="material-symbols-outlined text-2xl">arrow_back</span>
+        </button>
+
+        <div class="h-2 w-32 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div id="progressFill" class="h-full bg-primary rounded-full" style="width: 80%"></div>
+        </div>
+
+        <button
+          id="darkToggle"
+          type="button"
+          class="flex size-10 shrink-0 items-center justify-center rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors text-text-main dark:text-white"
+          aria-label="Toggle dark mode"
+        >
+          <span class="material-symbols-outlined text-2xl">dark_mode</span>
+        </button>
+      </div>
+
+      <div class="flex-1 flex flex-col px-6 pb-8 no-scrollbar overflow-y-auto">
+        <!-- Profile Avatar Picker -->
+        <div class="w-full flex justify-center py-4 relative">
+          <div class="relative w-40 h-40 group">
+            <div class="absolute inset-0 bg-primary/20 rounded-full blur-2xl animate-pulse"></div>
+
+            <button
+              id="avatarBtn"
+              type="button"
+              class="w-full h-full rounded-full bg-white dark:bg-gray-800 border-4 border-white/70 dark:border-gray-700 shadow-xl relative z-10 overflow-hidden flex items-center justify-center"
+              aria-label="Choose profile picture"
+            >
+              <div
+                id="avatarPreview"
+                class="w-full h-full bg-center bg-cover"
+                style="background-image:url('https://lh3.googleusercontent.com/aida-public/AB6AXuD90igZQPrpcib-AZfNF2ZDdOYbxb_Vcu_Y_4mx4VZyu9-4xomdRnfi4yhKHymx3b20GZbb-qmy3igr4zrexRQk8l45J1-7J7UaVd3-gxuVrHXT1_3hrdaDp-spamN6OgLdoHWWM-5hgpMyXfuo_Dl5vyod6u2ZIEllT4FWE5vm80Qv1mKoZBwtYZqirO9sfE15WtWjUcg6m6phdIdXU-rK0a0TWDBa52StV52lPgjrFV5TZb_kOid5jcK9sY8tDMVQ-VyYots1RRk');"
+              ></div>
+
+              <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
+            </button>
+
+            <div
+              class="absolute -bottom-2 -right-2 bg-white dark:bg-gray-800 p-2 rounded-full shadow-lg z-20 flex items-center justify-center border border-gray-100 dark:border-gray-700"
+            >
+              <span class="material-symbols-outlined text-primary text-2xl">photo_camera</span>
+            </div>
+
+            <input id="avatarInput" type="file" accept="image/*" class="hidden" />
+          </div>
+        </div>
+
+        <!-- Headline -->
+        <div class="mb-6">
+          <h1
+            class="text-text-main dark:text-white text-3xl font-extrabold leading-tight text-center tracking-tight"
+          >
+            Create a profile to save your progress!
+          </h1>
+        </div>
+
+        <!-- Form Fields -->
+        <div class="flex flex-col gap-4">
+          <!-- Age & Name Row -->
+          <div class="flex gap-4">
+            <div class="flex flex-col w-1/3">
+              <label class="text-text-main dark:text-gray-300 text-sm font-bold uppercase tracking-wider mb-2 ml-2"
+                >Age</label
+              >
+              <input
+                id="ageInput"
+                class="form-input w-full rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:border-primary focus:ring-0 h-14 px-4 text-lg font-semibold text-center text-text-main dark:text-white transition-all"
+                placeholder="18"
+                type="number"
+                inputmode="numeric"
+              />
+            </div>
+
+            <div class="flex flex-col w-2/3">
+              <label class="text-text-main dark:text-gray-300 text-sm font-bold uppercase tracking-wider mb-2 ml-2">
+                Name <span class="text-text-light font-normal normal-case">(Optional)</span>
+              </label>
+
+              <!-- IMPORTANT: id="nameInput" for app.js -->
+              <input
+                id="nameInput"
+                class="form-input w-full rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:border-primary focus:ring-0 h-14 px-5 text-lg font-medium text-text-main dark:text-white transition-all"
+                placeholder="Ada Lovelace"
+                type="text"
+                autocomplete="name"
+              />
+
+              <!-- IMPORTANT: id="nameDot" for app.js validation indicator -->
+              <div class="mt-2 flex items-center gap-2 ml-2">
+                <span
+                  id="nameDot"
+                  class="inline-block w-2.5 h-2.5 rounded-full bg-zinc-300 dark:bg-zinc-700"
+                ></span>
+                <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">At least 2 characters</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Email -->
+          <div class="flex flex-col">
+            <label class="text-text-main dark:text-gray-300 text-sm font-bold uppercase tracking-wider mb-2 ml-2"
+              >Email</label
+            >
+            <div class="relative">
+              <input
+                id="emailInput"
+                class="form-input w-full rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:border-primary focus:ring-0 h-14 px-5 pr-12 text-lg font-medium text-text-main dark:text-white transition-all"
+                placeholder="math@example.com"
+                type="email"
+                autocomplete="email"
+              />
+              <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
+                >mail</span
+              >
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div class="flex flex-col">
+            <label class="text-text-main dark:text-gray-300 text-sm font-bold uppercase tracking-wider mb-2 ml-2"
+              >Password</label
+            >
+            <div class="relative">
+              <input
+                id="passwordInput"
+                class="form-input w-full rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:border-primary focus:ring-0 h-14 px-5 pr-12 text-lg font-medium text-text-main dark:text-white transition-all"
+                placeholder="********"
+                type="password"
+                autocomplete="new-password"
+              />
+              <button
+                id="togglePw"
+                type="button"
+                class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors"
+                aria-label="Toggle password visibility"
+              >
+                <span class="material-symbols-outlined">visibility_off</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Primary Action -->
+          <!-- IMPORTANT: id="continueBtn" for app.js navigation -->
+          <button
+            id="continueBtn"
+            type="button"
+            data-auth-flow="account"
+            class="mt-4 w-full h-14 bg-primary hover:bg-[#0be062] active:scale-[0.98] transition-all rounded-xl shadow-[0_4px_0_0_#0aa84b] active:shadow-none active:translate-y-[4px] flex items-center justify-center group"
+          >
+            <span id="continueLabel" class="text-[#05331d] text-lg font-extrabold uppercase tracking-wide mr-2"
+              >Create Profile</span
+            >
+            <span class="material-symbols-outlined text-[#05331d] group-hover:translate-x-1 transition-transform"
+              >arrow_forward</span
+            >
+          </button>
+          <p id="authStatus" class="text-xs font-semibold text-center text-text-light hidden"></p>
+          <p id="authError" class="text-xs font-semibold text-center text-red-500 hidden"></p>
+
+          <!-- Divider -->
+          <div class="relative flex py-2 items-center">
+            <div class="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
+            <span class="flex-shrink-0 mx-4 text-gray-400 text-sm font-medium uppercase">or sign up with</span>
+            <div class="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
+          </div>
+
+          <!-- Social Login -->
+          <div class="flex gap-4 justify-center">
+            <button
+              id="googleSignupBtn"
+              type="button"
+              class="flex-1 h-14 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+            >
+              <div
+                class="w-6 h-6 rounded-full border-4 border-blue-500 border-t-red-500 border-r-yellow-500 border-l-green-500 box-border"
+                aria-hidden="true"
+              ></div>
+              <span class="font-bold text-text-main dark:text-white">Google</span>
+            </button>
+
+            <button
+              type="button"
+              class="flex-1 h-14 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2 opacity-50 cursor-not-allowed"
+              disabled
+              aria-disabled="true"
+            >
+              <div class="w-6 h-6 bg-blue-600 rounded-full text-white flex items-center justify-center font-bold text-sm font-serif">
+                f
+              </div>
+              <span class="font-bold text-text-main dark:text-white">Facebook</span>
+            </button>
+          </div>
+
+          <!-- Secondary Action -->
+          <div class="mt-4 text-center">
+            <button
+              type="button"
+              class="text-text-light font-bold uppercase text-sm hover:text-primary transition-colors"
+              onclick="location.href='done.html'"
+            >
+              Maybe Later
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Small local-only UI sugar: password show/hide
+      const pw = document.getElementById("passwordInput");
+      const toggle = document.getElementById("togglePw");
+      if (pw && toggle) {
+        toggle.addEventListener("click", () => {
+          const isPw = pw.type === "password";
+          pw.type = isPw ? "text" : "password";
+          toggle.querySelector(".material-symbols-outlined").textContent = isPw ? "visibility" : "visibility_off";
+        });
+      }
+
+      // --- Avatar picker (saves to fc_state.avatarUrl) ---
+      const avatarBtn = document.getElementById("avatarBtn");
+      const avatarInput = document.getElementById("avatarInput");
+      const avatarPreview = document.getElementById("avatarPreview");
+
+      const DEFAULT_AVATAR =
+        "https://lh3.googleusercontent.com/aida-public/AB6AXuD90igZQPrpcib-AZfNF2ZDdOYbxb_Vcu_Y_4mx4VZyu9-4xomdRnfi4yhKHymx3b20GZbb-qmy3igr4zrexRQk8l45J1-7J7UaVd3-gxuVrHXT1_3hrdaDp-spamN6OgLdoHWWM-5hgpMyXfuo_Dl5vyod6u2ZIEllT4FWE5vm80Qv1mKoZBwtYZqirO9sfE15WtWjUcg6m6phdIdXU-rK0a0TWDBa52StV52lPgjrFV5TZb_kOid5jcK9sY8tDMVQ-VyYots1RRk";
+
+      function loadFcState() {
+        try {
+          return JSON.parse(localStorage.getItem("fc_state") || "{}");
+        } catch {
+          return {};
+        }
+      }
+
+      function saveFcState(s) {
+        localStorage.setItem("fc_state", JSON.stringify(s));
+      }
+
+      // hydrate preview from stored state
+      (function initAvatar() {
+        const s = loadFcState();
+        const url = s.avatarUrl || DEFAULT_AVATAR;
+        if (avatarPreview) avatarPreview.style.backgroundImage = `url('${url}')`;
+
+        // ensure avatarUrl exists once
+        if (!s.avatarUrl) {
+          s.avatarUrl = url;
+          saveFcState(s);
+        }
+      })();
+
+      avatarBtn?.addEventListener("click", () => avatarInput?.click());
+
+      avatarInput?.addEventListener("change", () => {
+        const file = avatarInput.files?.[0];
+        if (!file) return;
+
+        // Basic guard: keep images reasonably sized for localStorage
+        const MAX_MB = 1.2;
+        if (file.size > MAX_MB * 1024 * 1024) {
+          alert("That image is a bit large. Please choose one under ~1MB.");
+          avatarInput.value = "";
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => {
+          const dataUrl = String(reader.result || "");
+          if (!dataUrl.startsWith("data:image/")) return;
+
+          // update preview
+          if (avatarPreview) avatarPreview.style.backgroundImage = `url('${dataUrl}')`;
+
+          // save to fc_state
+          const s = loadFcState();
+          s.avatarUrl = dataUrl;
+          saveFcState(s);
+        };
+        reader.readAsDataURL(file);
+      });
+    </script>
+
+    <script src="firebase-config.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="auth.js"></script>
+    <script src="./app.js"></script>
+    <script src="state.js"></script>
+    <script src="progress.js"></script>
+    <script>
+      (function () {
+        const continueBtn = document.getElementById("continueBtn");
+        const emailInput = document.getElementById("emailInput");
+        const passwordInput = document.getElementById("passwordInput");
+        const nameInput = document.getElementById("nameInput");
+        const ageInput = document.getElementById("ageInput");
+        const googleBtn = document.getElementById("googleSignupBtn");
+        const errorEl = document.getElementById("authError");
+        const statusEl = document.getElementById("authStatus");
+
+        if (!continueBtn) return;
+
+        const onboarding = window.FCOnboarding || null;
+
+        const readState = () => (onboarding?.loadState ? onboarding.loadState() : {});
+        const writeState = (next) => {
+          if (onboarding?.saveState) onboarding.saveState(next);
+        };
+
+        const setMessage = (el, msg) => {
+          if (!el) return;
+          if (!msg) {
+            el.classList.add("hidden");
+            el.textContent = "";
+            return;
+          }
+          el.textContent = msg;
+          el.classList.remove("hidden");
+        };
+
+        const setBusy = (busy, label) => {
+          continueBtn.disabled = !!busy;
+          continueBtn.classList.toggle("opacity-60", !!busy);
+          continueBtn.classList.toggle("cursor-not-allowed", !!busy);
+          if (label) document.getElementById("continueLabel").textContent = label;
+        };
+
+        const updateSavedProfile = () => {
+          const s = readState();
+          s.email = emailInput?.value.trim() || s.email || "";
+          s.age = ageInput?.value ? Number(ageInput.value) : s.age || "";
+          writeState(s);
+        };
+
+        const updateContinueState = () => {
+          const email = emailInput?.value.trim() || "";
+          const password = passwordInput?.value || "";
+          const ok = email.length > 3 && password.length >= 6;
+          continueBtn.disabled = !ok;
+          continueBtn.classList.toggle("opacity-60", !ok);
+          continueBtn.classList.toggle("cursor-not-allowed", !ok);
+        };
+
+        emailInput?.addEventListener("input", () => {
+          updateSavedProfile();
+          updateContinueState();
+        });
+        ageInput?.addEventListener("input", updateSavedProfile);
+        passwordInput?.addEventListener("input", updateContinueState);
+
+        continueBtn.addEventListener("click", async () => {
+          setMessage(errorEl, "");
+          const email = emailInput?.value.trim() || "";
+          const password = passwordInput?.value || "";
+          const name = nameInput?.value.trim() || "";
+          const age = ageInput?.value ? Number(ageInput.value) : "";
+
+          if (window.FCAuth?.getCurrentUser && FCAuth.getCurrentUser()) {
+            setBusy(true, "Continuing...");
+            try {
+              updateSavedProfile();
+              await FCAuth.syncToRemote({ name, age, email });
+              location.href = "done.html";
+            } catch (err) {
+              setMessage(errorEl, err?.message || "Unable to continue.");
+            } finally {
+              setBusy(false, "Continue");
+            }
+            return;
+          }
+
+          if (!window.FCAuth?.enabled) {
+            setMessage(errorEl, "Auth is not configured yet. Add Firebase keys in firebase-config.js.");
+            return;
+          }
+
+          if (!email || password.length < 6) {
+            setMessage(errorEl, "Enter a valid email and a password with at least 6 characters.");
+            return;
+          }
+
+          setBusy(true, "Creating...");
+          try {
+            const s = readState();
+            const avatarUrl = s.avatarUrl || "";
+            await FCAuth.signUpWithEmail({
+              email,
+              password,
+              name,
+              age,
+              avatarUrl,
+            });
+            updateSavedProfile();
+            location.href = "done.html";
+          } catch (err) {
+            setMessage(errorEl, err?.message || "Sign up failed. Try again.");
+          } finally {
+            setBusy(false, "Create Profile");
+          }
+        });
+
+        googleBtn?.addEventListener("click", async () => {
+          setMessage(errorEl, "");
+          if (!window.FCAuth?.enabled) {
+            setMessage(errorEl, "Auth is not configured yet. Add Firebase keys in firebase-config.js.");
+            return;
+          }
+          setBusy(true, "Connecting...");
+          try {
+            const user = await FCAuth.signInWithGoogle();
+            const s = readState();
+            s.email = user?.email || s.email || "";
+            s.name = user?.displayName || s.name || "";
+            s.avatarUrl = user?.photoURL || s.avatarUrl || "";
+            writeState(s);
+            await FCAuth.ensureUserDoc({ name: s.name, avatarUrl: s.avatarUrl, email: s.email });
+            location.href = "done.html";
+          } catch (err) {
+            setMessage(errorEl, err?.message || "Google sign-in failed.");
+          } finally {
+            setBusy(false, "Create Profile");
+          }
+        });
+
+        if (window.FCAuth?.onAuthStateChanged) {
+          FCAuth.onAuthStateChanged((user) => {
+            if (!user) return;
+            const s = readState();
+            if (emailInput && user.email) emailInput.value = user.email;
+            if (nameInput && user.displayName) nameInput.value = user.displayName;
+            s.email = user.email || s.email || "";
+            s.name = user.displayName || s.name || "";
+            s.avatarUrl = user.photoURL || s.avatarUrl || "";
+            writeState(s);
+            setMessage(statusEl, `Signed in as ${user.email || "your account"}`);
+            continueBtn.disabled = false;
+            continueBtn.classList.remove("opacity-60", "cursor-not-allowed");
+          });
+        }
+
+        updateContinueState();
+      })();
+    </script>
+  </body>
+</html>

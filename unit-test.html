@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Full Calculus - Unit Test</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+
+  <!-- MathJax -->
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#0d59f2",
+            backgroundDark: "#101622",
+            surfaceDark: "#182234",
+            borderDark: "#314368"
+          },
+          fontFamily: {
+            display: ["Lexend", "sans-serif"]
+          },
+          borderRadius: {
+            xl: "1rem",
+            full: "9999px"
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: "Lexend", sans-serif;
+      min-height: max(884px, 100dvh);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .math {
+      font-family: serif;
+      font-style: italic;
+    }
+  </style>
+</head>
+
+<body class="bg-backgroundDark text-white flex flex-col overflow-x-hidden">
+
+  <!-- APP SHELL -->
+  <div class="w-full max-w-md mx-auto min-h-screen flex flex-col">
+
+    <!-- HEADER -->
+    <header class="sticky top-0 z-50 bg-backgroundDark/95 backdrop-blur border-b border-borderDark px-4 py-3">
+      <div class="flex items-center gap-3">
+
+        <!-- Exit -->
+        <button id="exitTestBtn" class="p-2 rounded-lg hover:bg-white/10 transition">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+
+        <!-- Progress -->
+        <div class="flex-1">
+          <div class="flex justify-between text-xs mb-1">
+            <span id="testTitle" class="font-bold text-primary uppercase">Unit Test</span>
+            <span class="opacity-70">Question <span id="qIndex">1</span> / <span id="qTotal">1</span></span>
+          </div>
+          <div class="h-2 rounded-full bg-borderDark overflow-hidden">
+            <div id="progressBar" class="h-full bg-primary w-[5%] transition-all"></div>
+          </div>
+        </div>
+
+        <!-- Hearts -->
+        <div class="flex items-center gap-1 px-2 py-1 rounded-lg bg-red-500/10 border border-red-500/20">
+          <span class="material-symbols-outlined text-red-500 text-sm">favorite</span>
+          <span id="hearts" class="text-red-500 font-bold text-sm">0</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- CONTENT -->
+    <main class="flex-1 overflow-y-auto px-6 py-8">
+
+      <!-- Topic -->
+      <div class="text-center mb-8">
+        <span
+          id="topicTag"
+          class="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase border border-primary/20 mb-4"
+        >
+          Topic
+        </span>
+        <h1 id="questionText" class="text-2xl font-bold leading-tight">
+          Loading question...
+        </h1>
+      </div>
+
+      <!-- Answer -->
+      <div id="choicesContainer" class="hidden space-y-3 mb-6"></div>
+
+      <div id="inputContainer" class="space-y-2 mb-6">
+        <label class="text-sm opacity-70">Your Answer</label>
+        <input
+          id="answerInput"
+          type="text"
+          inputmode="text"
+          placeholder="Enter an answer"
+          class="w-full rounded-xl bg-white dark:bg-surfaceDark border-2 border-borderDark px-4 py-4 text-xl text-gray-900 dark:text-white focus:border-primary focus:ring-0"
+        />
+        <textarea
+          id="answerTextArea"
+          rows="3"
+          placeholder="Write a short response"
+          class="hidden w-full rounded-xl bg-white dark:bg-surfaceDark border-2 border-borderDark px-4 py-3 text-base text-gray-900 dark:text-white focus:border-primary focus:ring-0"
+        ></textarea>
+        <p id="answerHint" class="text-xs opacity-50 italic text-center">Use * for multiplication.</p>
+      </div>
+
+      <div id="feedbackText" class="text-sm font-semibold text-center mb-4"></div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="border-t border-borderDark bg-backgroundDark px-4 py-4 pb-8">
+      <button
+        id="submitBtn"
+        class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/20 transition active:scale-95 uppercase tracking-wider text-sm"
+      >
+        Submit Answer
+      </button>
+    </footer>
+
+  </div>
+
+  <!-- SCRIPTS -->
+  <script src="https://cdn.jsdelivr.net/npm/mathjs@11.8.0/lib/browser/math.min.js"></script>
+  <script src="state.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="auth.js"></script>
+  <script src="progress.js"></script>
+  <script src="content-structure.js"></script>
+  <script src="content-sections.js"></script>
+  <script src="content-examples.js"></script>
+  <script src="content-items.js"></script>
+  <script src="content-tests.js"></script>
+  <script src="content.js"></script>
+  <script src="engine.js"></script>
+
+  <script>
+    const qIndex = document.getElementById("qIndex");
+    const qTotal = document.getElementById("qTotal");
+    const progressBar = document.getElementById("progressBar");
+    const heartsEl = document.getElementById("hearts");
+    const topicTag = document.getElementById("topicTag");
+    const questionText = document.getElementById("questionText");
+    const choicesContainer = document.getElementById("choicesContainer");
+    const inputContainer = document.getElementById("inputContainer");
+    const answerInput = document.getElementById("answerInput");
+    const answerTextArea = document.getElementById("answerTextArea");
+    const answerHint = document.getElementById("answerHint");
+    const feedbackText = document.getElementById("feedbackText");
+    const submitBtn = document.getElementById("submitBtn");
+    const testTitle = document.getElementById("testTitle");
+
+    let testSession = null;
+    let currentItem = null;
+    let currentResponse = "";
+    let awaitingAnswer = true;
+    let mathTypesetTries = 0;
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function formatMathText(value) {
+      return escapeHtml(value).replace(/\n/g, "<br>");
+    }
+
+    function typesetMath(targets) {
+      if (window.MathJax?.typesetPromise) {
+        window.MathJax.typesetPromise(targets || undefined).catch(() => {});
+        return;
+      }
+      if (mathTypesetTries < 10) {
+        mathTypesetTries += 1;
+        setTimeout(() => typesetMath(targets), 200);
+      }
+    }
+
+    function loadTest() {
+      testSession = FCEngine.getTestSession();
+      if (!testSession) {
+        const fallback = FCContent.testBlueprints[0];
+        testSession = FCEngine.createTestSession(fallback?.id || "");
+        if (testSession) FCEngine.saveTestSession(testSession);
+      }
+    }
+
+    function getBlueprint() {
+      return FCContent.getTestBlueprint(testSession.blueprintId);
+    }
+
+    function updateHeader() {
+      const blueprint = getBlueprint();
+      if (testTitle && blueprint) testTitle.textContent = blueprint.title;
+      if (heartsEl && window.FC?.get) heartsEl.textContent = String(FC.get().lives ?? 0);
+    }
+
+    function updateProgress() {
+      const total = testSession.itemIds.length || 1;
+      const current = Math.min(testSession.index + 1, total);
+      qIndex.textContent = String(current);
+      qTotal.textContent = String(total);
+      progressBar.style.width = `${Math.round((current / total) * 100)}%`;
+    }
+
+    function formatAnswer(item) {
+      const answer = item.answer?.value ?? "";
+      if (item.type === "mcq") return answer;
+      if (item.type === "numeric") return String(answer);
+      if (item.type === "expression") return String(answer);
+      if (item.type === "free-response") return "Saved for review";
+      return String(answer);
+    }
+
+    function resetInputs() {
+      currentResponse = "";
+      feedbackText.textContent = "";
+      feedbackText.className = "text-sm font-semibold text-center mb-4";
+      answerInput.value = "";
+      answerTextArea.value = "";
+      answerInput.classList.add("hidden");
+      answerTextArea.classList.add("hidden");
+      choicesContainer.classList.add("hidden");
+      inputContainer.classList.remove("hidden");
+      awaitingAnswer = true;
+      submitBtn.textContent = "Submit Answer";
+    }
+
+    function renderChoices(item) {
+      choicesContainer.innerHTML = "";
+      choicesContainer.classList.remove("hidden");
+      inputContainer.classList.add("hidden");
+      const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      item.choices.forEach((choice, idx) => {
+        const letter = letters[idx] || String(idx + 1);
+        const label = document.createElement("label");
+        label.className = "group relative cursor-pointer";
+        label.innerHTML = `
+          <input class="peer sr-only" name="test_answer" type="radio" />
+          <div
+            class="choiceCard w-full p-4 rounded-xl bg-white dark:bg-surfaceDark border-2 border-borderDark flex items-center peer-checked:border-primary peer-checked:bg-primary/5 transition-all"
+          >
+            <div class="flex items-center justify-center size-9 rounded-lg border-2 border-borderDark text-gray-400 mr-4 peer-checked:border-primary peer-checked:bg-primary peer-checked:text-white">
+              <span class="text-sm font-bold">${letter}</span>
+            </div>
+            <span class="text-lg font-medium">${formatMathText(choice)}</span>
+          </div>
+        `;
+        const input = label.querySelector("input");
+        input.value = choice;
+        input.addEventListener("change", () => {
+          currentResponse = choice;
+        });
+        choicesContainer.appendChild(label);
+      });
+    }
+
+    function renderInput(item) {
+      inputContainer.classList.remove("hidden");
+      choicesContainer.classList.add("hidden");
+      answerInput.classList.add("hidden");
+      answerTextArea.classList.add("hidden");
+
+      if (item.type === "free-response") {
+        answerTextArea.classList.remove("hidden");
+        answerHint.textContent = "Write a short response.";
+        answerTextArea.oninput = () => {
+          currentResponse = answerTextArea.value;
+        };
+      } else {
+        answerInput.classList.remove("hidden");
+        answerHint.textContent = item.type === "expression" ? "Use * for multiplication." : "Enter a value.";
+        answerInput.oninput = () => {
+          currentResponse = answerInput.value;
+        };
+      }
+    }
+
+    function renderItem() {
+      if (!testSession?.itemIds?.length) return;
+      const itemId = testSession.itemIds[testSession.index];
+      currentItem = FCContent.getItem(itemId);
+      if (!currentItem) return;
+
+      const section = FCContent.getSection(currentItem.sectionId);
+      topicTag.textContent = section ? section.title : (currentItem.tags?.[0] || "Topic");
+      questionText.innerHTML = formatMathText(currentItem.prompt || "Question");
+
+      resetInputs();
+      if (currentItem.type === "mcq") {
+        renderChoices(currentItem);
+      } else {
+        renderInput(currentItem);
+      }
+
+      updateProgress();
+      updateHeader();
+      typesetMath([questionText, choicesContainer]);
+    }
+
+    function recordResult(result) {
+      const correct = result.correct === true;
+      if (result.correct === null) {
+        feedbackText.textContent = "Saved for review.";
+        feedbackText.classList.add("text-yellow-300");
+      } else if (correct) {
+        feedbackText.textContent = "Correct";
+        feedbackText.classList.add("text-emerald-300");
+      } else {
+        feedbackText.innerHTML = `Incorrect. Correct answer: <span class="underline">${formatMathText(
+          formatAnswer(currentItem)
+        )}</span>`;
+        feedbackText.classList.add("text-rose-300");
+        if (window.FC?.loseLife) FC.loseLife();
+      }
+      typesetMath([feedbackText]);
+
+      if (window.FC?.get && heartsEl) heartsEl.textContent = String(FC.get().lives ?? 0);
+      FCProgress.recordItemResult(currentItem.id, result.correct);
+      testSession.responses.push({ itemId: currentItem.id, response: currentResponse, correct: result.correct });
+      if (correct) testSession.correct += 1;
+      FCEngine.saveTestSession(testSession);
+    }
+
+    function finishTest() {
+      const blueprint = getBlueprint();
+      const total = testSession.itemIds.length || 1;
+      const correctCount = testSession.responses.filter((r) => r.correct === true).length;
+      const score = Math.round((correctCount / total) * 100);
+      const threshold = Math.round((blueprint?.passThreshold || 0.9) * 100);
+      const passed = score >= threshold;
+      const xpReward = passed ? Number(blueprint?.rewards?.xp || 0) : 0;
+
+      if (xpReward && window.FC?.addXP) FC.addXP(xpReward);
+      if (xpReward && window.FCProgress?.addDailyXp) FCProgress.addDailyXp(xpReward);
+
+      const tagBreakdown = FCEngine.buildTagBreakdown(testSession.responses);
+      FCEngine.saveLastTest({
+        id: testSession.id,
+        testBlueprintId: blueprint?.id || testSession.blueprintId,
+        score,
+        passed,
+        tagBreakdown,
+        xp: xpReward,
+        submittedAt: new Date().toISOString(),
+      });
+
+      FCProgress.recordTestResult(blueprint?.id || testSession.blueprintId, {
+        score,
+        passed,
+        unlockSectionIds: blueprint?.rewards?.unlockSectionIds || [],
+      });
+
+      FCEngine.clearTestSession();
+      window.location.href = passed ? "unit-test-pass.html" : "unit-test-fail.html";
+    }
+
+    submitBtn.addEventListener("click", () => {
+      if (awaitingAnswer) {
+        if (!currentResponse || !String(currentResponse).trim()) {
+          alert("Enter an answer first");
+          return;
+        }
+        const result = FCEngine.gradeItem(currentItem, currentResponse);
+        recordResult(result);
+        awaitingAnswer = false;
+        submitBtn.textContent = "Next Question";
+        return;
+      }
+
+      testSession.index += 1;
+      if (testSession.index >= testSession.itemIds.length) {
+        finishTest();
+      } else {
+        renderItem();
+      }
+    });
+
+    document.getElementById("exitTestBtn").addEventListener("click", () => {
+      if (confirm("Exit test? Progress will be lost.")) {
+        FCEngine.clearTestSession();
+        window.location.href = "path.html";
+      }
+    });
+
+    loadTest();
+    if (!testSession || !testSession.itemIds.length) {
+      alert("No test items available yet.");
+      window.location.href = "path.html";
+    } else {
+      renderItem();
+    }
+  </script>
+
+</body>
+</html>
+
+
+
+
+
+

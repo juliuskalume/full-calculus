@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Lesson Complete</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&family=Noto+Sans:wght@400;500;700&display=swap"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+    />
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#0d59f2",
+              "primary-content": "#ffffff",
+              "primary-light": "#dce6fc",
+              "background-light": "#f5f6f8",
+              "background-dark": "#101622",
+              "surface-light": "#ffffff",
+              "surface-dark": "#1a2234",
+              "text-main": "#0d121c",
+              "text-sub": "#4b5563",
+            },
+            fontFamily: {
+              display: ["Lexend", "sans-serif"],
+              body: ["Noto Sans", "sans-serif"],
+            },
+            boxShadow: {
+              glow: "0 0 15px -3px rgba(13, 89, 242, 0.5)",
+            },
+          },
+        },
+      };
+    </script>
+
+    <style>
+      body {
+        font-family: "Lexend", "Noto Sans", sans-serif;
+        min-height: max(884px, 100dvh);
+      }
+      .bg-lesson-pattern {
+        background-color: #f5f6f8;
+        background-image: radial-gradient(#dce6fc 1px, transparent 1px);
+        background-size: 20px 20px;
+      }
+      .overlay-dim {
+        background: rgba(13, 18, 28, 0.75);
+        backdrop-filter: blur(4px);
+      }
+      @keyframes slideUp {
+        from { transform: translateY(24px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+      .animate-slide-up {
+        animation: slideUp 260ms ease both;
+      }
+      @keyframes shimmer {
+        0% { transform: translateX(-120%); }
+        100% { transform: translateX(120%); }
+      }
+      .shimmer {
+        animation: shimmer 1.5s linear infinite;
+      }
+    </style>
+  </head>
+
+  <body class="bg-lesson-pattern relative min-h-screen w-full overflow-hidden text-text-main dark:text-white dark:bg-background-dark">
+    <!-- dimmed background mock -->
+    <div aria-hidden="true" class="absolute inset-0 z-0 flex flex-col p-6 opacity-30 pointer-events-none">
+      <div class="flex justify-between items-center mb-8">
+        <span class="material-symbols-outlined text-gray-400">close</span>
+        <div class="h-2 w-32 bg-gray-200 rounded-full"></div>
+        <span class="material-symbols-outlined text-gray-400">favorite</span>
+      </div>
+      <div class="space-y-4">
+        <div class="h-8 w-3/4 bg-gray-200 rounded animate-pulse"></div>
+        <div class="h-32 w-full bg-gray-200 rounded-lg animate-pulse"></div>
+        <div class="h-12 w-full bg-gray-200 rounded-lg animate-pulse mt-8"></div>
+        <div class="h-12 w-full bg-gray-200 rounded-lg animate-pulse"></div>
+      </div>
+    </div>
+
+    <!-- overlay -->
+    <div class="relative z-10 flex min-h-screen w-full flex-col justify-center items-center overlay-dim transition-all duration-500 px-4 py-8">
+      <div class="w-full max-w-md bg-surface-light dark:bg-surface-dark rounded-3xl p-6 sm:p-8 flex flex-col items-center gap-6 shadow-2xl animate-slide-up">
+        <!-- Mascot -->
+        <div class="relative -mt-16 sm:-mt-20">
+          <div class="relative w-40 h-40 sm:w-48 sm:h-48">
+            <div class="w-full h-full rounded-full bg-primary-light flex items-center justify-center overflow-hidden border-4 border-white dark:border-surface-dark shadow-lg">
+              <img
+                alt="Cal celebrating"
+                class="w-full h-full object-cover"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCnhFai7qanUDDZLP6t2VofGaBOCbfmZVWnJ889uQrLL3WzhS1QWDlM0jerWDNbJ1hVWZSxqilsTDFpjaFkPgfvjfpSkYyosbudyEcAz1h2RkSs_Kd6msgvEXbICSqOKuj679pqsmyhqnXijamUmbqkpmJECsu5AL2In2NRQlSEJnmFP1J3XvyYu6c6-oMv85ZGhq6GqSeEA0h4w8LLrWai_OjS3dB9q7QfB26ubvH3l4uc7HLORp6RxEZIx3SUFwH2y4SizfQAjrY"
+              />
+            </div>
+
+            <div class="absolute top-0 right-0 text-yellow-400 animate-bounce">
+              <span class="material-symbols-outlined text-3xl" style="font-variation-settings:'FILL' 1">star</span>
+            </div>
+            <div class="absolute bottom-4 left-0 text-primary animate-pulse">
+              <span class="material-symbols-outlined text-2xl" style="font-variation-settings:'FILL' 1">bolt</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Headline -->
+        <div class="w-full flex flex-col items-center gap-2">
+          <div class="flex flex-col items-center">
+            <h1 id="xpEarnedText" class="text-primary text-[42px] font-extrabold leading-none tracking-tight drop-shadow-sm">+0 XP</h1>
+            <span class="text-sm font-semibold text-primary/60 uppercase tracking-widest mt-1">Lesson Complete!</span>
+          </div>
+
+          <!-- XP bar -->
+          <div class="w-full flex flex-col gap-3 pt-6 pb-2">
+            <div class="relative w-full h-6 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
+              <div
+                id="xpFill"
+                class="absolute top-0 left-0 h-full bg-primary rounded-full flex items-center justify-end pr-1 shadow-glow transition-all duration-1000 ease-out"
+                style="width: 0%"
+              >
+                <div class="h-4 w-1 bg-white/40 rounded-full blur-[1px]"></div>
+              </div>
+            </div>
+
+            <div class="flex justify-between items-center w-full text-sm font-medium">
+              <span class="text-text-sub dark:text-gray-400">Daily Goal</span>
+              <span id="dailyGoalText" class="text-text-main dark:text-white font-bold">
+                0 <span class="text-gray-400 font-normal">/ 100 XP</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- Stats -->
+          <div class="grid grid-cols-2 w-full gap-3 mt-2">
+            <div class="bg-background-light dark:bg-background-dark p-3 rounded-xl flex items-center gap-3 border border-gray-100 dark:border-gray-800">
+              <div class="p-2 rounded-lg bg-orange-100 text-orange-600">
+                <span class="material-symbols-outlined text-xl" style="font-variation-settings:'FILL' 1">local_fire_department</span>
+              </div>
+              <div class="flex flex-col">
+                <span class="text-xs text-text-sub dark:text-gray-400 uppercase font-bold">Streak</span>
+                <span id="streakText" class="text-sm font-bold text-text-main dark:text-white">0 Days</span>
+              </div>
+            </div>
+
+            <div class="bg-background-light dark:bg-background-dark p-3 rounded-xl flex items-center gap-3 border border-gray-100 dark:border-gray-800">
+              <div class="p-2 rounded-lg bg-emerald-100 text-emerald-600">
+                <span class="material-symbols-outlined text-xl" style="font-variation-settings:'FILL' 1">check_circle</span>
+              </div>
+              <div class="flex flex-col">
+                <span class="text-xs text-text-sub dark:text-gray-400 uppercase font-bold">Accuracy</span>
+                <span id="accuracyText" class="text-sm font-bold text-text-main dark:text-white">0%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Continue (now always visible) -->
+        <div class="w-full mt-2">
+          <button
+            id="continueBtn"
+            class="w-full group relative flex items-center justify-center overflow-hidden rounded-xl h-14 bg-primary text-primary-content text-lg font-bold shadow-lg shadow-blue-500/30 transition-all hover:bg-blue-600 hover:scale-[1.02] active:scale-[0.98]"
+            type="button"
+          >
+            <span class="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:shimmer"></span>
+            <span>Continue</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="state.js"></script>
+    <script src="progress.js"></script>
+
+    <script>
+      const session = (() => {
+        try {
+          return JSON.parse(localStorage.getItem("fc_last_session") || "{}");
+        } catch {
+          return {};
+        }
+      })();
+
+      const xpEarned = Number(session.xp || 0);
+      const accuracy = Number(session.accuracy || 0);
+
+      const xpText = document.getElementById("xpEarnedText");
+      if (xpText) xpText.textContent = `+${xpEarned} XP`;
+
+      const accuracyText = document.getElementById("accuracyText");
+      if (accuracyText) accuracyText.textContent = `${accuracy}%`;
+
+      const streakText = document.getElementById("streakText");
+      if (streakText && window.FC?.get) {
+        streakText.textContent = `${FC.get().streak ?? 0} Days`;
+      }
+
+      const DAILY_GOAL = 100;
+      const daily = FCProgress.get().daily || { xp: 0 };
+      const dailyText = document.getElementById("dailyGoalText");
+      if (dailyText) {
+        dailyText.innerHTML = `${daily.xp || 0} <span class="text-gray-400 font-normal">/ ${DAILY_GOAL} XP</span>`;
+      }
+
+      document.getElementById("continueBtn").addEventListener("click", () => {
+        window.location.href = "path.html";
+      });
+
+      window.addEventListener("load", () => {
+        const fill = document.getElementById("xpFill");
+        if (!fill) return;
+        const pct = Math.min(100, Math.round(((daily.xp || 0) / DAILY_GOAL) * 100));
+        setTimeout(() => {
+          fill.style.width = `${pct}%`;
+        }, 120);
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Full Calculus — League</title>
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&family=Noto+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+      rel="stylesheet"
+    />
+
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#135bec",
+              secondary: "#58cc02",
+              danger: "#ff4b4b",
+              gold: "#ffc800",
+              silver: "#dce6ea",
+              bronze: "#f4a259",
+
+              "background-light": "#f5f6f8",
+              "background-dark": "#101622",
+              "surface-light": "#ffffff",
+              "surface-dark": "#1e2532",
+            },
+            fontFamily: {
+              display: ["Lexend", "sans-serif"],
+              body: ["Noto Sans", "sans-serif"],
+            },
+            borderRadius: {
+              DEFAULT: "1rem",
+              lg: "1.5rem",
+              xl: "2rem",
+              full: "9999px",
+            },
+            boxShadow: {
+              soft: "0 4px 20px -2px rgba(0,0,0,0.06)",
+              gold: "0 4px 0 0 #e5b400",
+              silver: "0 4px 0 0 #c4ced2",
+              bronze: "0 4px 0 0 #d98e4d",
+            },
+          },
+        },
+      };
+    </script>
+
+    <style>
+      body {
+        font-family: "Lexend", sans-serif;
+        min-height: max(884px, 100dvh);
+      }
+      .material-symbols-outlined {
+        font-variation-settings: "FILL" 1, "wght" 650, "GRAD" 0, "opsz" 24;
+      }
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      .press:active {
+        transform: translateY(4px);
+        box-shadow: none !important;
+      }
+    </style>
+  </head>
+
+  <body
+    data-step="leaderboard"
+    class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white min-h-screen flex justify-center antialiased"
+  >
+    <!-- Mobile shell -->
+    <div
+      class="w-full max-w-md h-[100dvh] sm:min-h-screen bg-background-light dark:bg-background-dark shadow-2xl flex flex-col overflow-hidden"
+    >
+      <!-- Sticky Header -->
+      <header
+        class="bg-surface-light/95 dark:bg-background-dark/95 backdrop-blur-md sticky top-0 z-30 px-4 pt-4 pb-3 border-b border-slate-200 dark:border-slate-800"
+      >
+        <!-- Top row -->
+        <div class="flex items-center justify-between mb-2">
+          <button
+            id="backBtn"
+            type="button"
+            class="press text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors rounded-xl p-2 hover:bg-slate-50 dark:hover:bg-slate-800"
+            aria-label="Back"
+          >
+            <span class="material-symbols-outlined">arrow_back</span>
+          </button>
+
+          <div class="flex items-center gap-2">
+            <div class="bg-primary/10 dark:bg-primary/20 px-3 py-1 rounded-full flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-primary text-[18px]">schedule</span>
+              <p class="text-primary text-xs font-extrabold tracking-wide uppercase">
+                <span id="timeLeft">2d 4h left</span>
+              </p>
+            </div>
+
+            <button
+              id="darkToggle"
+              type="button"
+              class="text-xs font-extrabold px-3 py-1 rounded-full border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-surface-dark/70 backdrop-blur"
+              aria-label="Toggle dark mode"
+            >
+              DARK
+            </button>
+          </div>
+        </div>
+
+        <!-- Title + meta -->
+        <div class="flex flex-col items-center">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="material-symbols-outlined text-primary text-3xl">diamond</span>
+            <h1 class="text-xl font-extrabold tracking-tight">Diamond League</h1>
+          </div>
+          <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">
+            Top 10 promote to Obsidian
+          </p>
+
+          <!-- User meta chips -->
+          <div class="mt-3 flex items-center gap-2">
+            <div class="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-surface-dark rounded-full border border-slate-200 dark:border-slate-700 shadow-sm">
+              <span class="material-symbols-outlined text-yellow-500 text-[18px]">bolt</span>
+              <span class="text-sm font-extrabold text-yellow-600 dark:text-yellow-400" id="xpVal">—</span>
+              <span class="text-xs font-bold text-slate-400">XP</span>
+            </div>
+
+            <div class="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-surface-dark rounded-full border border-slate-200 dark:border-slate-700 shadow-sm">
+              <span class="material-symbols-outlined text-orange-500 text-[18px]">local_fire_department</span>
+              <span class="text-sm font-extrabold text-orange-500" id="streakVal">—</span>
+              <span class="text-xs font-bold text-slate-400">streak</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Scroll -->
+      <main class="flex-1 overflow-y-auto no-scrollbar pb-10">
+        <!-- Podium -->
+        <section class="px-4 pt-6 pb-8">
+          <div class="flex items-end justify-center gap-2">
+            <!-- 2nd -->
+            <div class="flex flex-col items-center z-10 -mr-4 mb-4">
+              <p class="text-slate-500 dark:text-slate-400 font-bold mb-1">LimitsMaster</p>
+              <div class="relative">
+                <div class="w-20 h-20 rounded-full border-4 border-silver bg-slate-200 shadow-silver overflow-hidden">
+                  <img
+                    alt="User Avatar"
+                    class="w-full h-full object-cover"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuB2f9cSQBAeU7I4nQmAxBEOzpXy0AyoYa3-X2o1No1vzVgre1jlYyrXmjAyaFczqJNZWBL1bCFQWccBfToXeEEcCjA0vLhuxkj_Z86w6Ymsg9D5BZcIeREKh7Gz6Ot4x3Q-FaR6ybThV1Wtg5vx3tqgiRG77YJXOkrwNt87lDAEwGf13iTcn7CZQLGxNXBGXPKeYdJe1Dod3A6KWKOqL5L39VoLUcJ9HQh0l3kvQj7z0YlUiZtgg8ebjPo8gd33zeeKwQibgIEA0sw"
+                  />
+                </div>
+                <div
+                  class="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-silver text-slate-700 text-xs font-black px-2 py-0.5 rounded-full shadow-sm"
+                >
+                  2
+                </div>
+              </div>
+              <p class="text-slate-900 dark:text-white font-bold mt-4 text-sm">2100 XP</p>
+            </div>
+
+            <!-- 1st -->
+            <div class="flex flex-col items-center z-20">
+              <div class="mb-2 flex items-center gap-1 text-gold animate-bounce">
+                <span class="material-symbols-outlined">crown</span>
+              </div>
+              <div class="relative">
+                <div class="w-28 h-28 rounded-full border-4 border-gold bg-slate-200 shadow-gold overflow-hidden">
+                  <img
+                    alt="User Avatar"
+                    class="w-full h-full object-cover"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuCX2nPHUtJFrDNWyTwwi7HTd9jgGQ85Ntbfxm9vuelrxefaoqUjzDJltY3RV89YsI5AJ5lmdUbHfASUAekBzIeBRrdpI22mc_yJo4U769sm6ttGmSIGffc1PlRzATojJcsitYEsIEoL4BxK2C4vg0PTmZ3PnEL5gqeWsdWW7E9vSJ7FkBuelT33dtW119FCLKgNIka0_AQvADOuwtdcgYBD5lnadyq5knorQW35gQa0MgPfvoPjIp8zCc6blhImRVCQnLOlWZdj4sE"
+                  />
+                </div>
+                <div
+                  class="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-gold text-slate-900 text-sm font-black px-3 py-1 rounded-full shadow-sm"
+                >
+                  1
+                </div>
+              </div>
+              <p class="text-primary font-extrabold mt-5 text-lg">MathWizard</p>
+              <p class="text-slate-900 dark:text-white font-black text-xl">2400 XP</p>
+            </div>
+
+            <!-- 3rd -->
+            <div class="flex flex-col items-center z-10 -ml-4 mb-4">
+              <p class="text-slate-500 dark:text-slate-400 font-bold mb-1">DerivDiva</p>
+              <div class="relative">
+                <div class="w-20 h-20 rounded-full border-4 border-bronze bg-slate-200 shadow-bronze overflow-hidden">
+                  <img
+                    alt="User Avatar"
+                    class="w-full h-full object-cover"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuDAkl8exJbEUHjFsrfWfGbCeZ1qEUauefqvRK-HmjEJ4HSDCmTPgRsJlr86lcSCDD0T9u5dgNgdxBBAAGbnVPodypo86KvUkvs8D91RRMKmil1TfEdsB53ujtG2rOH51sBJc9YUgTSCzoBv35NkWMdnrr1iAAnGa7LFpchuagIB1SPKsyAv1N-P0WPmT_CZowKAbADraTcVbTR5NXpUnqrW1TxftZrkaZM2zR78ez4PtI5PY6yokwf9d6aAqHek0ZhvU6dIWSOPB3M"
+                  />
+                </div>
+                <div
+                  class="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-bronze text-white text-xs font-black px-2 py-0.5 rounded-full shadow-sm"
+                >
+                  3
+                </div>
+              </div>
+              <p class="text-slate-900 dark:text-white font-bold mt-4 text-sm">1950 XP</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Promotion Zone -->
+        <div class="flex items-center gap-2 px-6 py-2">
+          <div class="h-[1px] bg-secondary/30 flex-1"></div>
+          <p class="text-secondary text-xs font-bold uppercase tracking-wider">Promotion Zone</p>
+          <div class="h-[1px] bg-secondary/30 flex-1"></div>
+        </div>
+
+        <!-- List -->
+        <section class="flex flex-col px-4 gap-3 pb-8" id="list">
+          <!-- Example entries -->
+          <div class="flex items-center gap-4 p-3 bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
+            <p class="text-slate-400 font-bold w-6 text-center">4</p>
+            <div class="w-10 h-10 rounded-full bg-slate-100 overflow-hidden shrink-0">
+              <img
+                alt="User"
+                class="w-full h-full object-cover"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDcA81Iaq_snsrew_LRU6mfYj9A6mhzyWnbj7khiHDErU3gck8EIQotNZOqynRebiwSrvOUl3HmnmHPXX---LJZD14ABk9vda6AXEIAbd_hEcpcklUIhb2fYn0xU_Ze2dSb29pMNWSTvOpbhtTknp5sOzLySRG8yIL1ZBbgtPfPujXia4TsucVlPknb_V_sb6yH7C2lvjZqy0ljxG6LXBPJq0pivDFaG5WynMFCV8fccCdpiPM7zWtp7H9AO5FIo5Qh1d5AhA7BDOU"
+              />
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="font-bold text-sm truncate">IntegrationKing</h3>
+              <div class="flex items-center gap-1">
+                <span class="material-symbols-outlined text-orange-500 text-[14px]">local_fire_department</span>
+                <span class="text-slate-500 dark:text-slate-400 text-xs font-medium">12 day streak</span>
+              </div>
+            </div>
+            <p class="font-bold">1850 XP</p>
+          </div>
+
+          <div class="flex items-center gap-4 p-3 bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
+            <p class="text-slate-400 font-bold w-6 text-center">5</p>
+            <div class="w-10 h-10 rounded-full bg-slate-100 overflow-hidden shrink-0">
+              <img
+                alt="User"
+                class="w-full h-full object-cover"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSzfm45McxDPL_-CUtwnzqR1ocsJPcGoS9f-K41OzIgdaFsTJdaZ1q_8OeV9-qxeV-4SAF6K9tT18NqsSPZgdXO8LFmFFErY4x0Yn9xuiw0tchlId-QxY4JLTGCzPYVIhyeUGJ5r9kW77vg05T6SOesaE3m-_1jhfjSsXr2mS0Xzx3YS9-gTwqxyZbYSO_Aza1BBY5sNQJzyHg8qpVRvBCiApjD3uwBUs8vT1jSsNUgh--1PrzG4nEZ3uH55xw5pIY70os4HrdqHo"
+              />
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="font-bold text-sm truncate">ChainRuleChamp</h3>
+              <div class="flex items-center gap-1">
+                <span class="material-symbols-outlined text-slate-300 dark:text-slate-600 text-[14px]"
+                  >local_fire_department</span
+                >
+                <span class="text-slate-500 dark:text-slate-400 text-xs font-medium">0 day streak</span>
+              </div>
+            </div>
+            <p class="font-bold">1720 XP</p>
+          </div>
+
+          <!-- Current user row (filled by JS) -->
+          <div
+            id="youRow"
+            class="flex items-center gap-4 p-3 bg-primary/5 dark:bg-primary/20 rounded-2xl shadow-sm border-2 border-primary/20 dark:border-primary/40 relative overflow-hidden"
+          >
+            <div class="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
+            <p class="text-primary font-bold w-6 text-center" id="youRank">6</p>
+
+            <div
+              class="w-10 h-10 rounded-full bg-slate-100 overflow-hidden shrink-0 border-2 border-primary"
+              id="youAvatarWrap"
+            >
+              <div class="w-full h-full bg-slate-300"></div>
+            </div>
+
+            <div class="flex-1 min-w-0">
+              <h3 class="text-primary font-bold text-sm truncate" id="youName">You</h3>
+              <div class="flex items-center gap-1">
+                <span class="material-symbols-outlined text-orange-500 text-[14px]">local_fire_department</span>
+                <span class="text-primary/70 dark:text-primary/80 text-xs font-medium"
+                  ><span id="youStreak">—</span> day streak</span
+                >
+              </div>
+            </div>
+
+            <p class="text-primary font-black" id="youXp">— XP</p>
+          </div>
+
+          <!-- Demotion divider -->
+          <div class="flex items-center gap-2 px-2 py-4 opacity-50">
+            <div class="h-[1px] bg-slate-300 dark:bg-slate-700 flex-1"></div>
+            <div
+              class="text-slate-400 text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full"
+            >
+              Demotion Zone Below
+            </div>
+            <div class="h-[1px] bg-slate-300 dark:bg-slate-700 flex-1"></div>
+          </div>
+
+          <!-- Danger examples -->
+          <div class="flex items-center gap-4 p-3 bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 opacity-80">
+            <p class="text-danger font-bold w-6 text-center">25</p>
+            <div class="w-10 h-10 rounded-full bg-slate-100 overflow-hidden shrink-0 grayscale">
+              <img
+                alt="User"
+                class="w-full h-full object-cover"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBf8JFXSlKQTAcM7NZUtV-TQbEfRqwjlad_izT1ukOdjWEsAbpztjHPGc7JXJ84mCSjQeRU_gq3_IIGwK9jFe2s0HMjLstt66TSCHfvGKEXQJWR5vgaZ-LNj_deMNpKvppGtPKUiGz52TOPl6WiAURo4RCw8xW_Yq7TIz4m30eOHl0rx2ksbC1chdhSjXymRoTNR2JXvO2E56njGIe293oR14aZyYgt1_2SFk6CiuyOgefEOQnyaxYLzh2etYVAxesEPzWXINM9KSQ"
+              />
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="text-slate-500 dark:text-slate-400 font-bold text-sm truncate">LazyFunc</h3>
+              <div class="flex items-center gap-1">
+                <span class="text-slate-400 text-xs font-medium">Last seen 2d ago</span>
+              </div>
+            </div>
+            <p class="text-slate-400 font-bold">420 XP</p>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- Shared state -->
+    <script src="state.js"></script>
+    <script src="progress.js"></script>
+
+    <script>
+      // Back
+      document.getElementById("backBtn")?.addEventListener("click", () => {
+        window.location.href = "path.html";
+      });
+
+      // Dark toggle
+      document.getElementById("darkToggle")?.addEventListener("click", () => {
+        document.documentElement.classList.toggle("dark");
+        document.documentElement.classList.toggle("light");
+      });
+
+      // Fill from FC state
+      (function hydrate() {
+        const meta = window.FC?.get ? FC.get() : {};
+        const xp = Number(meta.xp ?? 0);
+        const streak = Number(meta.streak ?? 0);
+        const name = (meta.name && String(meta.name).trim()) || "CalcHero";
+
+        document.getElementById("xpVal").textContent = String(xp);
+        document.getElementById("streakVal").textContent = String(streak);
+
+        document.getElementById("youName").textContent = `${name} (You)`;
+        document.getElementById("youStreak").textContent = String(streak);
+        document.getElementById("youXp").textContent = `${xp} XP`;
+
+        // Optional avatar if you later store one:
+        if (meta.avatarUrl) {
+          document.getElementById("youAvatarWrap").innerHTML =
+            `<img alt="You" class="w-full h-full object-cover" src="${meta.avatarUrl}" />`;
+        }
+      })();
+    </script>
+  </body>
+</html>

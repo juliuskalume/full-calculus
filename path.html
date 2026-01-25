@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Calculus Home Learning Path</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    />
+
+    <!-- Material Icons -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+    />
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#0df26c",
+              "primary-dark": "#0ab850",
+              "background-light": "#f5f8f7",
+              "background-dark": "#102217",
+              "surface-light": "#ffffff",
+              "surface-dark": "#1a3325",
+
+              /* added so the lesson-style unit header works */
+              "accent-gold": "#ffc800",
+              "accent-gold-dark": "#e6b400",
+            },
+            fontFamily: {
+              display: ["Plus Jakarta Sans", "sans-serif"],
+            },
+            borderRadius: {
+              DEFAULT: "1rem",
+              lg: "1.5rem",
+              xl: "2rem",
+              full: "9999px",
+            },
+            boxShadow: {
+              "game-btn": "0 4px 0 0 rgba(0,0,0,0.2)",
+              "game-btn-active": "0 0 0 0 rgba(0,0,0,0.2)",
+              "game-card": "0 4px 0 0 rgba(0,0,0,0.05)",
+            },
+          },
+        },
+      };
+    </script>
+
+    <style>
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      .btn-3d {
+        transition: all 0.1s;
+        transform: translateY(0);
+      }
+      .btn-3d:active {
+        transform: translateY(4px);
+        box-shadow: none !important;
+      }
+      body {
+        min-height: max(884px, 100dvh);
+      }
+    </style>
+  </head>
+
+  <body
+    data-step="path"
+    class="bg-background-light dark:bg-background-dark text-slate-800 dark:text-slate-100 font-display min-h-screen overflow-x-hidden selection:bg-primary selection:text-black"
+  >
+    <div class="max-w-md mx-auto min-h-screen bg-background-light dark:bg-background-dark relative shadow-2xl flex flex-col">
+      <!-- Top Gamification Bar -->
+      <header
+        class="sticky top-0 z-50 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center justify-between"
+      >
+        <div class="flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-orange-500 fill-1 text-[24px]" style="font-variation-settings: 'FILL' 1"
+            >local_fire_department</span
+          >
+          <span class="text-orange-500 font-bold text-lg" id="streakVal">3</span>
+        </div>
+
+        <div class="flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-yellow-500 fill-1 text-[24px]" style="font-variation-settings: 'FILL' 1"
+            >bolt</span
+          >
+          <span class="text-yellow-500 font-bold text-lg" id="xpVal">450</span>
+        </div>
+
+        <div class="flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-red-500 fill-1 text-[24px]" style="font-variation-settings: 'FILL' 1"
+            >favorite</span
+          >
+          <span class="text-red-500 font-bold text-lg" id="livesVal">5</span>
+        </div>
+      </header>
+
+      <main class="flex-1 flex flex-col pb-28 pt-4 no-scrollbar overflow-y-auto">
+        <!-- ✅ REPLACED UNIT HEADER (from lesson design) -->
+        <section class="px-4 mb-8">
+          <div class="w-full bg-primary text-white rounded-2xl p-4 shadow-lg relative overflow-hidden group">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-8 -mt-8"></div>
+            <div class="absolute bottom-0 left-0 w-24 h-24 bg-black/10 rounded-full blur-xl -ml-4 -mb-4"></div>
+
+            <div class="relative z-10">
+              <div class="flex justify-between items-start mb-2">
+                <div>
+                  <h2 id="unitLabel" class="text-xl font-extrabold leading-tight">Unit 1</h2>
+                  <h3 id="unitTitle" class="text-lg font-semibold opacity-90">Limits &amp; Continuity</h3>
+                </div>
+
+                <button
+                  type="button"
+                  class="bg-white/20 hover:bg-white/30 p-2 rounded-xl transition-colors backdrop-blur-sm"
+                  title="Notes"
+                >
+                  <span class="material-symbols-outlined text-white">menu_book</span>
+                </button>
+              </div>
+
+              <p id="unitSubtitle" class="text-sm text-emerald-100/90 mb-4 font-medium">
+                Learn how to approach the infinite.
+              </p>
+
+              <div class="flex items-center gap-3">
+                <div class="flex-1 h-3 bg-black/20 rounded-full overflow-hidden">
+                  <div
+                    id="unitProgressBar"
+                    class="h-full bg-accent-gold rounded-full w-[0%] shadow-[0_0_10px_rgba(255,200,0,0.5)]"
+                  ></div>
+                </div>
+                <span id="unitProgressText" class="text-sm font-extrabold">0/0</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Daily Quest Widget -->
+        <section class="px-4 mb-8">
+          <div
+            id="dailyQuestCard"
+            role="button"
+            tabindex="0"
+            aria-label="Open daily quests"
+            class="bg-gradient-to-r from-slate-900 to-slate-800 dark:from-green-900 dark:to-slate-900 rounded-xl p-4 flex items-center justify-between shadow-lg text-white relative overflow-hidden group cursor-pointer"
+          >
+            <div class="absolute right-0 top-0 h-full w-1/3 bg-white/5 skew-x-12 transform translate-x-4"></div>
+
+            <div class="relative z-10 flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="material-symbols-outlined text-primary text-xl">military_tech</span>
+                <h3 class="font-bold text-sm uppercase tracking-wide text-primary">Daily Quest</h3>
+              </div>
+              <p id="dailyQuestSummary" class="text-sm font-medium text-slate-200 mb-3">
+                Complete today's quests to earn XP
+              </p>
+
+              <div class="w-full bg-white/20 h-2.5 rounded-full overflow-hidden">
+                <div
+                  id="dailyQuestProgressBar"
+                  class="bg-primary h-full rounded-full shadow-[0_0_10px_rgba(13,242,108,0.5)]"
+                  style="width: 0%"
+                ></div>
+              </div>
+            </div>
+
+            <div class="relative z-10 ml-4 flex flex-col items-center justify-center">
+              <div class="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center border-2 border-white/20">
+                <span class="material-symbols-outlined text-yellow-400">inventory_2</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Learning Path -->
+        <section class="relative px-4 flex flex-col items-center gap-4">
+          <div class="absolute top-0 bottom-0 w-3 bg-slate-200 dark:bg-slate-800 rounded-full left-1/2 transform -translate-x-1/2 -z-10"></div>
+          <div id="pathNodes" class="w-full flex flex-col items-center gap-4"></div>
+          <div class="h-12"></div>
+        </section>
+      </main>
+
+      <!-- Bottom Navigation Bar -->
+      <nav class="fixed bottom-0 w-full max-w-md bg-surface-light dark:bg-surface-dark border-t border-slate-200 dark:border-slate-800 pb-safe pt-2 px-2 z-50">
+        <div class="flex justify-around items-end h-16 pb-2">
+          <button id="navHome" class="flex flex-col items-center gap-1 group w-16" type="button">
+            <div class="bg-primary/20 dark:bg-primary/10 rounded-full px-4 py-1.5 transition-all group-hover:bg-primary/30">
+              <span class="material-symbols-outlined text-primary fill-1 text-[28px]" style="font-variation-settings:'FILL' 1">home</span>
+            </div>
+            <span class="text-[10px] font-bold text-primary">Home</span>
+          </button>
+
+          <button id="navPractice" class="flex flex-col items-center gap-1 group w-16 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" type="button">
+            <div class="px-4 py-1.5">
+              <span class="material-symbols-outlined text-[28px]">fitness_center</span>
+            </div>
+            <span class="text-[10px] font-bold">Practice</span>
+          </button>
+
+          <button id="navRank" class="flex flex-col items-center gap-1 group w-16 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" type="button">
+            <div class="px-4 py-1.5">
+              <span class="material-symbols-outlined text-[28px]">leaderboard</span>
+            </div>
+            <span class="text-[10px] font-bold">Rank</span>
+          </button>
+
+          <button id="navNotes" class="flex flex-col items-center gap-1 group w-16 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" type="button">
+            <div class="px-4 py-1.5">
+              <span class="material-symbols-outlined text-[28px]">menu_book</span>
+            </div>
+            <span class="text-[10px] font-bold">Notes</span>
+          </button>
+
+          <!-- ✅ Profile uses fc_state avatar + name -->
+          <button id="navProfile" class="flex flex-col items-center gap-1 group w-16 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" type="button">
+            <div class="px-4 py-1.5">
+              <div
+                id="navAvatar"
+                class="w-8 h-8 rounded-full overflow-hidden border-2 border-slate-200 dark:border-slate-700 bg-slate-300 bg-cover bg-center"
+                style="background-image:url('https://lh3.googleusercontent.com/aida-public/AB6AXuD90igZQPrpcib-AZfNF2ZDdOYbxb_Vcu_Y_4mx4VZyu9-4xomdRnfi4yhKHymx3b20GZbb-qmy3igr4zrexRQk8l45J1-7J7UaVd3-gxuVrHXT1_3hrdaDp-spamN6OgLdoHWWM-5hgpMyXfuo_Dl5vyod6u2ZIEllT4FWE5vm80Qv1mKoZBwtYZqirO9sfE15WtWjUcg6m6phdIdXU-rK0a0TWDBa52StV52lPgjrFV5TZb_kOid5jcK9sY8tDMVQ-VyYots1RRk');"
+                aria-label="Profile avatar"
+              ></div>
+            </div>
+            <span id="navProfileLabel" class="text-[10px] font-bold">Profile</span>
+          </button>
+        </div>
+      </nav>
+    </div>
+
+    <!-- Floating Action Button -->
+    <div class="fixed bottom-24 right-4 md:right-[calc(50%-220px+1rem)] z-40">
+      <button
+        type="button"
+        class="bg-surface-light dark:bg-surface-dark p-3 rounded-full shadow-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-primary transition-colors"
+      >
+        <span class="material-symbols-outlined">help</span>
+      </button>
+    </div>
+
+    <!-- Shared state FIRST -->
+    <script src="state.js"></script>
+    <script src="progress.js"></script>
+    <script src="content-structure.js"></script>
+    <script src="content-sections.js"></script>
+    <script src="content-examples.js"></script>
+    <script src="content-items.js"></script>
+    <script src="content-tests.js"></script>
+    <script src="content.js"></script>
+    <script src="engine.js"></script>
+
+    <script>
+      // Use shared state (auto-refill happens inside FC.get())
+      (function () {
+        const meta = FC.get();
+        document.getElementById("streakVal").textContent = String(meta.streak);
+        document.getElementById("xpVal").textContent = String(meta.xp);
+        document.getElementById("livesVal").textContent = String(meta.lives);
+      })();
+
+      // ✅ Read onboarding profile info saved by account.html (fc_state)
+      (function () {
+        const DEFAULT_AVATAR =
+          "https://lh3.googleusercontent.com/aida-public/AB6AXuD90igZQPrpcib-AZfNF2ZDdOYbxb_Vcu_Y_4mx4VZyu9-4xomdRnfi4yhKHymx3b20GZbb-qmy3igr4zrexRQk8l45J1-7J7UaVd3-gxuVrHXT1_3hrdaDp-spamN6OgLdoHWWM-5hgpMyXfuo_Dl5vyod6u2ZIEllT4FWE5vm80Qv1mKoZBwtYZqirO9sfE15WtWjUcg6m6phdIdXU-rK0a0TWDBa52StV52lPgjrFV5TZb_kOid5jcK9sY8tDMVQ-VyYots1RRk";
+
+        let s = {};
+        try {
+          s = JSON.parse(localStorage.getItem("fc_state") || "{}");
+        } catch {
+          s = {};
+        }
+
+        const name = (s.name && String(s.name).trim()) || "";
+        const avatarUrl = s.avatarUrl || DEFAULT_AVATAR;
+
+        const navAvatar = document.getElementById("navAvatar");
+        if (navAvatar) navAvatar.style.backgroundImage = `url('${avatarUrl}')`;
+
+        const label = document.getElementById("navProfileLabel");
+        if (label && name) label.textContent = name.length > 8 ? name.slice(0, 8) + "…" : name;
+      })();
+
+      // Path rendering
+      (function () {
+        if (!window.FCContent || !window.FCProgress) return;
+
+        const courseId = localStorage.getItem("fc_course") || "calc-1";
+        const course = FCContent.getCourse(courseId) || FCContent.getCourse("calc-1");
+        const modules = FCContent.getCourseModules(course.id);
+        const progress = FCProgress.get();
+
+        const orderedChapters = modules.flatMap((mod) =>
+          FCContent.getModuleChapters(mod.id).map((chapter) => ({ chapter, module: mod }))
+        );
+
+        const isChapterPassed = (chapter) => {
+          const chapterSections = FCContent.getChapterSections(chapter.id);
+          if (!chapterSections.length) return false;
+          const testId = chapter.recommendedTestBlueprintId;
+          if (testId) {
+            return !!progress.completedTests?.[testId]?.passed;
+          }
+          return chapterSections.every((s) => FCProgress.isSectionCompleted(s.id));
+        };
+
+        const lastPassedEntry = orderedChapters.filter((entry) => isChapterPassed(entry.chapter)).slice(-1)[0];
+
+        let currentSection = FCContent.getSection(progress.currentSectionId);
+        if (!currentSection && orderedChapters.length) {
+          const firstChapter = orderedChapters[0].chapter;
+          const firstSection = firstChapter ? FCContent.getChapterSections(firstChapter.id)[0] : null;
+          currentSection = firstSection;
+        }
+
+        const fallbackChapter = currentSection
+          ? FCContent.getChapter(currentSection.chapterId)
+          : orderedChapters.length
+          ? orderedChapters[0].chapter
+          : null;
+        const fallbackModule = fallbackChapter ? FCContent.getModule(fallbackChapter.moduleId) : modules[0];
+
+        const baseChapter = lastPassedEntry ? lastPassedEntry.chapter : fallbackChapter;
+        const baseModule = lastPassedEntry ? lastPassedEntry.module : fallbackModule;
+        const baseSections = baseChapter ? FCContent.getChapterSections(baseChapter.id) : [];
+
+        const getNextChapter = (activeModule, activeChapter) => {
+          if (!activeModule || !activeChapter) return null;
+          const chapters = FCContent.getModuleChapters(activeModule.id);
+          const index = chapters.findIndex((c) => c.id === activeChapter.id);
+          if (index >= 0 && index < chapters.length - 1) return chapters[index + 1];
+          const moduleIndex = modules.findIndex((m) => m.id === activeModule.id);
+          if (moduleIndex >= 0 && moduleIndex < modules.length - 1) {
+            const nextModule = modules[moduleIndex + 1];
+            return FCContent.getModuleChapters(nextModule.id)[0] || null;
+          }
+          return null;
+        };
+
+        const baseComplete =
+          baseSections.length > 0 && baseSections.every((s) => FCProgress.isSectionCompleted(s.id));
+        const baseHasTest = !!baseChapter?.recommendedTestBlueprintId;
+        const baseTestPassed = baseHasTest
+          ? progress.completedTests?.[baseChapter.recommendedTestBlueprintId]?.passed
+          : true;
+        const baseUnitPassed = baseHasTest ? !!baseTestPassed : baseComplete;
+
+        let headerChapter = baseChapter;
+        let headerModule = baseModule;
+        let headerSections = baseSections;
+
+        if (baseUnitPassed) {
+          const nextChapter = getNextChapter(baseModule, baseChapter);
+          if (nextChapter) {
+            headerChapter = nextChapter;
+            headerModule = FCContent.getModule(nextChapter.moduleId) || baseModule;
+            headerSections = FCContent.getChapterSections(nextChapter.id);
+          }
+        }
+
+        if (headerModule) {
+          const unitLabel = document.getElementById("unitLabel");
+          const unitTitle = document.getElementById("unitTitle");
+          const unitSubtitle = document.getElementById("unitSubtitle");
+          if (unitLabel) unitLabel.textContent = `Unit ${headerModule.order || 1}`;
+          if (unitTitle) unitTitle.textContent = headerChapter ? headerChapter.title : headerModule.title;
+          if (unitSubtitle) unitSubtitle.textContent = headerModule.title;
+        }
+
+        const completedCount = headerSections.filter((s) => FCProgress.isSectionCompleted(s.id)).length;
+        const totalCount = headerSections.length || 0;
+        const pct = totalCount ? Math.round((completedCount / totalCount) * 100) : 0;
+        const bar = document.getElementById("unitProgressBar");
+        const text = document.getElementById("unitProgressText");
+        if (bar) bar.style.width = `${pct}%`;
+        if (text) text.textContent = `${completedCount}/${totalCount}`;
+
+        const container = document.getElementById("pathNodes");
+        if (!container) return;
+
+        const collapsedUnits = (() => {
+          try {
+            return JSON.parse(localStorage.getItem("fc_path_collapsed_units") || "{}");
+          } catch {
+            return {};
+          }
+        })();
+
+        const saveCollapsedUnits = () => {
+          localStorage.setItem("fc_path_collapsed_units", JSON.stringify(collapsedUnits));
+        };
+
+        const buildLabel = (title, muted) => {
+          const opacity = muted ? "opacity-60" : "";
+          return `
+            <div class="text-center ${opacity}">
+              <h4 class="font-bold text-slate-500 dark:text-slate-400 text-sm">${title}</h4>
+            </div>
+          `;
+        };
+
+        const buildUnitMarker = ({ chapter, module, completed, collapsed }) => {
+          const marker = document.createElement("div");
+          marker.className = "relative z-10 w-full flex justify-center py-6";
+          const toggleLabel = collapsed ? "Expand" : "Collapse";
+          const toggleButton = completed
+            ? `
+              <button
+                type="button"
+                data-unit-toggle="${chapter.id}"
+                class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-700 dark:text-slate-300 dark:hover:text-slate-100"
+              >
+                ${toggleLabel}
+              </button>
+            `
+            : "";
+          marker.innerHTML = `
+            <div class="w-full max-w-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3 flex items-center justify-between gap-3">
+              <div>
+                <div class="text-[10px] uppercase tracking-widest font-bold text-slate-500">Unit ${module?.order || 1}</div>
+                <div class="text-sm font-bold text-slate-700 dark:text-slate-200">${chapter.title}</div>
+                <div class="text-xs text-slate-400">${module?.title || ""}</div>
+              </div>
+              <div class="flex items-center gap-2">
+                ${completed ? `<span class="text-[10px] font-bold text-emerald-600">Completed</span>` : ""}
+                ${toggleButton}
+              </div>
+            </div>
+          `;
+          return marker;
+        };
+
+        let nodeIndex = 0;
+
+        const renderSectionNode = (section) => {
+          const completed = FCProgress.isSectionCompleted(section.id);
+          const unlocked = FCProgress.isSectionUnlocked(section.id);
+          const zigzagOffset = nodeIndex % 2 === 0 ? "-translate-x-12" : "translate-x-12";
+
+          const wrapper = document.createElement("div");
+          wrapper.className = "relative z-10 w-full flex justify-center pt-4 pb-10";
+
+          let effect = "";
+          let buttonClasses =
+            "btn-3d w-16 h-16 rounded-full flex items-center justify-center shadow-game-btn border-4 border-white dark:border-background-dark";
+          let icon = "lock";
+          let iconClass = "text-slate-400 dark:text-slate-500";
+          let buttonBg = "bg-slate-200 dark:bg-slate-700";
+          let dataAction = "locked";
+
+          if (completed) {
+            buttonBg = "bg-primary";
+            icon = "check";
+            iconClass = "text-black";
+            dataAction = "review";
+          } else if (unlocked) {
+            buttonBg = "bg-primary";
+            icon = "play_arrow";
+            iconClass = "text-black";
+            dataAction = "start";
+            buttonClasses = "btn-3d w-20 h-20 rounded-full flex items-center justify-center shadow-game-btn border-4 border-white dark:border-background-dark";
+            effect = `
+              <div class="absolute inset-0 bg-primary rounded-full animate-ping opacity-25"></div>
+              <div class="absolute -inset-2 bg-primary/20 rounded-full animate-pulse"></div>
+            `;
+          }
+
+          wrapper.innerHTML = `
+            <div class="relative flex flex-col items-center gap-2 ${zigzagOffset}">
+              <div class="relative">
+                ${effect}
+                <button
+                  type="button"
+                  data-section-id="${section.id}"
+                  data-action="${dataAction}"
+                  class="${buttonClasses} ${buttonBg} relative z-10"
+                >
+                  <span class="material-symbols-outlined ${iconClass} text-[30px]" style="font-variation-settings:'FILL' 1">${icon}</span>
+                </button>
+              </div>
+              ${buildLabel(section.title, !unlocked)}
+            </div>
+          `;
+
+          container.appendChild(wrapper);
+          nodeIndex += 1;
+        };
+
+        const renderTestNode = ({ chapter, sections }) => {
+          if (!chapter?.recommendedTestBlueprintId) return;
+          const allDone = sections.length > 0 && sections.every((s) => FCProgress.isSectionCompleted(s.id));
+          const testNode = document.createElement("div");
+          testNode.className = "relative z-10 w-full flex justify-center py-6";
+          testNode.innerHTML = `
+            <div class="relative">
+              <button
+                type="button"
+                data-test-id="${chapter.recommendedTestBlueprintId}"
+                data-chapter-id="${chapter.id}"
+                class="btn-3d w-24 h-20 ${allDone ? "bg-primary" : "bg-slate-200 dark:bg-slate-700"} rounded-2xl flex items-center justify-center shadow-game-btn border-4 border-white dark:border-background-dark ${
+                  allDone ? "text-black" : "text-slate-400 dark:text-slate-500"
+                }"
+              >
+                <span class="material-symbols-outlined text-[32px]">trophy</span>
+              </button>
+              <div class="absolute -top-3 -right-3">
+                <div class="${allDone ? "bg-accent-gold" : "bg-slate-400"} text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider border-2 border-white dark:border-background-dark">
+                  Test
+                </div>
+              </div>
+            </div>
+          `;
+          container.appendChild(testNode);
+        };
+
+        const attachHandlers = () => {
+          container.querySelectorAll("button[data-section-id]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              const sectionId = btn.getAttribute("data-section-id");
+              const unlocked = FCProgress.isSectionUnlocked(sectionId);
+              if (!unlocked) return;
+              const session = FCEngine.createSession({
+                mode: "lesson",
+                sectionId,
+                count: 3,
+                types: ["mcq", "numeric", "expression"],
+                xpPerCorrect: 10,
+              });
+              FCEngine.saveSession(session);
+              FCProgress.setCurrentSection(sectionId);
+              window.location.href = "active-lesson.html";
+            });
+          });
+
+          container.querySelectorAll("button[data-test-id]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              const chapterId = btn.getAttribute("data-chapter-id");
+              const testId = btn.getAttribute("data-test-id");
+              if (!chapterId || !testId) return;
+              const targetChapter = FCContent.getChapter(chapterId);
+              if (!targetChapter) return;
+              const chapterSections = FCContent.getChapterSections(chapterId);
+              const allDone =
+                chapterSections.length > 0 && chapterSections.every((s) => FCProgress.isSectionCompleted(s.id));
+              if (!allDone) return;
+              const test = FCEngine.createTestSession(testId);
+              if (!test) return;
+              FCEngine.saveTestSession(test);
+              window.location.href = "unit-test.html";
+            });
+          });
+
+          container.querySelectorAll("button[data-unit-toggle]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              const chapterId = btn.getAttribute("data-unit-toggle");
+              if (!chapterId) return;
+              collapsedUnits[chapterId] = !collapsedUnits[chapterId];
+              saveCollapsedUnits();
+              renderPath();
+            });
+          });
+        };
+
+        const renderPath = () => {
+          container.innerHTML = "";
+          nodeIndex = 0;
+
+          orderedChapters.forEach((entry) => {
+            const chapter = entry.chapter;
+            const module = entry.module;
+            const sections = FCContent.getChapterSections(chapter.id);
+            const completed = isChapterPassed(chapter);
+            const collapsed = completed && !!collapsedUnits[chapter.id];
+
+            container.appendChild(
+              buildUnitMarker({
+                chapter,
+                module,
+                completed,
+                collapsed,
+              })
+            );
+
+            if (!collapsed) {
+              sections.forEach((section) => renderSectionNode(section));
+              renderTestNode({ chapter, sections });
+            }
+          });
+
+          attachHandlers();
+        };
+
+        renderPath();
+      })();
+
+      (function () {
+        if (!window.FCProgress) return;
+        const summary = document.getElementById("dailyQuestSummary");
+        const bar = document.getElementById("dailyQuestProgressBar");
+        if (!summary || !bar) return;
+
+        const quests = [
+          { id: "lesson_master", goal: 2, progressKey: "lessonsCompleted" },
+          { id: "streak_master", goal: 5, progressKey: "bestStreak" },
+        ];
+
+        const daily = FCProgress.getDailyQuests();
+        const total = quests.length || 1;
+        let completed = 0;
+        let progressSum = 0;
+        let claimable = 0;
+
+        quests.forEach((quest) => {
+          const progressValue = Math.min(Number(daily[quest.progressKey] || 0), quest.goal);
+          progressSum += progressValue / quest.goal;
+          if (progressValue >= quest.goal) {
+            completed += 1;
+            if (!daily.claimed?.[quest.id]) claimable += 1;
+          }
+        });
+
+        const pct = Math.round((progressSum / total) * 100);
+        bar.style.width = `${pct}%`;
+
+        if (completed === total) {
+          summary.textContent = claimable
+            ? `${claimable} reward${claimable === 1 ? "" : "s"} ready to claim`
+            : "All daily quests completed";
+        } else {
+          summary.textContent = `${completed}/${total} quests completed`;
+        }
+      })();
+
+      // Bottom nav routing
+      document.getElementById("navHome")?.addEventListener("click", () => {
+        window.location.href = "path.html";
+      });
+      document.getElementById("navPractice")?.addEventListener("click", () => {
+        window.location.href = "practice.html";
+      });
+      document.getElementById("navRank")?.addEventListener("click", () => {
+        window.location.href = "leaderboard.html";
+      });
+      document.getElementById("navNotes")?.addEventListener("click", () => {
+        window.location.href = "notes.html";
+      });
+      document.getElementById("navProfile")?.addEventListener("click", () => {
+        window.location.href = "profile.html";
+      });
+
+      const questCard = document.getElementById("dailyQuestCard");
+      if (questCard) {
+        const openDailyQuest = () => {
+          window.location.href = "daily-quest.html";
+        };
+        questCard.addEventListener("click", openDailyQuest);
+        questCard.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            openDailyQuest();
+          }
+        });
+      }
+
+      document.querySelector("button[title='Notes']")?.addEventListener("click", () => {
+        window.location.href = "notes.html";
+      });
+    </script>
+
+    <script src="app.js"></script>
+  </body>
+</html>
+
+
+
+
+
+
+

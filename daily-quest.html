@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Full Calculus - Daily Quests</title>
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- FIXED: correct Material Symbols link -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+      rel="stylesheet"
+    />
+
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#0d59f2",
+              "background-light": "#f5f6f8",
+              "background-dark": "#101622",
+              "surface-dark": "#1a2130",
+              "card-dark": "#232b3e",
+            },
+            fontFamily: {
+              display: ["Lexend", "sans-serif"],
+            },
+            borderRadius: {
+              DEFAULT: "1rem",
+              lg: "1.5rem",
+              xl: "2rem",
+              full: "9999px",
+            },
+            boxShadow: {
+              "press-blue": "0 4px 0 0 #0b4dc9",
+            },
+          },
+        },
+      };
+    </script>
+
+    <style>
+      body {
+        font-family: "Lexend", sans-serif;
+        min-height: max(884px, 100dvh);
+      }
+      /* Important for icons */
+      .material-symbols-outlined {
+        font-variation-settings: "FILL" 1, "wght" 600, "GRAD" 0, "opsz" 24;
+        line-height: 1;
+      }
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      .press:active {
+        transform: translateY(4px);
+        box-shadow: none !important;
+      }
+    </style>
+  </head>
+
+  <body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white overflow-hidden">
+    <div
+      class="w-full max-w-md mx-auto h-[100dvh] flex flex-col overflow-hidden shadow-2xl bg-background-light dark:bg-background-dark relative"
+    >
+      <header
+        class="sticky top-0 z-30 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur border-b border-slate-200 dark:border-slate-800"
+      >
+        <div class="px-4 py-3 flex items-center justify-between">
+          <button
+            type="button"
+            onclick="(history.length>1)?history.back():location.href='path.html'"
+            class="press rounded-xl p-2 text-slate-500 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            aria-label="Back"
+          >
+            <span class="material-symbols-outlined">close</span>
+          </button>
+
+          <div class="text-center">
+            <h1 class="text-lg font-extrabold tracking-tight">Daily Quests</h1>
+            <p class="text-xs font-semibold text-slate-500 dark:text-slate-400" id="resetText">
+              Reset in 12h 45m
+            </p>
+          </div>
+
+          <div class="w-10"></div>
+        </div>
+      </header>
+
+      <main class="flex-1 overflow-y-auto no-scrollbar px-4 py-4 pb-safe">
+        <div class="flex flex-col gap-4">
+          <!-- Quest 1 -->
+          <section class="rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 bg-white dark:bg-card-dark p-4">
+            <div class="flex gap-4 items-center">
+              <div class="w-16 h-16 shrink-0 bg-primary/10 dark:bg-primary/20 rounded-xl flex items-center justify-center text-primary">
+                <span class="material-symbols-outlined text-[40px]">featured_play_list</span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-lg font-extrabold tracking-tight">Lesson Master</p>
+                <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">Complete 2 lessons</p>
+              </div>
+            </div>
+
+            <div class="mt-4 flex flex-col gap-2">
+              <div class="flex justify-between items-end">
+                <p id="quest1ProgressText" class="text-primary text-sm font-extrabold">0/2 completed</p>
+                <p class="text-xs text-slate-400 font-bold">+50 XP</p>
+              </div>
+              <div class="rounded-full h-2.5 bg-slate-200 dark:bg-slate-700 w-full overflow-hidden">
+                <div id="quest1ProgressBar" class="h-full rounded-full bg-primary" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <button
+              id="quest1ClaimBtn"
+              type="button"
+              class="press mt-4 w-full h-11 rounded-xl bg-primary text-white font-extrabold text-sm shadow-[0_4px_0_0_#0b4dc9] hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+            >
+              <span class="material-symbols-outlined text-[20px]">workspace_premium</span>
+              Claim Reward
+            </button>
+          </section>
+
+          <!-- Quest 2 -->
+          <section class="rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 bg-white dark:bg-card-dark p-4">
+            <div class="flex gap-4 items-center">
+              <div class="w-16 h-16 shrink-0 bg-orange-100 dark:bg-orange-900/30 rounded-xl flex items-center justify-center text-orange-500">
+                <span class="material-symbols-outlined text-[40px]">local_fire_department</span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-lg font-extrabold tracking-tight">Calculus Sage</p>
+                <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">5 correct answers in a row</p>
+              </div>
+            </div>
+
+            <div class="mt-4 flex flex-col gap-2">
+              <div class="flex justify-between items-end">
+                <p id="quest2ProgressText" class="text-slate-500 dark:text-slate-400 text-sm font-bold">0/5 streak</p>
+                <p class="text-xs text-slate-400 font-bold">+30 XP</p>
+              </div>
+              <div class="rounded-full h-2.5 bg-slate-200 dark:bg-slate-700 w-full overflow-hidden">
+                <div id="quest2ProgressBar" class="h-full rounded-full bg-orange-400" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <button
+              id="quest2ClaimBtn"
+              class="mt-4 w-full h-11 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 text-sm font-extrabold cursor-not-allowed"
+              disabled
+            >
+              In Progress
+            </button>
+          </section>
+        </div>
+
+        <div class="h-6"></div>
+      </main>
+
+      <footer class="border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-background-dark/95 backdrop-blur px-4 py-4 pb-safe">
+        <button
+          id="continueBtn"
+          type="button"
+          class="press w-full h-12 rounded-xl bg-primary text-white font-extrabold text-base shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all active:scale-95"
+          onclick="location.href='path.html'"
+        >
+          Continue to Path
+        </button>
+      </footer>
+    </div>
+
+    <script src="state.js"></script>
+    <script src="progress.js"></script>
+
+    <script>
+      const QUESTS = [
+        {
+          id: "lesson_master",
+          goal: 2,
+          reward: 50,
+          progressKey: "lessonsCompleted",
+          progressTextId: "quest1ProgressText",
+          progressBarId: "quest1ProgressBar",
+          claimBtnId: "quest1ClaimBtn",
+        },
+        {
+          id: "streak_master",
+          goal: 5,
+          reward: 30,
+          progressKey: "bestStreak",
+          progressTextId: "quest2ProgressText",
+          progressBarId: "quest2ProgressBar",
+          claimBtnId: "quest2ClaimBtn",
+        },
+      ];
+
+      const updateResetText = () => {
+        const resetEl = document.getElementById("resetText");
+        if (!resetEl) return;
+        const now = new Date();
+        const next = new Date();
+        next.setHours(24, 0, 0, 0);
+        const diffMs = Math.max(0, next.getTime() - now.getTime());
+        const diffMin = Math.floor(diffMs / 60000);
+        const hours = Math.floor(diffMin / 60);
+        const minutes = diffMin % 60;
+        resetEl.textContent = `Reset in ${hours}h ${minutes}m`;
+      };
+
+      const renderQuests = () => {
+        if (!window.FCProgress) return;
+        const daily = FCProgress.getDailyQuests();
+
+        QUESTS.forEach((quest) => {
+          const progressValue = Number(daily[quest.progressKey] || 0);
+          const current = Math.min(progressValue, quest.goal);
+          const percent = Math.min(100, Math.round((current / quest.goal) * 100));
+          const claimed = !!daily.claimed?.[quest.id];
+
+          const progressText = document.getElementById(quest.progressTextId);
+          const progressBar = document.getElementById(quest.progressBarId);
+          const claimBtn = document.getElementById(quest.claimBtnId);
+
+          if (progressText) {
+            progressText.textContent = `${current}/${quest.goal} ${quest.id === "lesson_master" ? "completed" : "streak"}`;
+          }
+          if (progressBar) {
+            progressBar.style.width = `${percent}%`;
+          }
+          if (claimBtn) {
+            if (claimed) {
+              claimBtn.disabled = true;
+              claimBtn.className =
+                "mt-4 w-full h-11 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 text-sm font-extrabold cursor-not-allowed";
+              claimBtn.textContent = "Claimed";
+            } else if (progressValue >= quest.goal) {
+              claimBtn.disabled = false;
+              claimBtn.className =
+                "press mt-4 w-full h-11 rounded-xl bg-primary text-white font-extrabold text-sm shadow-[0_4px_0_0_#0b4dc9] hover:bg-primary/90 transition-colors flex items-center justify-center gap-2";
+              claimBtn.innerHTML = `<span class="material-symbols-outlined text-[20px]">workspace_premium</span>Claim Reward`;
+            } else {
+              claimBtn.disabled = true;
+              claimBtn.className =
+                "mt-4 w-full h-11 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 text-sm font-extrabold cursor-not-allowed";
+              claimBtn.textContent = "In Progress";
+            }
+          }
+        });
+      };
+
+      const bindClaimHandlers = () => {
+        QUESTS.forEach((quest) => {
+          const claimBtn = document.getElementById(quest.claimBtnId);
+          if (!claimBtn) return;
+          claimBtn.addEventListener("click", () => {
+            const daily = FCProgress.getDailyQuests();
+            if ((daily.claimed && daily.claimed[quest.id]) || daily[quest.progressKey] < quest.goal) return;
+            if (FCProgress.claimDailyQuest(quest.id)) {
+              if (window.FC?.addXP) FC.addXP(quest.reward);
+              if (window.FCProgress?.addDailyXp) FCProgress.addDailyXp(quest.reward);
+              renderQuests();
+            }
+          });
+        });
+      };
+
+      updateResetText();
+      renderQuests();
+      bindClaimHandlers();
+      setInterval(updateResetText, 60000);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Log In - Full Calculus</title>
+
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    />
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#0df26c",
+              "background-light": "#f5f8f7",
+              "background-dark": "#102217",
+              "text-main": "#0d1c13",
+              "text-light": "#499c6c",
+            },
+            fontFamily: {
+              display: ["Plus Jakarta Sans", "sans-serif"],
+            },
+            borderRadius: {
+              DEFAULT: "1rem",
+              lg: "1.5rem",
+              xl: "3rem",
+              full: "9999px",
+            },
+          },
+        },
+      };
+    </script>
+
+    <style>
+      body {
+        min-height: max(884px, 100dvh);
+      }
+      .form-input::placeholder {
+        color: #9abfab;
+        opacity: 1;
+      }
+    </style>
+  </head>
+
+  <body
+    class="bg-background-light dark:bg-background-dark font-display antialiased text-text-main dark:text-white transition-colors duration-300"
+  >
+    <div
+      class="relative flex min-h-screen w-full flex-col overflow-x-hidden max-w-md mx-auto shadow-2xl bg-background-light dark:bg-background-dark"
+    >
+      <div class="flex items-center p-4 justify-between sticky top-0 z-10 bg-background-light/90 dark:bg-background-dark/90 backdrop-blur-sm">
+        <button
+          type="button"
+          class="flex size-10 shrink-0 items-center justify-center rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors text-text-main dark:text-white"
+          aria-label="Back"
+          onclick="location.href='skill.html'"
+        >
+          <span class="material-symbols-outlined text-2xl">arrow_back</span>
+        </button>
+        <h1 class="text-lg font-extrabold">Log in</h1>
+        <button
+          id="darkToggle"
+          type="button"
+          class="flex size-10 shrink-0 items-center justify-center rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors text-text-main dark:text-white"
+          aria-label="Toggle dark mode"
+        >
+          <span class="material-symbols-outlined text-2xl">dark_mode</span>
+        </button>
+      </div>
+
+      <div class="flex-1 flex flex-col px-6 pb-8">
+        <div class="mt-4 mb-6 text-center">
+          <h2 class="text-3xl font-extrabold">Welcome back</h2>
+          <p class="text-text-light">Log in to continue your learning path.</p>
+        </div>
+
+        <div class="flex flex-col gap-4">
+          <div class="flex flex-col">
+            <label class="text-text-main dark:text-gray-300 text-sm font-bold uppercase tracking-wider mb-2 ml-2">
+              Email
+            </label>
+            <div class="relative">
+              <input
+                id="loginEmail"
+                class="form-input w-full rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:border-primary focus:ring-0 h-14 px-5 pr-12 text-lg font-medium text-text-main dark:text-white transition-all"
+                placeholder="math@example.com"
+                type="email"
+                autocomplete="email"
+              />
+              <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
+                >mail</span
+              >
+            </div>
+          </div>
+
+          <div class="flex flex-col">
+            <label class="text-text-main dark:text-gray-300 text-sm font-bold uppercase tracking-wider mb-2 ml-2">
+              Password
+            </label>
+            <div class="relative">
+              <input
+                id="loginPassword"
+                class="form-input w-full rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:border-primary focus:ring-0 h-14 px-5 pr-12 text-lg font-medium text-text-main dark:text-white transition-all"
+                placeholder="********"
+                type="password"
+                autocomplete="current-password"
+              />
+              <button
+                id="toggleLoginPw"
+                type="button"
+                class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors"
+                aria-label="Toggle password visibility"
+              >
+                <span class="material-symbols-outlined">visibility_off</span>
+              </button>
+            </div>
+          </div>
+
+          <button
+            id="loginBtn"
+            type="button"
+            class="mt-2 w-full h-14 bg-primary hover:bg-[#0be062] active:scale-[0.98] transition-all rounded-xl shadow-[0_4px_0_0_#0aa84b] active:shadow-none active:translate-y-[4px] flex items-center justify-center group"
+          >
+            <span class="text-[#05331d] text-lg font-extrabold uppercase tracking-wide mr-2">Log in</span>
+            <span class="material-symbols-outlined text-[#05331d] group-hover:translate-x-1 transition-transform"
+              >arrow_forward</span
+            >
+          </button>
+
+          <p id="loginStatus" class="text-xs font-semibold text-center text-text-light hidden"></p>
+          <p id="loginError" class="text-xs font-semibold text-center text-red-500 hidden"></p>
+
+          <div class="relative flex py-2 items-center">
+            <div class="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
+            <span class="flex-shrink-0 mx-4 text-gray-400 text-sm font-medium uppercase">or continue with</span>
+            <div class="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
+          </div>
+
+          <button
+            id="googleLoginBtn"
+            type="button"
+            class="w-full h-14 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+          >
+            <div
+              class="w-6 h-6 rounded-full border-4 border-blue-500 border-t-red-500 border-r-yellow-500 border-l-green-500 box-border"
+              aria-hidden="true"
+            ></div>
+            <span class="font-bold text-text-main dark:text-white">Google</span>
+          </button>
+        </div>
+
+        <div class="mt-6 text-center">
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            New here?
+            <a class="font-bold text-text-light hover:text-primary" href="account.html">Create an account</a>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="auth.js"></script>
+
+    <script>
+      (function () {
+        const html = document.documentElement;
+        const saved = localStorage.getItem("fc_dark") === "1";
+        if (saved) html.classList.add("dark");
+
+        document.getElementById("darkToggle")?.addEventListener("click", () => {
+          html.classList.toggle("dark");
+          localStorage.setItem("fc_dark", html.classList.contains("dark") ? "1" : "0");
+        });
+      })();
+
+      (function () {
+        const loginBtn = document.getElementById("loginBtn");
+        const emailInput = document.getElementById("loginEmail");
+        const passwordInput = document.getElementById("loginPassword");
+        const googleBtn = document.getElementById("googleLoginBtn");
+        const errorEl = document.getElementById("loginError");
+        const statusEl = document.getElementById("loginStatus");
+
+        const setMessage = (el, msg) => {
+          if (!el) return;
+          if (!msg) {
+            el.classList.add("hidden");
+            el.textContent = "";
+            return;
+          }
+          el.textContent = msg;
+          el.classList.remove("hidden");
+        };
+
+        const setBusy = (busy) => {
+          if (!loginBtn) return;
+          loginBtn.disabled = !!busy;
+          loginBtn.classList.toggle("opacity-60", !!busy);
+          loginBtn.classList.toggle("cursor-not-allowed", !!busy);
+        };
+
+        loginBtn?.addEventListener("click", async () => {
+          setMessage(errorEl, "");
+          if (!window.FCAuth?.enabled) {
+            setMessage(errorEl, "Auth is not configured yet. Add Firebase keys in firebase-config.js.");
+            return;
+          }
+          const email = emailInput?.value.trim() || "";
+          const password = passwordInput?.value || "";
+          if (!email || !password) {
+            setMessage(errorEl, "Enter your email and password.");
+            return;
+          }
+          setBusy(true);
+          try {
+            await FCAuth.signInWithEmail({ email, password });
+            setMessage(statusEl, "Signed in. Redirecting...");
+            location.href = "path.html";
+          } catch (err) {
+            setMessage(errorEl, err?.message || "Login failed.");
+          } finally {
+            setBusy(false);
+          }
+        });
+
+        googleBtn?.addEventListener("click", async () => {
+          setMessage(errorEl, "");
+          if (!window.FCAuth?.enabled) {
+            setMessage(errorEl, "Auth is not configured yet. Add Firebase keys in firebase-config.js.");
+            return;
+          }
+          setBusy(true);
+          try {
+            await FCAuth.signInWithGoogle();
+            setMessage(statusEl, "Signed in. Redirecting...");
+            location.href = "path.html";
+          } catch (err) {
+            setMessage(errorEl, err?.message || "Google sign-in failed.");
+          } finally {
+            setBusy(false);
+          }
+        });
+
+        document.getElementById("toggleLoginPw")?.addEventListener("click", () => {
+          const input = passwordInput;
+          if (!input) return;
+          const isPw = input.type === "password";
+          input.type = isPw ? "text" : "password";
+          document.querySelector("#toggleLoginPw .material-symbols-outlined").textContent = isPw
+            ? "visibility"
+            : "visibility_off";
+        });
+      })();
+    </script>
+  </body>
+</html>
