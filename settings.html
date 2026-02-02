@@ -184,7 +184,55 @@
             </button>
           </div>
         </div>
-        <input id="avatarInput" type="file" accept="image/*" class="hidden" />
+        <div id="avatarPickerWrap" class="hidden mb-6">
+          <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 px-1">Choose an avatar</p>
+          <div id="avatarPicker" class="grid grid-cols-4 gap-3">
+            <button
+              type="button"
+              class="avatar-option press rounded-2xl border border-slate-200 dark:border-slate-700 p-2 bg-white dark:bg-surface-dark"
+              data-avatar="icons/avatar-fox-green.png"
+              aria-label="Green fox"
+            >
+              <div
+                class="w-12 h-12 rounded-xl bg-cover bg-center"
+                style="background-image:url('icons/avatar-fox-green.png');"
+              ></div>
+            </button>
+            <button
+              type="button"
+              class="avatar-option press rounded-2xl border border-slate-200 dark:border-slate-700 p-2 bg-white dark:bg-surface-dark"
+              data-avatar="icons/avatar-fox-red.png"
+              aria-label="Red fox"
+            >
+              <div
+                class="w-12 h-12 rounded-xl bg-cover bg-center"
+                style="background-image:url('icons/avatar-fox-red.png');"
+              ></div>
+            </button>
+            <button
+              type="button"
+              class="avatar-option press rounded-2xl border border-slate-200 dark:border-slate-700 p-2 bg-white dark:bg-surface-dark"
+              data-avatar="icons/avatar-fox-yellow.png"
+              aria-label="Yellow fox"
+            >
+              <div
+                class="w-12 h-12 rounded-xl bg-cover bg-center"
+                style="background-image:url('icons/avatar-fox-yellow.png');"
+              ></div>
+            </button>
+            <button
+              type="button"
+              class="avatar-option press rounded-2xl border border-slate-200 dark:border-slate-700 p-2 bg-white dark:bg-surface-dark"
+              data-avatar="icons/avatar-fox-blue.png"
+              aria-label="Blue fox"
+            >
+              <div
+                class="w-12 h-12 rounded-xl bg-cover bg-center"
+                style="background-image:url('icons/avatar-fox-blue.png');"
+              ></div>
+            </button>
+          </div>
+        </div>
 
         <!-- Account -->
         <section class="mb-6">
@@ -473,20 +521,21 @@
         return fallback;
       }
 
+      const DEFAULT_AVATAR =
+        "https://github.com/juliuskalume/full-calculus/blob/main/icons/icon-192.png?raw=true";
+
       // Hydrate header info from onboarding state
       (function hydrateProfileHeader() {
         const s = loadFcState();
         const meta = window.FC?.get ? FC.get() : { xp: 0, streak: 0, lives: 0 };
         const authUser = window.FCAuth?.getCurrentUser ? FCAuth.getCurrentUser() : null;
 
-        const DEFAULT_AVATAR =
-          "https://github.com/juliuskalume/full-calculus/blob/main/icons/icon-192.png?raw=true";
-
         const name = (s.name && String(s.name).trim()) || authUser?.displayName || "Student";
         const avatarUrl = s.avatarUrl || authUser?.photoURL || DEFAULT_AVATAR;
 
         document.getElementById("nameText").textContent = name;
         document.getElementById("avatar").style.backgroundImage = `url('${avatarUrl}')`;
+        window.__fc_avatar_current = avatarUrl;
         const nameInput = document.getElementById("nameInput");
         if (nameInput) nameInput.value = name;
 
@@ -594,8 +643,9 @@
       const accountError = document.getElementById("accountError");
       const nameInput = document.getElementById("nameInput");
       const avatarEl = document.getElementById("avatar");
-      const avatarInput = document.getElementById("avatarInput");
       const changeAvatarBtn = document.getElementById("changeAvatarBtn");
+      const avatarPickerWrap = document.getElementById("avatarPickerWrap");
+      const avatarOptions = Array.from(document.querySelectorAll(".avatar-option"));
 
       let pendingAvatarUrl = null;
 
@@ -603,28 +653,33 @@
         if (avatarEl && url) avatarEl.style.backgroundImage = `url('${url}')`;
       };
 
+      const updateAvatarSelection = (url) => {
+        avatarOptions.forEach((btn) => {
+          const isActive = btn.dataset.avatar === url;
+          btn.classList.toggle("ring-2", isActive);
+          btn.classList.toggle("ring-primary", isActive);
+          btn.classList.toggle("border-primary", isActive);
+        });
+      };
+
       changeAvatarBtn?.addEventListener("click", () => {
-        avatarInput?.click();
+        avatarPickerWrap?.classList.toggle("hidden");
+        const current = pendingAvatarUrl || window.__fc_avatar_current || DEFAULT_AVATAR;
+        updateAvatarSelection(current);
       });
 
-      avatarInput?.addEventListener("change", (e) => {
-        setMessage(accountError, "");
-        const file = e.target.files && e.target.files[0];
-        if (!file) return;
-        const maxSize = 200 * 1024;
-        if (file.size > maxSize) {
-          setMessage(accountError, "Please choose an image under 200 KB.");
-          return;
-        }
-        const reader = new FileReader();
-        reader.onload = () => {
-          const dataUrl = reader.result;
-          if (typeof dataUrl !== "string") return;
-          pendingAvatarUrl = dataUrl;
-          applyAvatar(dataUrl);
-        };
-        reader.readAsDataURL(file);
+      avatarOptions.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          setMessage(accountError, "");
+          const url = btn.dataset.avatar;
+          if (!url) return;
+          pendingAvatarUrl = url;
+          applyAvatar(url);
+          updateAvatarSelection(url);
+        });
       });
+
+      updateAvatarSelection(window.__fc_avatar_current);
 
       // Save profile updates
       document.getElementById("saveBtn")?.addEventListener("click", async () => {
