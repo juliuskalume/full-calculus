@@ -30,6 +30,15 @@
     } else if (darkPref === false) {
       html.classList.remove("dark");
       html.classList.add("light");
+    } else {
+      const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      if (prefersDark) {
+        html.classList.add("dark");
+        html.classList.remove("light");
+      } else {
+        html.classList.remove("dark");
+        html.classList.add("light");
+      }
     }
   };
 
