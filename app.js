@@ -64,7 +64,7 @@ function nextHref(step) {
 function prevHref(step) {
   const map = {
     skill: null,
-    goal: "skill.html",
+    goal: "index.html",
     time: "goal.html",
     notify: "time.html",
     account: "notify.html",
