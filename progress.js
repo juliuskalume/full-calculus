@@ -1,16 +1,44 @@
 
 window.FCProgress = {
   _syncTimer: null,
+  _syncPending: false,
+  _authListenerAttached: false,
+
+  _ensureAuthListener() {
+    if (this._authListenerAttached) return;
+    if (!window.FCAuth?.onAuthStateChanged) return;
+    this._authListenerAttached = true;
+    FCAuth.onAuthStateChanged((user) => {
+      if (!user) return;
+      if (this._syncPending) this._scheduleSync();
+    });
+  },
+
+  _flushSync() {
+    if (!this._syncPending) return;
+    if (!window.FCAuth || !FCAuth.enabled || !FCAuth.getCurrentUser) return;
+    if (!FCAuth.getCurrentUser()) {
+      this._ensureAuthListener();
+      return;
+    }
+    if (!window.FCAuth?.syncToRemote) return;
+    this._syncPending = false;
+    FCAuth.syncToRemote().catch(() => {
+      this._syncPending = true;
+    });
+  },
 
   _scheduleSync() {
+    this._syncPending = true;
     if (!window.FCAuth || !FCAuth.enabled || !FCAuth.getCurrentUser) return;
-    if (!FCAuth.getCurrentUser()) return;
+    if (!FCAuth.getCurrentUser()) {
+      this._ensureAuthListener();
+      return;
+    }
     if (this._syncTimer) return;
     this._syncTimer = setTimeout(() => {
       this._syncTimer = null;
-      if (window.FCAuth?.syncToRemote) {
-        FCAuth.syncToRemote().catch(() => {});
-      }
+      this._flushSync();
     }, 250);
   },
 
@@ -129,6 +157,7 @@ window.FCProgress = {
     p.currentSectionId = sectionId;
     p.current = sectionId;
     this.set(p);
+    this._scheduleSync();
   },
 
   complete(lessonId) {
@@ -186,6 +215,7 @@ window.FCProgress = {
 
     this.recordDailyAnswer(correct, p);
     this.set(p);
+    this._scheduleSync();
   },
 
   recordTestResult(blueprintId, result) {
@@ -224,6 +254,7 @@ window.FCProgress = {
     }
     p.daily.xp += Number(amount) || 0;
     this.set(p);
+    this._scheduleSync();
   },
 
   getDailyQuests() {
@@ -252,7 +283,10 @@ window.FCProgress = {
     } else {
       p.dailyQuests.correctStreak = 0;
     }
-    if (!existing) this.set(p);
+    if (!existing) {
+      this.set(p);
+      this._scheduleSync();
+    }
   },
 
   claimDailyQuest(questId) {
@@ -262,6 +296,7 @@ window.FCProgress = {
     if (p.dailyQuests.claimed[questId]) return false;
     p.dailyQuests.claimed[questId] = true;
     this.set(p);
+    this._scheduleSync();
     return true;
   },
 };

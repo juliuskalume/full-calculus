@@ -32,6 +32,219 @@
     }
   };
 
+  const toObject = (value) =>
+    value && typeof value === "object" && !Array.isArray(value) ? value : {};
+
+  const toArray = (value) => (Array.isArray(value) ? value.filter((item) => item != null) : []);
+
+  const mergeList = (primary, secondary) => {
+    const out = Array.isArray(primary) ? primary.slice() : [];
+    const extras = Array.isArray(secondary) ? secondary : [];
+    extras.forEach((item) => {
+      if (!out.includes(item)) out.push(item);
+    });
+    return out;
+  };
+
+  const mergeSparseObject = (remoteObj, localObj) => {
+    const merged = { ...toObject(remoteObj) };
+    const local = toObject(localObj);
+    Object.keys(local).forEach((key) => {
+      const val = local[key];
+      if (val == null) return;
+      if (typeof val === "string" && !val.trim()) return;
+      merged[key] = val;
+    });
+    return merged;
+  };
+
+  const normalizeProgress = (raw) => {
+    const p = toObject(raw);
+    const daily = toObject(p.daily);
+    const dailyQuests = toObject(p.dailyQuests);
+    return {
+      ...p,
+      completed: toArray(p.completed),
+      completedSections: toArray(p.completedSections),
+      completedTests: toObject(p.completedTests),
+      unlockedSectionIds: toArray(p.unlockedSectionIds),
+      unlockedChapterIds: toArray(p.unlockedChapterIds),
+      tagStats: toObject(p.tagStats),
+      mistakeItemIds: toArray(p.mistakeItemIds),
+      daily: {
+        date: typeof daily.date === "string" ? daily.date : "",
+        xp: Number(daily.xp) || 0,
+      },
+      dailyQuests: {
+        date: typeof dailyQuests.date === "string" ? dailyQuests.date : "",
+        lessonsCompleted: Number(dailyQuests.lessonsCompleted) || 0,
+        correctStreak: Number(dailyQuests.correctStreak) || 0,
+        bestStreak: Number(dailyQuests.bestStreak) || 0,
+        claimed: {
+          lesson_master: !!dailyQuests?.claimed?.lesson_master,
+          streak_master: !!dailyQuests?.claimed?.streak_master,
+        },
+      },
+      currentSectionId: p.currentSectionId || p.current || "",
+      current: p.current || p.currentSectionId || "",
+    };
+  };
+
+  const pickTestResult = (a, b) => {
+    const aTime = Date.parse(a?.submittedAt || "");
+    const bTime = Date.parse(b?.submittedAt || "");
+    if (!Number.isNaN(aTime) && !Number.isNaN(bTime) && aTime !== bTime) {
+      return bTime > aTime ? b : a;
+    }
+    if (b?.passed && !a?.passed) return b;
+    if (a?.passed && !b?.passed) return a;
+    const aScore = typeof a?.score === "number" ? a.score : null;
+    const bScore = typeof b?.score === "number" ? b.score : null;
+    if (aScore != null && bScore != null && aScore !== bScore) {
+      return bScore > aScore ? b : a;
+    }
+    return a;
+  };
+
+  const mergeTests = (primary, secondary) => {
+    const merged = { ...toObject(primary) };
+    const extra = toObject(secondary);
+    Object.keys(extra).forEach((id) => {
+      if (!merged[id]) {
+        merged[id] = extra[id];
+        return;
+      }
+      merged[id] = pickTestResult(merged[id], extra[id]);
+    });
+    return merged;
+  };
+
+  const mergeTagStats = (primary, secondary) => {
+    const merged = { ...toObject(primary) };
+    const extra = toObject(secondary);
+    Object.keys(extra).forEach((tag) => {
+      const a = toObject(merged[tag]);
+      const b = toObject(extra[tag]);
+      const total = Math.max(Number(a.total) || 0, Number(b.total) || 0);
+      const correct = Math.min(total, Math.max(Number(a.correct) || 0, Number(b.correct) || 0));
+      merged[tag] = { correct, total };
+    });
+    return merged;
+  };
+
+  const mergeDaily = (primary, secondary) => {
+    const a = toObject(primary);
+    const b = toObject(secondary);
+    const aDate = typeof a.date === "string" ? a.date : "";
+    const bDate = typeof b.date === "string" ? b.date : "";
+    if (aDate && bDate) {
+      if (aDate === bDate) {
+        return { date: aDate, xp: Math.max(Number(a.xp) || 0, Number(b.xp) || 0) };
+      }
+      return aDate > bDate
+        ? { date: aDate, xp: Number(a.xp) || 0 }
+        : { date: bDate, xp: Number(b.xp) || 0 };
+    }
+    if (aDate) return { date: aDate, xp: Number(a.xp) || 0 };
+    if (bDate) return { date: bDate, xp: Number(b.xp) || 0 };
+    return { date: "", xp: 0 };
+  };
+
+  const mergeDailyQuests = (primary, secondary) => {
+    const a = normalizeProgress({ dailyQuests: primary }).dailyQuests;
+    const b = normalizeProgress({ dailyQuests: secondary }).dailyQuests;
+    if (a.date && b.date) {
+      if (a.date === b.date) {
+        return {
+          date: a.date,
+          lessonsCompleted: Math.max(a.lessonsCompleted, b.lessonsCompleted),
+          correctStreak: Math.max(a.correctStreak, b.correctStreak),
+          bestStreak: Math.max(a.bestStreak, b.bestStreak),
+          claimed: {
+            lesson_master: a.claimed.lesson_master || b.claimed.lesson_master,
+            streak_master: a.claimed.streak_master || b.claimed.streak_master,
+          },
+        };
+      }
+      return a.date > b.date ? a : b;
+    }
+    return a.date ? a : b;
+  };
+
+  const pickCurrentSectionId = (primary, secondary, completedSections) => {
+    const completed = new Set(Array.isArray(completedSections) ? completedSections : []);
+    const primaryId = primary.currentSectionId || primary.current || "";
+    const secondaryId = secondary.currentSectionId || secondary.current || "";
+    if (primaryId && !completed.has(primaryId)) return primaryId;
+    if (secondaryId && !completed.has(secondaryId)) return secondaryId;
+    return primaryId || secondaryId || "";
+  };
+
+  const mergeProgress = (localRaw, remoteRaw) => {
+    const local = normalizeProgress(localRaw);
+    const remote = normalizeProgress(remoteRaw);
+    const localScore = local.completedSections.length + Object.keys(local.completedTests).length;
+    const remoteScore = remote.completedSections.length + Object.keys(remote.completedTests).length;
+    const primary = localScore >= remoteScore ? local : remote;
+    const secondary = primary === local ? remote : local;
+
+    const merged = { ...secondary, ...primary };
+    merged.completedSections = mergeList(primary.completedSections, secondary.completedSections);
+    merged.completed = mergeList(primary.completed, secondary.completed);
+    merged.unlockedSectionIds = mergeList(primary.unlockedSectionIds, secondary.unlockedSectionIds);
+    merged.unlockedChapterIds = mergeList(primary.unlockedChapterIds, secondary.unlockedChapterIds);
+    merged.completedTests = mergeTests(primary.completedTests, secondary.completedTests);
+    merged.tagStats = mergeTagStats(primary.tagStats, secondary.tagStats);
+    merged.mistakeItemIds = mergeList(primary.mistakeItemIds, secondary.mistakeItemIds);
+    merged.daily = mergeDaily(primary.daily, secondary.daily);
+    merged.dailyQuests = mergeDailyQuests(primary.dailyQuests, secondary.dailyQuests);
+
+    merged.completedSections.forEach((id) => {
+      if (!merged.completed.includes(id)) merged.completed.push(id);
+    });
+    merged.completed.forEach((id) => {
+      if (!merged.completedSections.includes(id)) merged.completedSections.push(id);
+    });
+
+    merged.currentSectionId = pickCurrentSectionId(primary, secondary, merged.completedSections);
+    merged.current = merged.currentSectionId || merged.current || "";
+    merged.version = primary.version || secondary.version || merged.version || "";
+    return merged;
+  };
+
+  const mergeMeta = (localMeta, remoteMeta) => {
+    const local = toObject(localMeta);
+    const remote = toObject(remoteMeta);
+    const toNumber = (value) => (typeof value === "number" ? value : Number(value) || 0);
+    return {
+      xp: Math.max(toNumber(local.xp), toNumber(remote.xp)),
+      streak: Math.max(toNumber(local.streak), toNumber(remote.streak)),
+      lives: Math.max(toNumber(local.lives), toNumber(remote.lives)),
+      lastHeartTime: Math.max(toNumber(local.lastHeartTime), toNumber(remote.lastHeartTime)),
+    };
+  };
+
+  const mergeLocalAndRemoteState = (localState, remoteData) => ({
+    onboarding: mergeSparseObject(remoteData?.onboarding, localState?.onboarding),
+    progress: mergeProgress(localState?.progress, remoteData?.progress),
+    meta: mergeMeta(localState?.meta, remoteData?.meta),
+  });
+
+  const needsRemoteUpdate = (merged, remoteData) => {
+    const safeStringify = (value) => {
+      try {
+        return JSON.stringify(value || {});
+      } catch {
+        return "";
+      }
+    };
+    return (
+      safeStringify(merged?.onboarding) !== safeStringify(remoteData?.onboarding) ||
+      safeStringify(merged?.progress) !== safeStringify(remoteData?.progress) ||
+      safeStringify(merged?.meta) !== safeStringify(remoteData?.meta)
+    );
+  };
+
   const exportLocalState = () => ({
     onboarding: safeParse(DEFAULT_STATE_KEY, {}),
     progress: safeParse(DEFAULT_PROGRESS_KEY, {}),
@@ -120,15 +333,14 @@
     if (!user) return null;
     const doc = await db.collection("users").doc(user.uid).get();
     if (!doc.exists) return null;
-    const data = doc.data();
-    if (data) {
-      applyLocalState({
-        onboarding: data.onboarding || {},
-        progress: data.progress || {},
-        meta: data.meta || {},
-      });
+    const data = doc.data() || {};
+    const local = exportLocalState();
+    const merged = mergeLocalAndRemoteState(local, data);
+    applyLocalState(merged);
+    if (needsRemoteUpdate(merged, data)) {
+      await syncToRemote();
     }
-    return data;
+    return { ...data, ...merged };
   };
 
   const ensureUserDoc = async (extra) => {
@@ -187,9 +399,7 @@
     await auth.signOut();
   };
 
-  const onAuthStateChanged = (cb) => {
-    auth.onAuthStateChanged(cb);
-  };
+  const onAuthStateChanged = (cb) => auth.onAuthStateChanged(cb);
 
   const getCurrentUser = () => auth.currentUser;
 
@@ -210,4 +420,9 @@
     exportLocalState,
     applyLocalState,
   };
+
+  auth.onAuthStateChanged((user) => {
+    if (!user) return;
+    syncFromRemote().catch(() => {});
+  });
 })();
