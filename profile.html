@@ -220,32 +220,41 @@
           </button>
         </div>
 
-        <div class="grid grid-cols-3 gap-3">
+        <div class="grid grid-cols-3 gap-3" id="achievementGrid">
           <div
-            class="flex flex-col items-center gap-3 p-3 bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-white/5 shadow-soft">
+            class="achievement-card flex flex-col items-center gap-3 p-3 bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-white/5 shadow-soft transition"
+            data-calc="c1"
+            data-icon="looks_one"
+          >
             <div
-              class="flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-yellow-100 to-orange-100 dark:from-yellow-900/40 dark:to-orange-900/40 border-2 border-yellow-400/30 text-yellow-600 dark:text-yellow-400 shadow-inner">
-              <span class="material-symbols-outlined text-2xl">emoji_events</span>
+              class="achievement-icon flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-emerald-100 to-lime-100 dark:from-emerald-900/40 dark:to-lime-900/40 border-2 border-emerald-300/40 text-emerald-700 dark:text-emerald-300 shadow-inner">
+              <span class="material-symbols-outlined text-2xl">looks_one</span>
             </div>
-            <span class="text-[11px] font-extrabold text-center leading-tight">Chain Rule<br />Champion</span>
+            <span class="achievement-label text-[11px] font-extrabold text-center leading-tight">Calc I<br />Trailblazer</span>
           </div>
 
           <div
-            class="flex flex-col items-center gap-3 p-3 bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-white/5 shadow-soft">
+            class="achievement-card flex flex-col items-center gap-3 p-3 bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-white/5 shadow-soft transition"
+            data-calc="c2"
+            data-icon="looks_two"
+          >
             <div
-              class="flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700/40 dark:to-slate-600/40 border-2 border-slate-300 dark:border-slate-500 text-slate-500 dark:text-slate-200 shadow-inner">
-              <span class="material-symbols-outlined text-2xl">military_tech</span>
+              class="achievement-icon flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-sky-100 to-indigo-100 dark:from-sky-900/40 dark:to-indigo-900/40 border-2 border-sky-300/40 text-sky-700 dark:text-sky-300 shadow-inner">
+              <span class="material-symbols-outlined text-2xl">looks_two</span>
             </div>
-            <span class="text-[11px] font-extrabold text-center leading-tight">Limit<br />Legend</span>
+            <span class="achievement-label text-[11px] font-extrabold text-center leading-tight">Calc II<br />Pathfinder</span>
           </div>
 
           <div
-            class="flex flex-col items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-white/5 opacity-70">
+            class="achievement-card flex flex-col items-center gap-3 p-3 bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-white/5 shadow-soft transition"
+            data-calc="c3"
+            data-icon="looks_3"
+          >
             <div
-              class="flex items-center justify-center w-14 h-14 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-dashed border-slate-300 dark:border-slate-600 text-slate-400">
-              <span class="material-symbols-outlined text-2xl">lock</span>
+              class="achievement-icon flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-fuchsia-100 to-purple-100 dark:from-fuchsia-900/40 dark:to-purple-900/40 border-2 border-fuchsia-300/40 text-fuchsia-700 dark:text-fuchsia-300 shadow-inner">
+              <span class="material-symbols-outlined text-2xl">looks_3</span>
             </div>
-            <span class="text-[11px] font-medium text-center leading-tight text-slate-400">Integral<br />Master</span>
+            <span class="achievement-label text-[11px] font-extrabold text-center leading-tight">Calc III<br />Voyager</span>
           </div>
         </div>
       </section>
@@ -348,9 +357,57 @@
       document.getElementById("xpVal").textContent = String(meta.xp ?? 0);
       document.getElementById("streakVal").textContent = String(meta.streak ?? 0);
 
-      // lessons completed (your existing local fallback)
-      const lessons = Number(localStorage.getItem("fc_lessons_completed") || "0");
-      document.getElementById("lessonsVal").textContent = String(lessons);
+      // lessons completed (real count from progress)
+      const progress = window.FCProgress?.get ? FCProgress.get() : {};
+      const completedSections = Array.isArray(progress.completedSections)
+        ? progress.completedSections
+        : Array.isArray(progress.completed)
+          ? progress.completed
+          : [];
+      document.getElementById("lessonsVal").textContent = String(completedSections.length);
+
+      // achievements: Calc I/II/III based on completed sections by prefix
+      const calcCounts = {
+        c1: completedSections.filter((id) => String(id).startsWith("c1-")).length,
+        c2: completedSections.filter((id) => String(id).startsWith("c2-")).length,
+        c3: completedSections.filter((id) => String(id).startsWith("c3-")).length,
+      };
+
+      document.querySelectorAll(".achievement-card").forEach((card) => {
+        const key = card.dataset.calc;
+        const unlocked = (calcCounts[key] || 0) > 0;
+        const iconWrap = card.querySelector(".achievement-icon");
+        const icon = card.querySelector(".achievement-icon span");
+        const iconName = card.dataset.icon || "emoji_events";
+
+        if (unlocked) {
+          card.classList.remove("opacity-60", "grayscale");
+          if (icon) icon.textContent = iconName;
+          if (iconWrap) {
+            iconWrap.classList.remove(
+              "bg-slate-100",
+              "dark:bg-slate-800",
+              "border-dashed",
+              "border-slate-300",
+              "dark:border-slate-600",
+              "text-slate-400"
+            );
+          }
+        } else {
+          card.classList.add("opacity-60", "grayscale");
+          if (icon) icon.textContent = "lock";
+          if (iconWrap) {
+            iconWrap.classList.add(
+              "bg-slate-100",
+              "dark:bg-slate-800",
+              "border-dashed",
+              "border-slate-300",
+              "dark:border-slate-600",
+              "text-slate-400"
+            );
+          }
+        }
+      });
 
       // joined date (keep your existing approach)
       const joinedKey = "fc_joined_date";
