@@ -312,6 +312,14 @@
     </main>
   </div>
 
+  <!-- Content data (for achievements) -->
+  <script src="content-structure.js"></script>
+  <script src="content-sections.js"></script>
+  <script src="content-items.js"></script>
+  <script src="content-examples.js"></script>
+  <script src="content-tests.js"></script>
+  <script src="content.js"></script>
+
   <!-- Shared state -->
   <script src="state.js"></script>
   <script src="progress.js"></script>
@@ -363,16 +371,23 @@
           : [];
       document.getElementById("lessonsVal").textContent = String(completedSections.length);
 
-      // achievements: Calc I/II/III based on completed sections by prefix
-      const calcCounts = {
-        c1: completedSections.filter((id) => String(id).startsWith("c1-")).length,
-        c2: completedSections.filter((id) => String(id).startsWith("c2-")).length,
-        c3: completedSections.filter((id) => String(id).startsWith("c3-")).length,
+      // achievements: unlock only after completing all units per Calc
+      const allSections = Array.isArray(window.FCContent?.sections) ? window.FCContent.sections : [];
+      const totals = {
+        c1: allSections.filter((section) => String(section.id).startsWith("c1-")).map((s) => s.id),
+        c2: allSections.filter((section) => String(section.id).startsWith("c2-")).map((s) => s.id),
+        c3: allSections.filter((section) => String(section.id).startsWith("c3-")).map((s) => s.id),
+      };
+      const completedSet = new Set(completedSections.map((id) => String(id)));
+      const calcUnlocked = {
+        c1: totals.c1.length > 0 && totals.c1.every((id) => completedSet.has(id)),
+        c2: totals.c2.length > 0 && totals.c2.every((id) => completedSet.has(id)),
+        c3: totals.c3.length > 0 && totals.c3.every((id) => completedSet.has(id)),
       };
 
       document.querySelectorAll(".achievement-card").forEach((card) => {
         const key = card.dataset.calc;
-        const unlocked = (calcCounts[key] || 0) > 0;
+        const unlocked = !!calcUnlocked[key];
         const iconWrap = card.querySelector(".achievement-icon");
         const icon = card.querySelector(".achievement-icon span");
         const iconName = card.dataset.icon || "emoji_events";
