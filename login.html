@@ -231,7 +231,7 @@
         loginBtn?.addEventListener("click", async () => {
           setMessage(errorEl, "");
           if (!window.FCAuth?.enabled) {
-            setMessage(errorEl, "Auth is not configured yet. Add Firebase keys in firebase-config.js.");
+            setMessage(errorEl, "Auth is not configured yet.");
             return;
           }
           const email = emailInput?.value.trim() || "";
@@ -255,7 +255,7 @@
         googleBtn?.addEventListener("click", async () => {
           setMessage(errorEl, "");
           if (!window.FCAuth?.enabled) {
-            setMessage(errorEl, "Auth is not configured yet. Add Firebase keys in firebase-config.js.");
+            setMessage(errorEl, "Auth is not configured yet.");
             return;
           }
           if (isFirefoxPwaAndroid()) {
@@ -278,12 +278,12 @@
           setMessage(errorEl, "");
           setMessage(statusEl, "");
           if (!window.FCAuth?.enabled) {
-            setMessage(errorEl, "Auth is not configured yet. Add Firebase keys in firebase-config.js.");
+            setMessage(errorEl, "Auth is not configured yet.");
             return;
           }
           const email = emailInput?.value.trim() || "";
           if (!email) {
-            setMessage(errorEl, "Enter your email to reset your password.");
+            setMessage(errorEl, "Enter your email first then click Forgot password.");
             return;
           }
           setBusy(true);
