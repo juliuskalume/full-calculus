@@ -405,6 +405,25 @@
           if (label) document.getElementById("continueLabel").textContent = label;
         };
 
+        const isFirefoxPwaAndroid = () => {
+          const ua = navigator.userAgent || "";
+          const isFirefox = /firefox/i.test(ua);
+          const isAndroid = /android/i.test(ua);
+          let isPwa = false;
+          try {
+            if (window.matchMedia) {
+              isPwa =
+                window.matchMedia("(display-mode: standalone)").matches ||
+                window.matchMedia("(display-mode: fullscreen)").matches ||
+                window.matchMedia("(display-mode: minimal-ui)").matches;
+            }
+          } catch {
+            isPwa = false;
+          }
+          if (!isPwa && window.navigator?.standalone === true) isPwa = true;
+          return isFirefox && isAndroid && isPwa;
+        };
+
         const updateSavedProfile = () => {
           const s = readState();
           s.email = emailInput?.value.trim() || s.email || "";
@@ -483,6 +502,10 @@
           setMessage(errorEl, "");
           if (!window.FCAuth?.enabled) {
             setMessage(errorEl, "Auth is not configured yet. Add Firebase keys in firebase-config.js.");
+            return;
+          }
+          if (isFirefoxPwaAndroid()) {
+            location.href = "auth-restriction.html";
             return;
           }
           setBusy(true, "Connecting...");
