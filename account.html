@@ -488,9 +488,6 @@
           setBusy(true, "Connecting...");
           try {
             const user = await FCAuth.signInWithGoogle();
-            if (user && user.redirecting) {
-              return;
-            }
             const s = readState();
             s.email = user?.email || s.email || "";
             s.name = user?.displayName || s.name || "";
