@@ -1,13 +1,27 @@
 const HEART_MAX = 5;
 const HEART_REFILL_MIN = 5;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 window.FC = {
+  _todayKey() {
+    return new Date().toISOString().slice(0, 10);
+  },
+
+  _dayDiff(fromKey, toKey) {
+    if (!fromKey || !toKey) return null;
+    const fromMs = Date.parse(fromKey);
+    const toMs = Date.parse(toKey);
+    if (!Number.isFinite(fromMs) || !Number.isFinite(toMs)) return null;
+    return Math.floor((toMs - fromMs) / DAY_MS);
+  },
+
   get() {
     const fallback = {
       xp: 450,
-      streak: 3,
+      streak: 0,
       lives: HEART_MAX,
       lastHeartTime: Date.now(),
+      lastActiveDate: "",
     };
 
     let s;
@@ -21,8 +35,10 @@ window.FC = {
     if (typeof s.streak !== "number") s.streak = fallback.streak;
     if (typeof s.lives !== "number") s.lives = fallback.lives;
     if (typeof s.lastHeartTime !== "number") s.lastHeartTime = Date.now();
+    if (typeof s.lastActiveDate !== "string") s.lastActiveDate = "";
 
     s = this._refillHearts(s);
+    s = this._refreshStreak(s);
     this.set(s);
     return s;
   },
@@ -58,10 +74,42 @@ window.FC = {
     if (s.lives >= HEART_MAX) s.lastHeartTime = now;
     return s;
   },
+
+  _refreshStreak(s) {
+    const today = this._todayKey();
+    const last = typeof s.lastActiveDate === "string" ? s.lastActiveDate : "";
+    if (!last) return s;
+    const diff = this._dayDiff(last, today);
+    if (diff != null && diff > 1) {
+      s.streak = 0;
+    }
+    if (diff != null && diff < 0) {
+      s.lastActiveDate = today;
+    }
+    return s;
+  },
+
+  recordDailyActivity() {
+    const s = this.get();
+    const today = this._todayKey();
+    const last = typeof s.lastActiveDate === "string" ? s.lastActiveDate : "";
+    if (last === today) return s;
+
+    const diff = this._dayDiff(last, today);
+    if (!last || diff == null || diff > 1) {
+      s.streak = 1;
+    } else if (diff === 1) {
+      s.streak = (Number(s.streak) || 0) + 1;
+    }
+
+    s.lastActiveDate = today;
+    this.set(s);
+    return s;
+  },
 };
 
 if (!localStorage.getItem("fc_meta")) {
-  FC.set({ xp: 450, streak: 3, lives: HEART_MAX, lastHeartTime: Date.now() });
+  FC.set({ xp: 450, streak: 0, lives: HEART_MAX, lastHeartTime: Date.now(), lastActiveDate: "" });
 } else {
   FC.get();
 }
