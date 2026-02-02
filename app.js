@@ -258,7 +258,7 @@ function initAccountPage() {
 
   // ✅ default avatar (used app-wide)
   const DEFAULT_AVATAR =
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuD90igZQPrpcib-AZfNF2ZDdOYbxb_Vcu_Y_4mx4VZyu9-4xomdRnfi4yhKHymx3b20GZbb-qmy3igr4zrexRQk8l45J1-7J7UaVd3-gxuVrHXT1_3hrdaDp-spamN6OgLdoHWWM-5hgpMyXfuo_Dl5vyod6u2ZIEllT4FWE5vm80Qv1mKoZBwtYZqirO9sfE15WtWjUcg6m6phdIdXU-rK0a0TWDBa52StV52lPgjrFV5TZb_kOid5jcK9sY8tDMVQ-VyYots1RRk";
+    "https://github.com/juliuskalume/full-calculus/blob/main/icons/icon-192.png?raw=true";
 
   // ✅ seed avatarUrl once if missing
   if (!s.avatarUrl) {
