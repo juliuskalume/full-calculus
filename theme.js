@@ -43,4 +43,22 @@
   };
 
   applyTheme();
+
+  const registerServiceWorker = () => {
+    if (!("serviceWorker" in navigator)) {
+      return;
+    }
+
+    if (window.location.protocol === "file:") {
+      return;
+    }
+
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js").catch(() => {
+        // ignore registration failures
+      });
+    });
+  };
+
+  registerServiceWorker();
 })();
