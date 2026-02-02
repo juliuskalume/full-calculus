@@ -289,7 +289,7 @@
           setBusy(true);
           try {
             await FCAuth.resetPassword({ email });
-            setMessage(statusEl, "Password reset email sent. Check your inbox.");
+            setMessage(statusEl, "Password reset email sent. Check your inbox or spam folder.");
           } catch (err) {
             setMessage(errorEl, err?.message || "Unable to send reset email.");
           } finally {
