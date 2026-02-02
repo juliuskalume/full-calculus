@@ -310,6 +310,9 @@
       },
       onAuthStateChanged: () => {},
       getCurrentUser: () => null,
+      resetPassword: async () => {
+        throw new Error("Firebase config missing.");
+      },
       syncFromRemote: async () => null,
       syncToRemote: async () => null,
     };
@@ -408,6 +411,14 @@
     return result.user;
   };
 
+  const resetPassword = async ({ email }) => {
+    const cleanEmail = normalizeEmail(email);
+    if (!cleanEmail) {
+      throw new Error("Enter your email to reset your password.");
+    }
+    await auth.sendPasswordResetEmail(cleanEmail);
+  };
+
   const signInWithGoogle = async () => {
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
@@ -443,6 +454,7 @@
     signUpWithEmail,
     signInWithEmail,
     signInWithGoogle,
+    resetPassword,
     signOut,
     onAuthStateChanged,
     getCurrentUser,

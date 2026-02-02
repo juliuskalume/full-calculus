@@ -124,6 +124,13 @@
                 <span class="material-symbols-outlined">visibility_off</span>
               </button>
             </div>
+            <button
+              id="forgotPasswordBtn"
+              type="button"
+              class="mt-2 self-end text-xs font-semibold text-text-light hover:text-primary transition-colors"
+            >
+              Forgot password?
+            </button>
           </div>
 
           <button
@@ -182,6 +189,7 @@
         const googleBtn = document.getElementById("googleLoginBtn");
         const errorEl = document.getElementById("loginError");
         const statusEl = document.getElementById("loginStatus");
+        const forgotBtn = document.getElementById("forgotPasswordBtn");
 
         const setMessage = (el, msg) => {
           if (!el) return;
@@ -261,6 +269,29 @@
             location.href = "path.html";
           } catch (err) {
             setMessage(errorEl, err?.message || "Google sign-in failed.");
+          } finally {
+            setBusy(false);
+          }
+        });
+
+        forgotBtn?.addEventListener("click", async () => {
+          setMessage(errorEl, "");
+          setMessage(statusEl, "");
+          if (!window.FCAuth?.enabled) {
+            setMessage(errorEl, "Auth is not configured yet. Add Firebase keys in firebase-config.js.");
+            return;
+          }
+          const email = emailInput?.value.trim() || "";
+          if (!email) {
+            setMessage(errorEl, "Enter your email to reset your password.");
+            return;
+          }
+          setBusy(true);
+          try {
+            await FCAuth.resetPassword({ email });
+            setMessage(statusEl, "Password reset email sent. Check your inbox.");
+          } catch (err) {
+            setMessage(errorEl, err?.message || "Unable to send reset email.");
           } finally {
             setBusy(false);
           }
