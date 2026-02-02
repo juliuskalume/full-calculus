@@ -333,6 +333,28 @@
           return {};
         }
       }
+      function clearLocalData() {
+        try {
+          const keys = [];
+          for (let i = 0; i < localStorage.length; i += 1) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith("fc_")) keys.push(key);
+          }
+          keys.forEach((key) => localStorage.removeItem(key));
+        } catch {
+          try {
+            localStorage.clear();
+          } catch {
+            // ignore
+          }
+        }
+
+        try {
+          sessionStorage.clear();
+        } catch {
+          // ignore
+        }
+      }
 
       // Hydrate header info from onboarding state
       (function hydrateProfileHeader() {
@@ -474,8 +496,7 @@
             // ignore
           }
         }
-        localStorage.removeItem("fc_state");
-        localStorage.removeItem("fc_meta");
+        clearLocalData();
         window.location.href = "login.html";
       });
     </script>

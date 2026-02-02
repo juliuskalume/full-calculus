@@ -32,6 +32,31 @@
     }
   };
 
+  const LOCAL_UID_KEY = "fc_uid";
+
+  const clearLocalData = () => {
+    try {
+      const keys = [];
+      for (let i = 0; i < localStorage.length; i += 1) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith("fc_")) keys.push(key);
+      }
+      keys.forEach((key) => localStorage.removeItem(key));
+    } catch {
+      try {
+        localStorage.clear();
+      } catch {
+        // ignore
+      }
+    }
+
+    try {
+      sessionStorage.clear();
+    } catch {
+      // ignore
+    }
+  };
+
   const toObject = (value) =>
     value && typeof value === "object" && !Array.isArray(value) ? value : {};
 
@@ -279,7 +304,9 @@
       signInWithGoogle: async () => {
         throw new Error("Firebase config missing.");
       },
-      signOut: async () => {},
+      signOut: async () => {
+        clearLocalData();
+      },
       onAuthStateChanged: () => {},
       getCurrentUser: () => null,
       syncFromRemote: async () => null,
@@ -396,7 +423,11 @@
   };
 
   const signOut = async () => {
-    await auth.signOut();
+    try {
+      await auth.signOut();
+    } finally {
+      clearLocalData();
+    }
   };
 
   const onAuthStateChanged = (cb) => auth.onAuthStateChanged(cb);
@@ -422,7 +453,29 @@
   };
 
   auth.onAuthStateChanged((user) => {
-    if (!user) return;
+    const currentUid = user?.uid || "";
+    let storedUid = "";
+    try {
+      storedUid = localStorage.getItem(LOCAL_UID_KEY) || "";
+    } catch {
+      storedUid = "";
+    }
+
+    if (!currentUid) {
+      clearLocalData();
+      return;
+    }
+
+    if (storedUid && storedUid !== currentUid) {
+      clearLocalData();
+    }
+
+    try {
+      localStorage.setItem(LOCAL_UID_KEY, currentUid);
+    } catch {
+      // ignore
+    }
+
     syncFromRemote().catch(() => {});
   });
 })();
