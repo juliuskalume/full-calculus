@@ -318,6 +318,17 @@
   firebase.initializeApp(config);
   const auth = firebase.auth();
   const db = firebase.firestore();
+  const persistenceReady = (() => {
+    const persistence =
+      firebase.auth &&
+      firebase.auth.Auth &&
+      firebase.auth.Auth.Persistence &&
+      firebase.auth.Auth.Persistence.LOCAL;
+    if (!persistence || typeof auth.setPersistence !== "function") {
+      return Promise.resolve();
+    }
+    return auth.setPersistence(persistence).catch(() => {});
+  })();
 
   const buildUserDoc = (user, extra) => {
     const now = new Date().toISOString();
@@ -381,6 +392,7 @@
   };
 
   const signUpWithEmail = async ({ email, password, name, age, avatarUrl }) => {
+    await persistenceReady;
     const cleanEmail = normalizeEmail(email);
     const result = await auth.createUserWithEmailAndPassword(cleanEmail, password);
     if (name) {
@@ -398,6 +410,7 @@
   };
 
   const signInWithEmail = async ({ email, password }) => {
+    await persistenceReady;
     const cleanEmail = normalizeEmail(email);
     const result = await auth.signInWithEmailAndPassword(cleanEmail, password);
     const data = await syncFromRemote();
@@ -408,6 +421,7 @@
   };
 
   const signInWithGoogle = async () => {
+    await persistenceReady;
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
     const result = await auth.signInWithPopup(provider);
@@ -462,7 +476,9 @@
     }
 
     if (!currentUid) {
-      clearLocalData();
+      if (storedUid) {
+        clearLocalData();
+      }
       return;
     }
 
