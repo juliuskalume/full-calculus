@@ -133,11 +133,14 @@
           if (isAndroid) {
             const url = new URL(loginUrl);
             const scheme = url.protocol.replace(":", "");
-            const intentUrl = `intent://${url.host}${url.pathname}#Intent;scheme=${scheme};package=org.mozilla.firefox;end`;
+            const fallback = encodeURIComponent(loginUrl);
+            const intentUrl = `intent://${url.host}${url.pathname}#Intent;scheme=${scheme};package=org.mozilla.firefox;S.browser_fallback_url=${fallback};end`;
             window.location.href = intentUrl;
             setTimeout(() => {
-              window.location.href = loginUrl;
-            }, 800);
+              if (document.visibilityState === "visible") {
+                window.location.href = loginUrl;
+              }
+            }, 1200);
             return;
           }
           window.location.href = loginUrl;
