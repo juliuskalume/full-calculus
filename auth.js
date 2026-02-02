@@ -15,17 +15,6 @@
     });
   };
 
-  const canUseSessionStorage = () => {
-    try {
-      const key = "fc_auth_state_test";
-      sessionStorage.setItem(key, "1");
-      sessionStorage.removeItem(key);
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
   const shouldFallbackToRedirect = (err) => {
     const code = err?.code || "";
     return (
@@ -33,14 +22,6 @@
       code === "auth/operation-not-supported-in-this-environment" ||
       code === "auth/unauthorized-domain"
     );
-  };
-
-  const redirectUnavailableError = () => {
-    const error = new Error(
-      "Google sign-in is not supported in this app mode. Open Full Calculus in your browser or use email/password."
-    );
-    error.code = "auth/redirect-unavailable";
-    return error;
   };
 
   const safeParse = (key, fallback) => {
@@ -451,9 +432,6 @@
       return result.user;
     } catch (err) {
       if (shouldFallbackToRedirect(err)) {
-        if (!canUseSessionStorage()) {
-          throw redirectUnavailableError();
-        }
         await auth.signInWithRedirect(provider);
         return { redirecting: true };
       }
