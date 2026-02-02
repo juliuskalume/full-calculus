@@ -233,7 +233,10 @@
           }
           setBusy(true);
           try {
-            await FCAuth.signInWithGoogle();
+            const result = await FCAuth.signInWithGoogle();
+            if (result && result.redirecting) {
+              return;
+            }
             setMessage(statusEl, "Signed in. Redirecting...");
             location.href = "path.html";
           } catch (err) {

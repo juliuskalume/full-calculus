@@ -15,6 +15,35 @@
     });
   };
 
+  const isStandaloneDisplayMode = () => {
+    try {
+      if (window.matchMedia) {
+        if (window.matchMedia("(display-mode: standalone)").matches) return true;
+        if (window.matchMedia("(display-mode: fullscreen)").matches) return true;
+        if (window.matchMedia("(display-mode: minimal-ui)").matches) return true;
+      }
+    } catch {
+      // ignore
+    }
+    return window.navigator?.standalone === true;
+  };
+
+  const shouldUseRedirectFlow = () => {
+    if (isStandaloneDisplayMode()) return true;
+    const ua = navigator.userAgent || "";
+    if (/android/i.test(ua) && /firefox/i.test(ua)) return true;
+    return false;
+  };
+
+  const shouldFallbackToRedirect = (err) => {
+    const code = err?.code || "";
+    return (
+      code === "auth/popup-blocked" ||
+      code === "auth/operation-not-supported-in-this-environment" ||
+      code === "auth/unauthorized-domain"
+    );
+  };
+
   const safeParse = (key, fallback) => {
     try {
       const raw = localStorage.getItem(key);
@@ -410,16 +439,29 @@
   const signInWithGoogle = async () => {
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
-    const result = await auth.signInWithPopup(provider);
-    const data = await syncFromRemote();
-    if (!data) {
-      await syncToRemote({
-        email: result.user.email || "",
-        name: result.user.displayName || "",
-        avatarUrl: result.user.photoURL || "",
-      });
+    if (shouldUseRedirectFlow()) {
+      await auth.signInWithRedirect(provider);
+      return { redirecting: true };
     }
-    return result.user;
+
+    try {
+      const result = await auth.signInWithPopup(provider);
+      const data = await syncFromRemote();
+      if (!data) {
+        await syncToRemote({
+          email: result.user.email || "",
+          name: result.user.displayName || "",
+          avatarUrl: result.user.photoURL || "",
+        });
+      }
+      return result.user;
+    } catch (err) {
+      if (shouldFallbackToRedirect(err)) {
+        await auth.signInWithRedirect(provider);
+        return { redirecting: true };
+      }
+      throw err;
+    }
   };
 
   const signOut = async () => {
