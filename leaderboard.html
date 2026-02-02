@@ -362,6 +362,30 @@
         renderList([fallbackUser], "local");
       };
 
+      const renderPrompt = (message) => {
+        const list = document.getElementById("list");
+        const podium = document.getElementById("podium");
+        if (podium) podium.innerHTML = "";
+        if (!list) return;
+        const note = message || "Sign in to see leaderboard";
+        list.innerHTML = `
+          <div class="bg-white dark:bg-surface-dark border border-slate-100 dark:border-slate-800 rounded-2xl p-5 text-center shadow-sm">
+            <p class="text-slate-700 dark:text-slate-200 font-bold text-lg mb-2">${note}</p>
+            <p class="text-slate-500 dark:text-slate-400 text-sm mb-4">Create an account or log in to view the global league rankings.</p>
+            <button
+              id="leaderboardLoginBtn"
+              type="button"
+              class="press inline-flex items-center justify-center rounded-xl h-12 px-5 bg-primary text-white font-extrabold uppercase tracking-wide shadow-md hover:bg-primary/90"
+            >
+              Sign in
+            </button>
+          </div>
+        `;
+        document.getElementById("leaderboardLoginBtn")?.addEventListener("click", () => {
+          window.location.href = "login.html";
+        });
+      };
+
       const loadLeaderboard = async (currentUid) => {
         try {
           const users = await fetchLeaderboard();
@@ -374,7 +398,7 @@
           renderPodium(users);
           renderList(users, currentUid);
         } catch {
-          renderFallback();
+          renderPrompt("Sign in to see leaderboard");
         }
       };
 
