@@ -99,12 +99,12 @@
         </div>
         <!-- Primary Action -->
         <button
-          id="openBrowserBtn"
+          id="copyLoginBtn"
           class="w-full cursor-pointer flex items-center justify-center gap-2 overflow-hidden rounded-xl h-14 bg-primary hover:bg-primary/90 text-[#0d1c12] text-base font-bold leading-normal tracking-[0.015em] shadow-lg shadow-primary/25 transition-all active:scale-[0.98]"
           type="button"
         >
-          <span class="material-symbols-outlined" style="font-size: 20px">open_in_browser</span>
-          <span>Open Browser to Log In</span>
+          <span class="material-symbols-outlined" style="font-size: 20px">content_copy</span>
+          <span>Copy Log In Link</span>
         </button>
         <!-- Secondary Action -->
         <button
@@ -123,27 +123,29 @@
       (function () {
         const origin = window.location.origin;
         const loginUrl = origin + "/login.html";
-        const openBrowserBtn = document.getElementById("openBrowserBtn");
+        const copyLoginBtn = document.getElementById("copyLoginBtn");
         const backBtn = document.getElementById("backBtn");
         const closeBtn = document.getElementById("closeBtn");
 
-        const openInFirefox = () => {
-          const ua = navigator.userAgent || "";
-          const isAndroid = /android/i.test(ua);
-          if (isAndroid) {
-            const url = new URL(loginUrl);
-            const scheme = url.protocol.replace(":", "");
-            const fallback = encodeURIComponent(loginUrl);
-            const intentUrl = `intent://${url.host}${url.pathname}#Intent;scheme=${scheme};package=org.mozilla.firefox;S.browser_fallback_url=${fallback};end`;
-            window.location.href = intentUrl;
-            setTimeout(() => {
-              if (document.visibilityState === "visible") {
-                window.location.href = loginUrl;
-              }
-            }, 1200);
-            return;
+        const copyLoginLink = async () => {
+          try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              await navigator.clipboard.writeText(loginUrl);
+            } else {
+              const temp = document.createElement("textarea");
+              temp.value = loginUrl;
+              temp.setAttribute("readonly", "true");
+              temp.style.position = "absolute";
+              temp.style.left = "-9999px";
+              document.body.appendChild(temp);
+              temp.select();
+              document.execCommand("copy");
+              document.body.removeChild(temp);
+            }
+            copyLoginBtn.querySelector("span:last-child").textContent = "Copied!";
+          } catch {
+            window.prompt("Copy this login link:", loginUrl);
           }
-          window.location.href = loginUrl;
         };
 
         const goBack = () => {
@@ -154,7 +156,7 @@
           }
         };
 
-        openBrowserBtn?.addEventListener("click", openInFirefox);
+        copyLoginBtn?.addEventListener("click", copyLoginLink);
         backBtn?.addEventListener("click", goBack);
         closeBtn?.addEventListener("click", goBack);
       })();
