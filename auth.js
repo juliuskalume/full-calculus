@@ -15,24 +15,15 @@
     });
   };
 
-  const isStandaloneDisplayMode = () => {
+  const canUseSessionStorage = () => {
     try {
-      if (window.matchMedia) {
-        if (window.matchMedia("(display-mode: standalone)").matches) return true;
-        if (window.matchMedia("(display-mode: fullscreen)").matches) return true;
-        if (window.matchMedia("(display-mode: minimal-ui)").matches) return true;
-      }
+      const key = "fc_auth_state_test";
+      sessionStorage.setItem(key, "1");
+      sessionStorage.removeItem(key);
+      return true;
     } catch {
-      // ignore
+      return false;
     }
-    return window.navigator?.standalone === true;
-  };
-
-  const shouldUseRedirectFlow = () => {
-    if (isStandaloneDisplayMode()) return true;
-    const ua = navigator.userAgent || "";
-    if (/android/i.test(ua) && /firefox/i.test(ua)) return true;
-    return false;
   };
 
   const shouldFallbackToRedirect = (err) => {
@@ -42,6 +33,14 @@
       code === "auth/operation-not-supported-in-this-environment" ||
       code === "auth/unauthorized-domain"
     );
+  };
+
+  const redirectUnavailableError = () => {
+    const error = new Error(
+      "Google sign-in is not supported in this app mode. Open Full Calculus in your browser or use email/password."
+    );
+    error.code = "auth/redirect-unavailable";
+    return error;
   };
 
   const safeParse = (key, fallback) => {
@@ -439,11 +438,6 @@
   const signInWithGoogle = async () => {
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
-    if (shouldUseRedirectFlow()) {
-      await auth.signInWithRedirect(provider);
-      return { redirecting: true };
-    }
-
     try {
       const result = await auth.signInWithPopup(provider);
       const data = await syncFromRemote();
@@ -457,6 +451,9 @@
       return result.user;
     } catch (err) {
       if (shouldFallbackToRedirect(err)) {
+        if (!canUseSessionStorage()) {
+          throw redirectUnavailableError();
+        }
         await auth.signInWithRedirect(provider);
         return { redirecting: true };
       }
