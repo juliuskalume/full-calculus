@@ -405,6 +405,62 @@
           if (label) document.getElementById("continueLabel").textContent = label;
         };
 
+        const logDevError = (context, err) => {
+          const entry = {
+            time: new Date().toISOString(),
+            context,
+            code: err?.code || "",
+            message: err?.message || String(err || ""),
+            stack: err?.stack || "",
+          };
+          try {
+            const raw = localStorage.getItem("fc_dev_errors");
+            const list = raw ? JSON.parse(raw) : [];
+            list.push(entry);
+            localStorage.setItem("fc_dev_errors", JSON.stringify(list.slice(-50)));
+          } catch {
+            // ignore
+          }
+          try {
+            console.error("[Dev]", entry);
+          } catch {
+            // ignore
+          }
+        };
+
+        const friendlyAuthMessage = (err, fallback) => {
+          const code = err?.code || "";
+          if (code === "auth/invalid-email") return "Enter a valid email address.";
+          if (code === "auth/user-not-found" || code === "auth/wrong-password") {
+            return "Incorrect email or password.";
+          }
+          if (code === "auth/too-many-requests") {
+            return "Too many attempts. Please try again later.";
+          }
+          if (code === "auth/network-request-failed") {
+            return "Network error. Check your connection and try again.";
+          }
+          if (code === "auth/popup-closed-by-user") {
+            return "Sign-in was canceled.";
+          }
+          if (code === "auth/popup-blocked") {
+            return "Pop-up blocked. Allow pop-ups and try again.";
+          }
+          if (code === "auth/account-exists-with-different-credential") {
+            return "This email is linked to another sign-in method.";
+          }
+          if (code === "auth/email-already-in-use") {
+            return "That email is already in use. Try logging in instead.";
+          }
+          if (code === "auth/weak-password") {
+            return "Use a stronger password (at least 6 characters).";
+          }
+          if (code === "auth/user-disabled") {
+            return "This account has been disabled.";
+          }
+          return fallback;
+        };
+
         const isFirefoxPwaAndroid = () => {
           const ua = navigator.userAgent || "";
           const isFirefox = /firefox/i.test(ua);
@@ -461,7 +517,8 @@
               await FCAuth.syncToRemote({ name, age, email });
               location.href = "done.html";
             } catch (err) {
-              setMessage(errorEl, err?.message || "Unable to continue.");
+              setMessage(errorEl, friendlyAuthMessage(err, "Unable to continue. Please try again."));
+              logDevError("account-continue", err);
             } finally {
               setBusy(false, "Continue");
             }
@@ -469,7 +526,8 @@
           }
 
           if (!window.FCAuth?.enabled) {
-            setMessage(errorEl, "Auth is not configured yet. Add Firebase keys in firebase-config.js.");
+            setMessage(errorEl, "Sign-up is unavailable right now. Please try again later.");
+            logDevError("account-disabled", new Error("Firebase auth not configured."));
             return;
           }
 
@@ -492,7 +550,8 @@
             updateSavedProfile();
             location.href = "done.html";
           } catch (err) {
-            setMessage(errorEl, err?.message || "Sign up failed. Try again.");
+            setMessage(errorEl, friendlyAuthMessage(err, "Sign up failed. Please try again."));
+            logDevError("account-signup", err);
           } finally {
             setBusy(false, "Create Profile");
           }
@@ -501,7 +560,8 @@
         googleBtn?.addEventListener("click", async () => {
           setMessage(errorEl, "");
           if (!window.FCAuth?.enabled) {
-            setMessage(errorEl, "Auth is not configured yet. Add Firebase keys in firebase-config.js.");
+            setMessage(errorEl, "Sign-up is unavailable right now. Please try again later.");
+            logDevError("account-google-disabled", new Error("Firebase auth not configured."));
             return;
           }
           if (isFirefoxPwaAndroid()) {
@@ -519,7 +579,8 @@
             await FCAuth.ensureUserDoc({ name: s.name, avatarUrl: s.avatarUrl, email: s.email });
             location.href = "done.html";
           } catch (err) {
-            setMessage(errorEl, err?.message || "Google sign-in failed.");
+            setMessage(errorEl, friendlyAuthMessage(err, "Google sign-in failed. Please try again."));
+            logDevError("account-google", err);
           } finally {
             setBusy(false, "Create Profile");
           }
