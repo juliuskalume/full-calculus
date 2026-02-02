@@ -71,7 +71,8 @@
       box-shadow: none !important;
     }
   </style>
-</head>
+  <script src="theme.js"></script>
+  </head>
 
 <body data-step="profile"
   class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 antialiased selection:bg-primary selection:text-white min-h-screen flex justify-center">
@@ -90,10 +91,6 @@
       <h2 class="text-lg font-extrabold tracking-tight">Profile</h2>
 
       <div class="flex items-center gap-2">
-        <button id="darkToggle" type="button"
-          class="text-xs font-extrabold px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-surface-dark/70 backdrop-blur">
-          DARK
-        </button>
 
         <button id="settingsBtn" type="button"
           class="press flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-200 dark:hover:bg-surface-dark transition-colors"
@@ -315,12 +312,6 @@
       window.location.href = "path.html";
     });
 
-    // Dark toggle
-    document.getElementById("darkToggle")?.addEventListener("click", () => {
-      document.documentElement.classList.toggle("dark");
-      document.documentElement.classList.toggle("light");
-    });
-
     // Hydrate from FC state
     (function hydrate() {
       // XP/streak/lives live in fc_meta (state.js)
@@ -385,3 +376,5 @@
 </body>
 
 </html>
+
+

@@ -589,6 +589,7 @@
         }
       }
     </style>
+    <script src="theme.js"></script>
   </head>
 
   <body>
@@ -605,9 +606,6 @@
             <a href="#approach">Approach</a>
           </div>
           <div class="nav-actions">
-            <button id="themeToggle" class="theme-toggle" type="button" aria-label="Toggle dark mode">
-              Theme
-            </button>
             <a class="btn btn-secondary" href="skill.html">Start Learning</a>
           </div>
         </nav>
@@ -803,28 +801,8 @@
       </footer>
     </div>
 
-    <script>
-      (function () {
-        const html = document.documentElement;
-        const saved = localStorage.getItem("fc_dark") === "1";
-        if (saved) html.classList.add("dark");
-
-        const toggle = document.getElementById("themeToggle");
-        if (!toggle) return;
-
-        const syncLabel = () => {
-          toggle.textContent = html.classList.contains("dark") ? "Light" : "Dark";
-        };
-
-        syncLabel();
-
-        toggle.addEventListener("click", () => {
-          html.classList.toggle("dark");
-          const isDark = html.classList.contains("dark");
-          localStorage.setItem("fc_dark", isDark ? "1" : "0");
-          syncLabel();
-        });
-      })();
-    </script>
   </body>
 </html>
+
+
+

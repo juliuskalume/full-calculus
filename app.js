@@ -83,23 +83,37 @@ function initDarkToggle() {
   const toggle = document.getElementById("darkToggle");
   const html = document.documentElement;
 
-  const saved = localStorage.getItem("fc_dark") === "1";
-  if (saved) html.classList.add("dark");
+  let prefs = {};
+  try {
+    prefs = JSON.parse(localStorage.getItem("fc_prefs") || "{}");
+  } catch {
+    prefs = {};
+  }
 
-  if (!toggle) return;
+  let darkPref = prefs?.darkMode;
+  if (darkPref !== true && darkPref !== false) {
+    const legacy = localStorage.getItem("fc_dark");
+    if (legacy === "1" || legacy === "0") {
+      darkPref = legacy === "1";
+      prefs.darkMode = darkPref;
+      try {
+        localStorage.setItem("fc_prefs", JSON.stringify(prefs));
+        localStorage.removeItem("fc_dark");
+      } catch {
+        // ignore
+      }
+    }
+  }
 
-  const syncLabel = () => {
-    toggle.textContent = html.classList.contains("dark") ? "LIGHT" : "DARK";
-  };
+  if (darkPref === true) {
+    html.classList.add("dark");
+    html.classList.remove("light");
+  } else if (darkPref === false) {
+    html.classList.remove("dark");
+    html.classList.add("light");
+  }
 
-  syncLabel();
-
-  toggle.addEventListener("click", () => {
-    html.classList.toggle("dark");
-    const isDark = html.classList.contains("dark");
-    localStorage.setItem("fc_dark", isDark ? "1" : "0");
-    syncLabel();
-  });
+  if (toggle) toggle.remove();
 }
 
 function initNav() {

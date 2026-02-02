@@ -53,6 +53,7 @@
         opacity: 1;
       }
     </style>
+    <script src="theme.js"></script>
   </head>
 
   <body
@@ -71,14 +72,6 @@
           <span class="material-symbols-outlined text-2xl">arrow_back</span>
         </button>
         <h1 class="text-lg font-extrabold">Log in</h1>
-        <button
-          id="darkToggle"
-          type="button"
-          class="flex size-10 shrink-0 items-center justify-center rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors text-text-main dark:text-white"
-          aria-label="Toggle dark mode"
-        >
-          <span class="material-symbols-outlined text-2xl">dark_mode</span>
-        </button>
       </div>
 
       <div class="flex-1 flex flex-col px-6 pb-8">
@@ -179,17 +172,6 @@
 
     <script>
       (function () {
-        const html = document.documentElement;
-        const saved = localStorage.getItem("fc_dark") === "1";
-        if (saved) html.classList.add("dark");
-
-        document.getElementById("darkToggle")?.addEventListener("click", () => {
-          html.classList.toggle("dark");
-          localStorage.setItem("fc_dark", html.classList.contains("dark") ? "1" : "0");
-        });
-      })();
-
-      (function () {
         const loginBtn = document.getElementById("loginBtn");
         const emailInput = document.getElementById("loginEmail");
         const passwordInput = document.getElementById("loginPassword");
@@ -270,3 +252,6 @@
     </script>
   </body>
 </html>
+
+
+

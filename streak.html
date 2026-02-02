@@ -91,6 +91,7 @@
       /* Tactile press */
       .press:active { transform: translateY(4px); box-shadow: none !important; }
     </style>
+    <script src="theme.js"></script>
   </head>
 
   <body
@@ -124,14 +125,6 @@
           <span class="material-symbols-outlined text-primary">auto_awesome</span>
           <span class="font-extrabold tracking-tight text-slate-800 dark:text-white">Full Calculus</span>
         </div>
-
-        <button
-          id="darkToggle"
-          type="button"
-          class="text-xs font-extrabold px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-surface-dark/70 backdrop-blur"
-        >
-          DARK
-        </button>
       </header>
 
       <!-- Main -->
@@ -245,13 +238,6 @@
       document.getElementById("nextGoalText").textContent =
         remaining === 0 ? "0 more days" : `${remaining} more day${remaining === 1 ? "" : "s"}`;
 
-      // Dark toggle (matches your other screens)
-      const darkToggle = document.getElementById("darkToggle");
-      darkToggle?.addEventListener("click", () => {
-        document.documentElement.classList.toggle("dark");
-        document.documentElement.classList.toggle("light");
-      });
-
       // Continue: mark as seen today, then go home
       document.getElementById("continueBtn")?.addEventListener("click", () => {
         localStorage.setItem(SEEN_KEY, nairobiYYYYMMDD());
@@ -275,3 +261,6 @@
     </script>
   </body>
 </html>
+
+
+

@@ -77,6 +77,7 @@
         box-shadow: none !important;
       }
     </style>
+    <script src="theme.js"></script>
   </head>
 
   <body
@@ -109,15 +110,6 @@
                 <span id="timeLeft">2d 4h left</span>
               </p>
             </div>
-
-            <button
-              id="darkToggle"
-              type="button"
-              class="text-xs font-extrabold px-3 py-1 rounded-full border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-surface-dark/70 backdrop-blur"
-              aria-label="Toggle dark mode"
-            >
-              DARK
-            </button>
           </div>
         </div>
 
@@ -180,12 +172,6 @@
       // Back
       document.getElementById("backBtn")?.addEventListener("click", () => {
         window.location.href = "path.html";
-      });
-
-      // Dark toggle
-      document.getElementById("darkToggle")?.addEventListener("click", () => {
-        document.documentElement.classList.toggle("dark");
-        document.documentElement.classList.toggle("light");
       });
 
       const DEFAULT_AVATAR =
@@ -413,6 +399,9 @@
     </script>
   </body>
 </html>
+
+
+
 
 
 
