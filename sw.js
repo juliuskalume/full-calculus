@@ -1,6 +1,7 @@
-const CACHE_NAME = "fc-static-v1";
+const CACHE_NAME = "fc-static-v2";
 const PRECACHE_URLS = [
   "index.html",
+  "auth-restriction.html",
   "offline.html",
   "manifest.webmanifest",
   "theme.js",
@@ -42,6 +43,13 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (request.mode === "navigate") {
+    if (url.pathname.startsWith("/__/auth/handler")) {
+      event.respondWith(
+        caches.match("auth-restriction.html").then((cached) => cached || fetch("auth-restriction.html"))
+      );
+      return;
+    }
+
     event.respondWith(
       fetch(request)
         .then((response) => {

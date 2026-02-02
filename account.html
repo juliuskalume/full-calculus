@@ -269,10 +269,6 @@
               <span class="font-bold text-text-main dark:text-white">Facebook</span>
             </button>
           </div>
-          <p id="googleHint" class="text-xs font-semibold text-amber-600 dark:text-amber-400 text-center hidden">
-            Google sign-in may not work in the Firefox PWA. Open the site in your browser or use email/password.
-          </p>
-
           <!-- Secondary Action -->
           <div class="mt-4 text-center">
             <button
@@ -503,33 +499,11 @@
             await FCAuth.ensureUserDoc({ name: s.name, avatarUrl: s.avatarUrl, email: s.email });
             location.href = "done.html";
           } catch (err) {
-            if (err?.code === "auth/redirect-unavailable") {
-              setMessage(
-                errorEl,
-                "Google sign-in is blocked in this app mode. Open the site in your browser or use email/password."
-              );
-            } else {
-              setMessage(errorEl, err?.message || "Google sign-in failed.");
-            }
+            setMessage(errorEl, err?.message || "Google sign-in failed.");
           } finally {
             setBusy(false, "Create Profile");
           }
         });
-
-        const canUseSessionStorage = () => {
-          try {
-            const key = "fc_auth_state_test";
-            sessionStorage.setItem(key, "1");
-            sessionStorage.removeItem(key);
-            return true;
-          } catch {
-            return false;
-          }
-        };
-
-        if (!canUseSessionStorage()) {
-          document.getElementById("googleHint")?.classList.remove("hidden");
-        }
 
         if (window.FCAuth?.onAuthStateChanged) {
           FCAuth.onAuthStateChanged((user) => {
