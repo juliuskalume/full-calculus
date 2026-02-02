@@ -192,15 +192,13 @@
           .replace(/'/g, "&#39;");
 
       const getDisplayName = (data) => {
-        const onboarding = data?.onboarding || {};
-        const fallbackEmail = String(data?.email || onboarding?.email || "").trim();
-        const fallback = fallbackEmail ? fallbackEmail.split("@")[0] : "Learner";
-        return String(data?.displayName || onboarding?.name || fallback || "Learner").trim() || "Learner";
+        const fallback = "Learner";
+        return String(data?.displayName || data?.name || fallback).trim() || fallback;
       };
 
-      const getAvatar = (data) => data?.photoURL || data?.onboarding?.avatarUrl || DEFAULT_AVATAR;
-      const getXp = (data) => toNumber(data?.meta?.xp);
-      const getStreak = (data) => toNumber(data?.meta?.streak);
+      const getAvatar = (data) => data?.photoURL || DEFAULT_AVATAR;
+      const getXp = (data) => toNumber(data?.xp ?? data?.meta?.xp);
+      const getStreak = (data) => toNumber(data?.streak ?? data?.meta?.streak);
 
       const renderPodium = (users) => {
         const podium = document.getElementById("podium");
@@ -326,15 +324,15 @@
 
       const fetchLeaderboard = async () => {
         if (!window.FCAuth?.db) return [];
-        const snap = await FCAuth.db.collection("users").orderBy("meta.xp", "desc").limit(50).get();
+        const snap = await FCAuth.db.collection("leaderboard").orderBy("xp", "desc").limit(50).get();
         const users = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
         return users.sort((a, b) => {
           const xpDiff = getXp(b) - getXp(a);
           if (xpDiff !== 0) return xpDiff;
           const streakDiff = getStreak(b) - getStreak(a);
           if (streakDiff !== 0) return streakDiff;
-          const aUpdated = Date.parse(a.updatedAt || a.lastLoginAt || "") || 0;
-          const bUpdated = Date.parse(b.updatedAt || b.lastLoginAt || "") || 0;
+          const aUpdated = Date.parse(a.updatedAt || "") || 0;
+          const bUpdated = Date.parse(b.updatedAt || "") || 0;
           return bUpdated - aUpdated;
         });
       };
@@ -345,7 +343,8 @@
           uid: "local",
           displayName: meta.name || "CalcHero",
           photoURL: meta.avatarUrl || DEFAULT_AVATAR,
-          meta: { xp: Number(meta.xp || 0), streak: Number(meta.streak || 0) },
+          xp: Number(meta.xp || 0),
+          streak: Number(meta.streak || 0),
         };
         renderHeader(fallbackUser);
         renderPodium([fallbackUser]);

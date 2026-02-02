@@ -351,11 +351,45 @@
     };
   };
 
+  const buildLeaderboardEntry = (user, extra) => {
+    const now = new Date().toISOString();
+    const local = exportLocalState();
+    const onboarding = { ...(local.onboarding || {}) };
+    const meta = local.meta || {};
+    const displayName =
+      user.displayName ||
+      extra?.name ||
+      onboarding.name ||
+      "Learner";
+    const photoURL =
+      user.photoURL ||
+      extra?.avatarUrl ||
+      onboarding.avatarUrl ||
+      "";
+    return {
+      uid: user.uid,
+      displayName,
+      photoURL,
+      xp: Number(meta.xp) || 0,
+      streak: Number(meta.streak) || 0,
+      updatedAt: now,
+    };
+  };
+
+  const syncLeaderboard = async (extra) => {
+    const user = auth.currentUser;
+    if (!user) return null;
+    const payload = buildLeaderboardEntry(user, extra);
+    await db.collection("leaderboard").doc(user.uid).set(payload, { merge: true });
+    return payload;
+  };
+
   const syncToRemote = async (extra) => {
     const user = auth.currentUser;
     if (!user) return null;
     const payload = buildUserDoc(user, extra);
     await db.collection("users").doc(user.uid).set(payload, { merge: true });
+    await syncLeaderboard(extra);
     return payload;
   };
 
@@ -371,6 +405,7 @@
     if (needsRemoteUpdate(merged, data)) {
       await syncToRemote();
     }
+    await syncLeaderboard();
     return { ...data, ...merged };
   };
 
@@ -461,6 +496,7 @@
     syncFromRemote,
     syncToRemote,
     ensureUserDoc,
+    syncLeaderboard,
     exportLocalState,
     applyLocalState,
   };
