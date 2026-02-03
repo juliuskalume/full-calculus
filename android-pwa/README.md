@@ -16,6 +16,7 @@ Change in:
 ## Notes
 - This uses a Trusted Web Activity (TWA). For full-screen mode without browser UI, you must host the Digital Asset Links file on your domain.
 - The repo includes `.well-known/assetlinks.json` with a placeholder fingerprint. You must replace it and deploy it on `https://full-calculus.vercel.app/.well-known/assetlinks.json`.
+- Android 13+ requires notification permission at the app level. The launcher requests it on first run.
 
 ### Get SHA-256 fingerprint
 Run from `android-pwa/`:
