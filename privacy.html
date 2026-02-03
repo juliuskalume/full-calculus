@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <meta name="theme-color" content="#0d59f2" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <link rel="icon" type="image/png" href="icons/icon-192.png" />
+    <title>Privacy Policy - Full Calculus</title>
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700&display=swap"
+      rel="stylesheet"
+    />
+
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#0d59f2",
+              "primary-hover": "#0b4dc9",
+              "background-light": "#f5f6f8",
+              "background-dark": "#101622",
+              "surface-light": "#ffffff",
+              "surface-dark": "#1a2332",
+              "text-main": "#0d121c",
+            },
+            fontFamily: {
+              display: ["Lexend", "sans-serif"],
+            },
+            borderRadius: {
+              DEFAULT: "1rem",
+              lg: "1.5rem",
+              xl: "2rem",
+              full: "9999px",
+            },
+          },
+        },
+      };
+    </script>
+
+    <style>
+      body {
+        font-family: "Lexend", sans-serif;
+        min-height: max(884px, 100dvh);
+      }
+      .material-symbols-outlined {
+        font-variation-settings: "FILL" 1, "wght" 550, "GRAD" 0, "opsz" 24;
+      }
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    </style>
+    <script src="theme.js"></script>
+  </head>
+
+  <body class="bg-background-light dark:bg-background-dark text-text-main dark:text-white transition-colors duration-200 antialiased">
+    <div class="w-full max-w-md mx-auto h-[100dvh] sm:min-h-screen bg-background-light dark:bg-background-dark shadow-2xl flex flex-col overflow-hidden">
+      <header class="sticky top-0 z-30 bg-background-light/90 dark:bg-background-dark/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+        <div class="flex items-center p-4 justify-between">
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              onclick="(history.length > 1) ? history.back() : location.href='settings.html'"
+              class="flex items-center justify-center w-10 h-10 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              aria-label="Back"
+            >
+              <span class="material-symbols-outlined text-primary">arrow_back</span>
+            </button>
+            <h2 class="text-lg font-extrabold leading-tight tracking-tight">Privacy Policy</h2>
+          </div>
+        </div>
+      </header>
+
+      <main class="flex-1 overflow-y-auto no-scrollbar px-5 pb-10 pt-6">
+        <section class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-5 mb-5">
+          <p class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">Last updated</p>
+          <p class="text-sm font-semibold mt-1">February 3, 2026</p>
+          <p class="text-sm text-slate-600 dark:text-slate-300 mt-3 leading-relaxed">
+            This Privacy Policy explains what information Full Calculus collects, how it is used, and the choices you
+            have. By using the app, you agree to this policy.
+          </p>
+        </section>
+
+        <section class="space-y-4">
+          <div class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-5">
+            <h3 class="text-base font-extrabold mb-2">Information we collect</h3>
+            <ul class="text-sm text-slate-600 dark:text-slate-300 space-y-2 leading-relaxed">
+              <li>
+                <span class="font-semibold text-slate-800 dark:text-slate-100">Account data:</span>
+                your name, email address, and avatar (when you sign up or update your profile).
+              </li>
+              <li>
+                <span class="font-semibold text-slate-800 dark:text-slate-100">Learning data:</span>
+                progress, completed units/tests, streaks, XP, goals, and app settings.
+              </li>
+              <li>
+                <span class="font-semibold text-slate-800 dark:text-slate-100">Device/storage data:</span>
+                local app preferences and cached progress stored in your browser or PWA storage.
+              </li>
+              <li>
+                <span class="font-semibold text-slate-800 dark:text-slate-100">Diagnostics:</span>
+                basic error logs used to troubleshoot issues (stored locally unless you share them).
+              </li>
+            </ul>
+          </div>
+
+          <div class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-5">
+            <h3 class="text-base font-extrabold mb-2">How we use your information</h3>
+            <ul class="text-sm text-slate-600 dark:text-slate-300 space-y-2 leading-relaxed">
+              <li>To create and secure your account.</li>
+              <li>To sync your learning progress across devices.</li>
+              <li>To show your rank on the leaderboard when enabled.</li>
+              <li>To improve app reliability and fix bugs.</li>
+            </ul>
+          </div>
+
+          <div class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-5">
+            <h3 class="text-base font-extrabold mb-2">Sharing & third‑party services</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+              Full Calculus uses Google Firebase for authentication, data storage, and hosting. If you sign in with
+              Google, your account is handled by Google’s authentication services. Firebase may process your data to
+              provide these features.
+            </p>
+          </div>
+
+          <div class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-5">
+            <h3 class="text-base font-extrabold mb-2">Leaderboard visibility</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+              The leaderboard shows a public profile with your display name, avatar, XP, and streak. This information is
+              visible to other signed‑in users.
+            </p>
+          </div>
+
+          <div class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-5">
+            <h3 class="text-base font-extrabold mb-2">Your choices</h3>
+            <ul class="text-sm text-slate-600 dark:text-slate-300 space-y-2 leading-relaxed">
+              <li>You can update your name and avatar from Settings.</li>
+              <li>You can log out to clear local app data on the device.</li>
+              <li>You can request account deletion by contacting support.</li>
+            </ul>
+          </div>
+
+          <div class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-5">
+            <h3 class="text-base font-extrabold mb-2">Data security</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+              We use industry‑standard services (Firebase) to store and protect your data. No method of transmission or
+              storage is 100% secure, so we cannot guarantee absolute security.
+            </p>
+          </div>
+
+          <div class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-5">
+            <h3 class="text-base font-extrabold mb-2">Contact</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+              For questions or requests, contact: <span class="font-semibold">juliuskalume906@gmail.com</span>
+            </p>
+          </div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
