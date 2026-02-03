@@ -423,6 +423,9 @@
                 <span class="slider"></span>
               </label>
             </div>
+            <div class="px-4 pb-3 text-xs text-slate-500 dark:text-slate-400" id="notifyStatus">
+              Push status: checking…
+            </div>
           </div>
         </section>
 
@@ -596,6 +599,7 @@
         const soundSwitch = document.getElementById("soundSwitch");
         const motivationSwitch = document.getElementById("motivationSwitch");
         const notifySwitch = document.getElementById("notifySwitch");
+        const notifyStatus = document.getElementById("notifyStatus");
 
         // hydrate switches
         const isDark = document.documentElement.classList.contains("dark");
@@ -622,6 +626,38 @@
             dailyGoal: loadPrefs().dailyGoal || "regular",
           });
         }
+
+        const setNotifyStatus = (msg) => {
+          if (!notifyStatus) return;
+          notifyStatus.textContent = msg;
+        };
+
+        const refreshNotifyStatus = async () => {
+          if (!notifyStatus) return;
+          const supportsPush =
+            typeof window !== "undefined" &&
+            "serviceWorker" in navigator &&
+            "PushManager" in window &&
+            "Notification" in window;
+          if (!supportsPush) {
+            setNotifyStatus("Push not supported here. On iOS, install the PWA from Home Screen.");
+            return;
+          }
+          const permission = Notification.permission;
+          let swState = "not active";
+          let subState = "not subscribed";
+          try {
+            const reg = await navigator.serviceWorker.getRegistration();
+            if (reg) {
+              swState = "active";
+              const sub = await reg.pushManager.getSubscription();
+              if (sub) subState = "subscribed";
+            }
+          } catch {
+            swState = "unknown";
+          }
+          setNotifyStatus(`Push: ${permission}, service worker: ${swState}, subscription: ${subState}`);
+        };
 
         darkSwitch.addEventListener("change", () => {
           if (darkSwitch.checked) {
@@ -656,7 +692,10 @@
               }
             }
           }
+          refreshNotifyStatus();
         });
+
+        refreshNotifyStatus();
       })();
 
       // Daily goal selector UI
