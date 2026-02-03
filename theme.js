@@ -246,7 +246,30 @@
       };
 
       const onPrimary = () => {
-        if (typeof options.onPrimary === "function") options.onPrimary();
+        if (typeof options.onPrimary === "function") {
+          options.onPrimary();
+          onClose();
+          return;
+        }
+        try {
+          const prefs = JSON.parse(localStorage.getItem("fc_prefs") || "{}");
+          prefs.sound = prefs.sound !== false ? prefs.sound : true;
+          prefs.motivation = prefs.motivation !== false ? prefs.motivation : true;
+          prefs.darkMode = prefs.darkMode;
+          localStorage.setItem("fc_prefs", JSON.stringify(prefs));
+        } catch {
+          // ignore
+        }
+        try {
+          const state = JSON.parse(localStorage.getItem("fc_state") || "{}");
+          state.notifications = true;
+          localStorage.setItem("fc_state", JSON.stringify(state));
+        } catch {
+          // ignore
+        }
+        if (window.FCPush?.requestPermissionAndSubscribe) {
+          window.FCPush.requestPermissionAndSubscribe().catch(() => {});
+        }
         onClose();
       };
 
