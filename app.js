@@ -236,6 +236,9 @@ function initNotifyPage() {
       next.notifications = true;
       saveState(next);
       updateUI(true);
+      if (window.FCPush?.requestPermissionAndSubscribe) {
+        window.FCPush.requestPermissionAndSubscribe().catch(() => {});
+      }
     });
   }
 
@@ -245,6 +248,9 @@ function initNotifyPage() {
       next.notifications = false;
       saveState(next);
       updateUI(false);
+      if (window.FCPush?.disable) {
+        window.FCPush.disable().catch(() => {});
+      }
     });
   }
 }

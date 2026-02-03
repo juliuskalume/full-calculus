@@ -473,6 +473,13 @@
     try {
       await auth.signOut();
     } finally {
+      if (window.FCPush?.disable) {
+        try {
+          await window.FCPush.disable();
+        } catch {
+          // ignore
+        }
+      }
       clearLocalData();
     }
   };
@@ -501,6 +508,88 @@
     applyLocalState,
   };
 
+  const PUSH_COLLECTION = "push_subscriptions";
+  const PUSH_PUBLIC_KEY = window.FC_PUSH_PUBLIC_KEY || "";
+
+  const hasPushSupport = () =>
+    typeof window !== "undefined" &&
+    "serviceWorker" in navigator &&
+    "PushManager" in window &&
+    "Notification" in window;
+
+  const urlBase64ToUint8Array = (base64String) => {
+    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+    const raw = atob(base64);
+    const output = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i += 1) output[i] = raw.charCodeAt(i);
+    return output;
+  };
+
+  const getNotificationPref = () => {
+    const s = safeParse(DEFAULT_STATE_KEY, {});
+    return !!s.notifications;
+  };
+
+  const saveSubscription = async (user, sub) => {
+    if (!user || !sub) return;
+    const payload = {
+      uid: user.uid,
+      subscription: sub.toJSON ? sub.toJSON() : sub,
+      updatedAt: new Date().toISOString(),
+    };
+    await db.collection(PUSH_COLLECTION).doc(user.uid).set(payload, { merge: true });
+  };
+
+  const ensurePushSubscription = async (user) => {
+    if (!hasPushSupport() || !PUSH_PUBLIC_KEY || !user) return null;
+    if (Notification.permission !== "granted") return null;
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(PUSH_PUBLIC_KEY),
+      });
+    }
+    await saveSubscription(user, sub);
+    return sub;
+  };
+
+  const requestPermissionAndSubscribe = async () => {
+    if (!hasPushSupport() || !PUSH_PUBLIC_KEY) return null;
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") return null;
+    const user = auth.currentUser;
+    if (!user) return null;
+    return ensurePushSubscription(user);
+  };
+
+  const disablePush = async () => {
+    if (!hasPushSupport()) return;
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) await sub.unsubscribe();
+    } catch {
+      // ignore
+    }
+    const user = auth.currentUser;
+    if (user) {
+      try {
+        await db.collection(PUSH_COLLECTION).doc(user.uid).delete();
+      } catch {
+        // ignore
+      }
+    }
+  };
+
+  window.FCPush = {
+    ensure: ensurePushSubscription,
+    requestPermissionAndSubscribe,
+    disable: disablePush,
+  };
+
   auth.onAuthStateChanged((user) => {
     const currentUid = user?.uid || "";
     let storedUid = "";
@@ -526,5 +615,9 @@
     }
 
     syncFromRemote().catch(() => {});
+
+    if (user && getNotificationPref()) {
+      ensurePushSubscription(user).catch(() => {});
+    }
   });
 })();

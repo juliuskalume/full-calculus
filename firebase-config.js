@@ -10,3 +10,7 @@ window.FC_FIREBASE_CONFIG = {
 
 // Set to false to disable Firebase auth in static builds.
 window.FC_FIREBASE_ENABLED = true;
+
+// Web Push (VAPID) public key for push subscriptions.
+window.FC_PUSH_PUBLIC_KEY =
+  "BH0mxXqAfmTAP45v5iHf8J2gdyQHlC5qiMiAlTbeR0Q3z_8YSnr17Y7CPQ1v3uWMBIZwZPkABb_HcULAvCUz4wU";
