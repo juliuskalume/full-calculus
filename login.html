@@ -265,11 +265,11 @@
           return fallback;
         };
 
-        const isFirefoxPwaAndroid = () => {
-          const ua = navigator.userAgent || "";
-          const isFirefox = /firefox/i.test(ua);
-          const isAndroid = /android/i.test(ua);
-          let isPwa = false;
+          const isRestrictedAuthEnv = () => {
+            const ua = navigator.userAgent || "";
+            const isFirefox = /firefox/i.test(ua);
+            const isAndroid = /android/i.test(ua);
+            let isPwa = false;
           try {
             if (window.matchMedia) {
               isPwa =
@@ -279,10 +279,12 @@
             }
           } catch {
             isPwa = false;
-          }
-          if (!isPwa && window.navigator?.standalone === true) isPwa = true;
-          return isFirefox && isAndroid && isPwa;
-        };
+            }
+            if (!isPwa && window.navigator?.standalone === true) isPwa = true;
+            const referrer = document.referrer || "";
+            const isTwa = /^android-app:\/\//i.test(referrer);
+            return (isFirefox && isAndroid && isPwa) || (isAndroid && isTwa);
+          };
 
         loginBtn?.addEventListener("click", async () => {
           setMessage(errorEl, "");
@@ -317,10 +319,10 @@
             logDevError("login-google-disabled", new Error("Firebase auth not configured."));
             return;
           }
-          if (isFirefoxPwaAndroid()) {
-            location.href = "auth-restriction.html";
-            return;
-          }
+            if (isRestrictedAuthEnv()) {
+              location.href = "auth-restriction.html";
+              return;
+            }
           setBusy(true);
           try {
             await FCAuth.signInWithGoogle();

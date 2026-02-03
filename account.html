@@ -473,7 +473,7 @@
           return fallback;
         };
 
-        const isFirefoxPwaAndroid = () => {
+        const isRestrictedAuthEnv = () => {
           const ua = navigator.userAgent || "";
           const isFirefox = /firefox/i.test(ua);
           const isAndroid = /android/i.test(ua);
@@ -489,7 +489,9 @@
             isPwa = false;
           }
           if (!isPwa && window.navigator?.standalone === true) isPwa = true;
-          return isFirefox && isAndroid && isPwa;
+          const referrer = document.referrer || "";
+          const isTwa = /^android-app:\/\//i.test(referrer);
+          return (isFirefox && isAndroid && isPwa) || (isAndroid && isTwa);
         };
 
         const updateSavedProfile = () => {
@@ -576,7 +578,7 @@
             logDevError("account-google-disabled", new Error("Firebase auth not configured."));
             return;
           }
-          if (isFirefoxPwaAndroid()) {
+          if (isRestrictedAuthEnv()) {
             location.href = "auth-restriction.html";
             return;
           }
