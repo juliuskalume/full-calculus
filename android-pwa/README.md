@@ -15,7 +15,7 @@ Change in:
 
 ## Notes
 - This uses a Trusted Web Activity (TWA). For full-screen mode without browser UI, you must host the Digital Asset Links file on your domain.
-- If you stay on `full-calculus.firebaseapp.com`, add your assetlinks.json there when you are ready.
+- If you stay on `full-calculus.vercel.app`, add your assetlinks.json there when you are ready.
 
 ## Build
 - Build → Build Bundle(s) / APK(s) → Build APK(s)
