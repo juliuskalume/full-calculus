@@ -32,7 +32,7 @@ exports.sendLearningReminder = functions.pubsub
     const payload = JSON.stringify({
       title: "Time to learn",
       body: "A short session keeps your streak strong. Ready for a quick lesson?",
-      url: "https://full-calculus.firebaseapp.com/path.html",
+      url: "path.html",
     });
 
     const tasks = [];
@@ -89,7 +89,7 @@ exports.sendTestPush = functions.https.onRequest(async (req, res) => {
     const payload = JSON.stringify({
       title: "Test reminder",
       body: "Push is working. Ready for a quick session?",
-      url: "https://full-calculus.firebaseapp.com/path.html",
+      url: "path.html",
     });
 
     await webpush.sendNotification(sub, payload);
