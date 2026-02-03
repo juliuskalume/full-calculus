@@ -208,13 +208,6 @@
                 <span class="absolute flex items-center justify-center w-full h-full text-white transition-all duration-300 group-hover:translate-x-full ease">Notify Me</span>
                 <span class="relative invisible">Notify Me</span>
               </button>
-              <button
-                type="button"
-                data-fc-secondary
-                class="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 px-6 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors text-slate-700 dark:text-slate-100 text-base font-bold leading-normal tracking-wide active:scale-[0.98]"
-              >
-                Back to Path
-              </button>
             </div>
           </div>
         </div>
@@ -231,7 +224,6 @@
       const hero = modal.querySelector("#fc-coming-soon-hero");
       const closeBtn = modal.querySelector("[data-fc-close]");
       const primaryBtn = modal.querySelector("[data-fc-primary]");
-      const secondaryBtn = modal.querySelector("[data-fc-secondary]");
 
       if (title) title.textContent = options.title || "Coming Soon!";
       if (body) body.innerHTML = options.message || "We're still perfecting this part of the path.";
@@ -276,15 +268,13 @@
       const onSecondary = () => {
         if (typeof options.onSecondary === "function") {
           options.onSecondary();
-        } else if (options.backToPath !== false) {
-          window.location.href = "path.html";
         }
         onClose();
       };
 
       closeBtn?.addEventListener("click", onClose, { once: true });
       primaryBtn?.addEventListener("click", onPrimary, { once: true });
-      secondaryBtn?.addEventListener("click", onSecondary, { once: true });
+      // no secondary button
 
       modal.classList.add("show");
       document.body.classList.add("overflow-hidden");
@@ -300,4 +290,29 @@
   } else {
     document.addEventListener("DOMContentLoaded", whenReady, { once: true });
   }
+
+  const initHaptics = () => {
+    const shouldVibrate = () => {
+      try {
+        const prefs = JSON.parse(localStorage.getItem("fc_prefs") || "{}");
+        return prefs.vibration !== false;
+      } catch {
+        return true;
+      }
+    };
+
+    document.addEventListener(
+      "click",
+      (event) => {
+        if (!shouldVibrate()) return;
+        if (!navigator.vibrate) return;
+        const target = event.target?.closest?.("button, [role='button'], input[type='button'], input[type='submit']");
+        if (!target) return;
+        navigator.vibrate(20);
+      },
+      { passive: true }
+    );
+  };
+
+  initHaptics();
 })();

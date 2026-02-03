@@ -415,6 +415,17 @@
 
             <div class="flex items-center gap-4 px-4 min-h-[56px] justify-between border-t border-slate-100/60 dark:border-slate-800">
               <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-slate-500">vibration</span>
+                <p class="text-base font-semibold">Vibration</p>
+              </div>
+              <label class="ios-switch" aria-label="Vibration toggle">
+                <input id="hapticSwitch" type="checkbox" checked />
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="flex items-center gap-4 px-4 min-h-[56px] justify-between border-t border-slate-100/60 dark:border-slate-800">
+              <div class="flex items-center gap-3">
                 <span class="material-symbols-outlined text-slate-500">notifications</span>
                 <p class="text-base font-semibold">Learning Reminders</p>
               </div>
@@ -596,6 +607,7 @@
         const darkSwitch = document.getElementById("darkModeSwitch");
         const soundSwitch = document.getElementById("soundSwitch");
         const motivationSwitch = document.getElementById("motivationSwitch");
+        const hapticSwitch = document.getElementById("hapticSwitch");
         const notifySwitch = document.getElementById("notifySwitch");
         const notifyStatus = document.getElementById("notifyStatus");
 
@@ -604,6 +616,7 @@
         darkSwitch.checked = prefs.darkMode ?? isDark;
         soundSwitch.checked = prefs.sound ?? true;
         motivationSwitch.checked = prefs.motivation ?? true;
+        hapticSwitch.checked = prefs.vibration ?? true;
         const notifyState = loadFcState();
         notifySwitch.checked = !!notifyState.notifications;
 
@@ -621,6 +634,7 @@
             darkMode: darkSwitch.checked,
             sound: soundSwitch.checked,
             motivation: motivationSwitch.checked,
+            vibration: hapticSwitch.checked,
             dailyGoal: loadPrefs().dailyGoal || "regular",
           });
         }
@@ -638,6 +652,7 @@
         });
         soundSwitch.addEventListener("change", persist);
         motivationSwitch.addEventListener("change", persist);
+        hapticSwitch.addEventListener("change", persist);
         notifySwitch.addEventListener("change", async () => {
           const s = loadFcState();
           s.notifications = notifySwitch.checked;
