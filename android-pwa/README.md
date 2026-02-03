@@ -1,4 +1,4 @@
-﻿# Android Studio project (Trusted Web Activity)
+# Android Studio project (Trusted Web Activity)
 
 Open this folder (`android-pwa`) in Android Studio and build a debug APK.
 

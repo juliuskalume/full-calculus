@@ -1,4 +1,4 @@
-﻿<resources>
+<resources>
   <style name="Theme.FullCalculus" parent="Theme.MaterialComponents.DayNight.NoActionBar">
     <item name="colorPrimary">@color/colorPrimary</item>
     <item name="colorPrimaryVariant">@color/colorPrimaryDark</item>

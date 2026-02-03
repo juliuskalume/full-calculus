@@ -1,4 +1,4 @@
-﻿package com.fullcalculus.app;
+package com.fullcalculus.app;
 
 import android.app.Activity;
 import android.net.Uri;

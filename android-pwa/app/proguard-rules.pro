@@ -1,1 +1,1 @@
-﻿# Add your proguard rules here.
+# Add your proguard rules here.
