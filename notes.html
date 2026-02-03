@@ -225,6 +225,21 @@
     <script>
       let mathTypesetTries = 0;
 
+      function shouldVibrate() {
+        try {
+          const prefs = JSON.parse(localStorage.getItem("fc_prefs") || "{}");
+          return prefs.vibration !== false;
+        } catch {
+          return true;
+        }
+      }
+
+      function vibrateClick() {
+        if (!navigator.vibrate) return;
+        if (!shouldVibrate()) return;
+        navigator.vibrate(20);
+      }
+
       function typesetMath(targets) {
         if (window.MathJax?.typesetPromise) {
           window.MathJax.typesetPromise(targets || undefined).catch(() => {});
@@ -354,6 +369,7 @@
 
         contentRoot.querySelectorAll(".startLessonBtn").forEach((btn) => {
           btn.addEventListener("click", () => {
+            vibrateClick();
             const sectionId = btn.getAttribute("data-section-id");
             if (!sectionId) return;
             const session = FCEngine.createSession({
@@ -409,6 +425,7 @@
 
       document.querySelectorAll('input[name="course_select"]').forEach((radio) => {
         radio.addEventListener("change", () => {
+          vibrateClick();
           localStorage.setItem("fc_course", radio.value);
           renderNotes(searchInput?.value || "");
         });
