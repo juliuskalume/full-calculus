@@ -8,6 +8,7 @@ import androidx.browser.customtabs.CustomTabsClient;
 import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.browser.customtabs.CustomTabsServiceConnection;
 import androidx.browser.customtabs.CustomTabsSession;
+import androidx.browser.trusted.TrustedWebActivityIntent;
 import androidx.browser.trusted.TrustedWebActivityIntentBuilder;
 import androidx.core.content.ContextCompat;
 
@@ -53,10 +54,10 @@ public class LauncherActivity extends Activity {
   private void launchTwa() {
     Uri uri = Uri.parse(getString(R.string.launch_url));
     TrustedWebActivityIntentBuilder builder = new TrustedWebActivityIntentBuilder(uri);
-    CustomTabsIntent intent = builder.build(session);
-    intent.intent.putExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR,
+    TrustedWebActivityIntent twaIntent = builder.build(session);
+    twaIntent.getIntent().putExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR,
         ContextCompat.getColor(this, R.color.colorPrimary));
-    intent.launchUrl(this, uri);
+    startActivity(twaIntent.getIntent());
     finish();
   }
 
