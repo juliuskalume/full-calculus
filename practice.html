@@ -504,7 +504,16 @@
         });
       });
 
-      document.getElementById("timedBtn")?.addEventListener("click", () => alert("Timed Challenge (coming soon)."));
+      document.getElementById("timedBtn")?.addEventListener("click", () => {
+        if (window.FCUI?.showComingSoon) {
+          window.FCUI.showComingSoon({
+            title: "Timed Challenge",
+            message: "Timed challenge mode is under construction. It’ll be ready soon.",
+          });
+          return;
+        }
+        alert("Timed Challenge (coming soon).");
+      });
       document.getElementById("topicLimitsBtn")?.addEventListener("click", () => {
         startSession({
           mode: "practice",

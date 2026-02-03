@@ -430,12 +430,26 @@
     document.getElementById("settingsBtn")?.addEventListener("click", () => {
       location.href = "settings.html";
     });
-    document.getElementById("addFriendBtn")?.addEventListener("click", () => {
-      alert("Friend system (coming soon).");
-    });
-    document.getElementById("viewAllAchievements")?.addEventListener("click", () => {
-      alert("All achievements (coming soon).");
-    });
+      document.getElementById("addFriendBtn")?.addEventListener("click", () => {
+        if (window.FCUI?.showComingSoon) {
+          window.FCUI.showComingSoon({
+            title: "Friends Coming Soon",
+            message: "The friend system is in the works. You’ll be able to follow classmates soon.",
+          });
+          return;
+        }
+        alert("Friend system (coming soon).");
+      });
+      document.getElementById("viewAllAchievements")?.addEventListener("click", () => {
+        if (window.FCUI?.showComingSoon) {
+          window.FCUI.showComingSoon({
+            title: "Achievements Coming Soon",
+            message: "More achievements are being crafted. New badges will arrive soon.",
+          });
+          return;
+        }
+        alert("All achievements (coming soon).");
+      });
   </script>
 </body>
 

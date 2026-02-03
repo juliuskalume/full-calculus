@@ -721,6 +721,13 @@
       });
 
       reportBtn.addEventListener("click", () => {
+        if (window.FCUI?.showComingSoon) {
+          window.FCUI.showComingSoon({
+            title: "Coming Soon!",
+            message: "We’re still building the report flow. This tool will be available soon.",
+          });
+          return;
+        }
         alert("Report flow coming soon.");
       });
 
