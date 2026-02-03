@@ -189,7 +189,7 @@
           <div id="avatarPicker" class="grid grid-cols-4 gap-3">
             <button
               type="button"
-              class="avatar-option press p-0"
+              class="avatar-option press p-0 rounded-xl transition-transform duration-200 hover:scale-[1.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
               data-avatar="icons/avatar-fox-green.png"
               aria-label="Green fox"
             >
@@ -200,7 +200,7 @@
             </button>
             <button
               type="button"
-              class="avatar-option press p-0"
+              class="avatar-option press p-0 rounded-xl transition-transform duration-200 hover:scale-[1.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
               data-avatar="icons/avatar-fox-red.png"
               aria-label="Red fox"
             >
@@ -211,7 +211,7 @@
             </button>
             <button
               type="button"
-              class="avatar-option press p-0"
+              class="avatar-option press p-0 rounded-xl transition-transform duration-200 hover:scale-[1.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
               data-avatar="icons/avatar-fox-yellow.png"
               aria-label="Yellow fox"
             >
@@ -222,7 +222,7 @@
             </button>
             <button
               type="button"
-              class="avatar-option press p-0"
+              class="avatar-option press p-0 rounded-xl transition-transform duration-200 hover:scale-[1.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
               data-avatar="icons/avatar-fox-blue.png"
               aria-label="Blue fox"
             >
@@ -687,8 +687,7 @@
         avatarOptions.forEach((btn) => {
           const isActive = btn.dataset.avatar === url;
           btn.classList.toggle("ring-2", isActive);
-          btn.classList.toggle("ring-primary", isActive);
-          btn.classList.toggle("border-primary", isActive);
+          btn.classList.toggle("ring-primary/70", isActive);
         });
       };
 
