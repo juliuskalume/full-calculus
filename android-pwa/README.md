@@ -15,7 +15,14 @@ Change in:
 
 ## Notes
 - This uses a Trusted Web Activity (TWA). For full-screen mode without browser UI, you must host the Digital Asset Links file on your domain.
-- If you stay on `full-calculus.vercel.app`, add your assetlinks.json there when you are ready.
+- The repo includes `.well-known/assetlinks.json` with a placeholder fingerprint. You must replace it and deploy it on `https://full-calculus.vercel.app/.well-known/assetlinks.json`.
+
+### Get SHA-256 fingerprint
+Run from `android-pwa/`:
+```
+gradlew signingReport
+```
+Use the **SHA-256** value under `debug` (or your release key).
 
 ## Build
 - Build → Build Bundle(s) / APK(s) → Build APK(s)

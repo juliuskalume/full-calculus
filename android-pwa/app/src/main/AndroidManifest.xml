@@ -9,6 +9,10 @@
     android:supportsRtl="true"
     android:theme="@style/Theme.FullCalculus">
 
+    <meta-data
+      android:name="android.support.customtabs.trusted.DEFAULT_URL"
+      android:value="@string/launch_url" />
+
     <activity
       android:name=".LauncherActivity"
       android:exported="true"
