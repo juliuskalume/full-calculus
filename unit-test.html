@@ -54,6 +54,7 @@
     }
   </style>
   <script src="theme.js"></script>
+  <script src="sound.js"></script>
   </head>
 
 <body class="bg-backgroundDark text-white flex flex-col overflow-x-hidden">
@@ -384,14 +385,23 @@
         feedbackText.textContent = "Saved for review.";
         feedbackText.classList.add("text-yellow-300");
       } else if (correct) {
+        if (window.FCSound?.play) FCSound.play("correct");
         feedbackText.textContent = "Correct";
         feedbackText.classList.add("text-emerald-300");
       } else {
+        if (window.FCSound?.play) FCSound.play("wrong");
         feedbackText.innerHTML = `Incorrect. Correct answer: <span class="underline">${formatMathText(
           formatAnswer(currentItem)
         )}</span>`;
         feedbackText.classList.add("text-rose-300");
-        if (window.FC?.loseLife) FC.loseLife();
+        if (window.FC?.loseLife) {
+          const beforeLives = FC.get()?.lives ?? 0;
+          FC.loseLife();
+          const afterLives = FC.get()?.lives ?? 0;
+          if (afterLives < beforeLives && window.FCSound?.play) {
+            FCSound.play("lives", { volume: 0.5 });
+          }
+        }
       }
       typesetMath([feedbackText]);
 
@@ -464,6 +474,7 @@
       if (!quitOverlay) return;
       quitOverlay.classList.remove("hidden");
       document.body.classList.add("overflow-hidden");
+      if (window.FCSound?.play) FCSound.play("closeConfirm", { volume: 0.55 });
     };
 
     const closeQuitOverlay = () => {

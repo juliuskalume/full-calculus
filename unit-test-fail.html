@@ -65,6 +65,7 @@
       }
     </style>
     <script src="theme.js"></script>
+    <script src="sound.js"></script>
   </head>
 
   <!-- lock body scroll -->
@@ -217,6 +218,10 @@
 
       document.getElementById("pathBtn").addEventListener("click", () => {
         window.location.href = "path.html";
+      });
+
+      window.addEventListener("load", () => {
+        if (window.FCSound?.play) FCSound.play("wrong", { volume: 0.6 });
       });
     </script>
   </body>

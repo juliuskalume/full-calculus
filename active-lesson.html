@@ -85,6 +85,7 @@
       .sheetAnim { transition: transform 260ms ease; }
     </style>
     <script src="theme.js"></script>
+    <script src="sound.js"></script>
   </head>
 
   <body
@@ -600,12 +601,14 @@
         const xpAward = result.correct === true ? session.xpPerCorrect : result.correct === null ? Math.round(session.xpPerCorrect / 2) : 0;
 
         if (correct) {
+          if (window.FCSound?.play) FCSound.play("correct");
           correctTitle.textContent = result.correct === null ? "Saved" : "Great job!";
           correctMessage.textContent = result.correct === null ? "Your response is saved for review." : "Keep the momentum going.";
           correctXp.textContent = `+${xpAward} XP`;
           if (window.FC?.addXP) FC.addXP(xpAward);
           if (window.FCProgress?.addDailyXp) FCProgress.addDailyXp(xpAward);
         } else {
+          if (window.FCSound?.play) FCSound.play("wrong");
           wrongTitle.textContent = "Not quite.";
           wrongAnswer.innerHTML = `The correct answer is <span class="underline">${formatMathText(
             formatAnswer(currentItem)
@@ -613,7 +616,14 @@
           const firstStep = currentItem.solutionSteps?.[0] || "Review the steps and try the next one.";
           wrongExplanation.innerHTML = formatMathText(firstStep);
           markWrongAnswer();
-          if (window.FC?.loseLife) FC.loseLife();
+          if (window.FC?.loseLife) {
+            const beforeLives = FC.get()?.lives ?? 0;
+            FC.loseLife();
+            const afterLives = FC.get()?.lives ?? 0;
+            if (afterLives < beforeLives && window.FCSound?.play) {
+              FCSound.play("lives", { volume: 0.5 });
+            }
+          }
           setLives();
         }
 
@@ -681,6 +691,7 @@
         if (!quitOverlay) return;
         quitOverlay.classList.remove("hidden");
         document.body.classList.add("overflow-hidden");
+        if (window.FCSound?.play) FCSound.play("closeConfirm", { volume: 0.55 });
       };
 
       const closeQuitOverlay = () => {

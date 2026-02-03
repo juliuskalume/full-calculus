@@ -80,6 +80,7 @@
       }
     </style>
     <script src="theme.js"></script>
+    <script src="sound.js"></script>
   </head>
 
   <body class="bg-lesson-pattern relative min-h-screen w-full overflow-hidden text-text-main dark:text-white dark:bg-background-dark">
@@ -221,6 +222,10 @@
 
       document.getElementById("continueBtn").addEventListener("click", () => {
         window.location.href = "path.html";
+      });
+
+      window.addEventListener("load", () => {
+        if (window.FCSound?.play) FCSound.play("lessonComplete", { volume: 0.65 });
       });
 
       window.addEventListener("load", () => {

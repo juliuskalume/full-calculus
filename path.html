@@ -306,6 +306,7 @@
     </div>
 
     <!-- Shared state FIRST -->
+    <script src="sound.js"></script>
     <script src="state.js"></script>
     <script src="progress.js"></script>
     <script src="content-structure.js"></script>
@@ -751,6 +752,7 @@
         const showExit = () => {
           exitOverlay.classList.remove("hidden");
           document.body.classList.add("overflow-hidden");
+          if (window.FCSound?.play) FCSound.play("closeConfirm", { volume: 0.55 });
         };
 
         const hideExit = () => {
