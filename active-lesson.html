@@ -740,6 +740,26 @@
         window.location.href = "path.html";
       });
 
+      // Intercept back button to show quit confirmation
+      (function () {
+        let allowExit = false;
+        const onPopState = () => {
+          if (allowExit) return;
+          openQuitOverlay();
+          history.pushState({ lessonQuitPrompt: true }, "");
+        };
+
+        history.pushState({ lessonQuitPrompt: true }, "");
+        window.addEventListener("popstate", onPopState);
+
+        quitLessonBtn?.addEventListener("click", () => {
+          allowExit = true;
+          window.removeEventListener("popstate", onPopState);
+          history.back();
+        });
+
+      })();
+
       document.addEventListener("keydown", (e) => {
         if (e.key !== "Enter") return;
         if (!checkBtn.disabled && !locked) checkBtn.click();

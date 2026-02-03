@@ -496,6 +496,25 @@
       window.location.href = "path.html";
     });
 
+    // Intercept back button to show quit confirmation
+    (function () {
+      let allowExit = false;
+      const onPopState = () => {
+        if (allowExit) return;
+        openQuitOverlay();
+        history.pushState({ testQuitPrompt: true }, "");
+      };
+
+      history.pushState({ testQuitPrompt: true }, "");
+      window.addEventListener("popstate", onPopState);
+
+      quitTestBtn?.addEventListener("click", () => {
+        allowExit = true;
+        window.removeEventListener("popstate", onPopState);
+        history.back();
+      });
+    })();
+
     loadTest();
     if (!testSession || !testSession.itemIds.length) {
       alert("No test items available yet.");
