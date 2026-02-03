@@ -8,6 +8,7 @@
   "orientation": "portrait",
   "background_color": "#0df26c",
   "theme_color": "#0df26c",
+  "id": "full-calculus",
   "icons": [
     {
       "src": "icons/icon-192.png",
@@ -22,6 +23,7 @@
   ],
   "lang": "en",
   "categories": [
+    "books",
     "education"
   ],
   "screenshots": [
