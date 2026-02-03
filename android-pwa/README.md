@@ -1,4 +1,4 @@
-# Android Studio project (Trusted Web Activity)
+# Android Studio project (WebView wrapper)
 
 Open this folder (`android-pwa`) in Android Studio and build a debug APK.
 
@@ -11,19 +11,12 @@ Default: `com.fullcalculus.app`
 Change in:
 - `app/build.gradle` → `applicationId`
 - `app/src/main/AndroidManifest.xml` (package is inferred from namespace)
-- `app/src/main/java/com/fullcalculus/app/LauncherActivity.java` (package path)
+- `app/src/main/java/com/fullcalculus/app/MainActivity.java` (package path)
 
 ## Notes
-- This uses a Trusted Web Activity (TWA). For full-screen mode without browser UI, you must host the Digital Asset Links file on your domain.
-- The repo includes `.well-known/assetlinks.json` with a placeholder fingerprint. You must replace it and deploy it on `https://full-calculus.vercel.app/.well-known/assetlinks.json`.
-- Android 13+ requires notification permission at the app level. The launcher requests it on first run.
-
-### Get SHA-256 fingerprint
-Run from `android-pwa/`:
-```
-gradlew signingReport
-```
-Use the **SHA-256** value under `debug` (or your release key).
+- This is a WebView wrapper. It renders your web app full-screen without a URL bar.
+- Android 13+ requires notification permission at the app level. You can request it in-app if needed.
+- WebView does **not** support Web Push; keep that in mind if notifications are critical.
 
 ## Build
 - Build → Build Bundle(s) / APK(s) → Build APK(s)

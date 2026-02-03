@@ -1,6 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
   <uses-permission android:name="android.permission.INTERNET" />
   <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
   <application
     android:allowBackup="true"
@@ -10,14 +11,12 @@
     android:supportsRtl="true"
     android:theme="@style/Theme.FullCalculus">
 
-    <meta-data
-      android:name="android.support.customtabs.trusted.DEFAULT_URL"
-      android:value="@string/launch_url" />
-
     <activity
-      android:name=".LauncherActivity"
+      android:name=".MainActivity"
       android:exported="true"
-      android:launchMode="singleTask">
+      android:launchMode="singleTask"
+      android:configChanges="orientation|keyboardHidden|screenSize"
+      android:hardwareAccelerated="true">
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
         <category android:name="android.intent.category.LAUNCHER" />
