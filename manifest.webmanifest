@@ -24,12 +24,84 @@
   "categories": [
     "education"
   ],
-  "screenshots" : [
-  {
-    "src": "screenshot.jpg",
-    "sizes": "1280x720",
-    "type": "image/jpg",
-    "platform": "wide",
-  }
-]
+  "screenshots": [
+    {
+      "src": "screenshots/Screenshot_20260203-052637_Chrome.png",
+      "sizes": "1080x2280",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "screenshots/Screenshot_20260203-052649_Chrome.png",
+      "sizes": "1080x2280",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "screenshots/Screenshot_20260203-052905_Chrome.png",
+      "sizes": "1080x2280",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "screenshots/Screenshot_20260203-052928_Chrome.png",
+      "sizes": "1080x2280",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "screenshots/Screenshot_20260203-053052_Chrome.png",
+      "sizes": "1080x2280",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "screenshots/Screenshot_20260203-053154_Chrome.png",
+      "sizes": "1080x2280",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "screenshots/Screenshot_20260203-053351_Chrome.png",
+      "sizes": "1080x2280",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "screenshots/Screenshot_20260203-053607_Chrome.png",
+      "sizes": "1080x2280",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "screenshots/Screenshot_20260203-053657_Chrome.png",
+      "sizes": "1080x2280",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "screenshots/Screenshot_20260203-053827_Chrome.png",
+      "sizes": "1080x2280",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "screenshots/Screenshot_20260203-053941_Chrome.png",
+      "sizes": "1080x2280",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "screenshots/Screenshot_20260203-054244_Chrome.png",
+      "sizes": "1080x2280",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "screenshots/Screenshot_20260203-054317_Chrome.png",
+      "sizes": "1080x2280",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ]
 }
