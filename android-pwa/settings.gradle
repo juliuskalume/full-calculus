@@ -1,0 +1,2 @@
+﻿rootProject.name = "FullCalculusPWA"
+include(":app")
