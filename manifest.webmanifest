@@ -4,7 +4,7 @@
   "description": "Learn Calculus I, II, and III with guided lessons, targeted practice, and unit tests.",
   "start_url": "./index.html",
   "scope": "./",
-  "display": "fullscreen",
+  "display": "standalone",
   "orientation": "portrait",
   "background_color": "#f5f6f8",
   "theme_color": "#0df26c",
