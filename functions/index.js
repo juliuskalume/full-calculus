@@ -9,6 +9,7 @@ const publicKey = config.public_key || "";
 const privateKey = config.private_key || "";
 const subject = config.subject || "mailto:juliuskalume906@gmail.com";
 const timeZone = config.timezone || "Etc/UTC";
+const testKey = config.test_key || "";
 
 if (publicKey && privateKey) {
   webpush.setVapidDetails(subject, publicKey, privateKey);
@@ -53,3 +54,48 @@ exports.sendLearningReminder = functions.pubsub
     await Promise.all(tasks);
     return null;
   });
+
+exports.sendTestPush = functions.https.onRequest(async (req, res) => {
+  try {
+    if (!publicKey || !privateKey) {
+      res.status(500).send("Missing VAPID keys.");
+      return;
+    }
+
+    const key = String(req.query.key || req.body?.key || "");
+    if (!testKey || key !== testKey) {
+      res.status(403).send("Forbidden");
+      return;
+    }
+
+    const uid = String(req.query.uid || req.body?.uid || "");
+    if (!uid) {
+      res.status(400).send("Missing uid");
+      return;
+    }
+
+    const doc = await admin.firestore().collection(COLLECTION).doc(uid).get();
+    if (!doc.exists) {
+      res.status(404).send("Subscription not found");
+      return;
+    }
+
+    const sub = doc.data()?.subscription;
+    if (!sub || !sub.endpoint) {
+      res.status(400).send("Invalid subscription");
+      return;
+    }
+
+    const payload = JSON.stringify({
+      title: "Test reminder",
+      body: "Push is working. Ready for a quick session?",
+      url: "https://full-calculus.firebaseapp.com/path.html",
+    });
+
+    await webpush.sendNotification(sub, payload);
+    res.status(200).send("Sent");
+  } catch (err) {
+    console.error("Test push error", err);
+    res.status(500).send("Error");
+  }
+});

@@ -36,7 +36,8 @@ firebase functions:config:set \
   webpush.public_key="BH0mxXqAfmTAP45v5iHf8J2gdyQHlC5qiMiAlTbeR0Q3z_8YSnr17Y7CPQ1v3uWMBIZwZPkABb_HcULAvCUz4wU" \
   webpush.private_key="XWgmQ0AIIwK0OokXGfiuRRuNKK3gP43jBLN9dES26ww" \
   webpush.subject="mailto:juliuskalume906@gmail.com" \
-  webpush.timezone="Etc/UTC"
+  webpush.timezone="Etc/UTC" \
+  webpush.test_key="CHANGE_ME"
 ```
 
 Adjust `webpush.timezone` if you want a different local time for reminders (e.g. `Africa/Nairobi`).
@@ -52,6 +53,15 @@ firebase deploy --only firestore:rules,functions
 - Open the app, sign in, and enable notifications on the Notify screen.
 - A subscription record should appear in Firestore under `push_subscriptions/{uid}`.
 - Reminders are scheduled for Tue/Fri at 18:00 in the configured timezone.
+
+## 7) Test Immediately (optional)
+
+1) Find your UID in Firebase Auth.
+2) Call the test endpoint in your browser:
+
+```
+https://us-central1-full-calculus.cloudfunctions.net/sendTestPush?uid=YOUR_UID&key=CHANGE_ME
+```
 
 ## Notes
 

@@ -412,6 +412,17 @@
                 <span class="slider"></span>
               </label>
             </div>
+
+            <div class="flex items-center gap-4 px-4 min-h-[56px] justify-between border-t border-slate-100/60 dark:border-slate-800">
+              <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-slate-500">notifications</span>
+                <p class="text-base font-semibold">Learning Reminders</p>
+              </div>
+              <label class="ios-switch" aria-label="Learning Reminders toggle">
+                <input id="notifySwitch" type="checkbox" />
+                <span class="slider"></span>
+              </label>
+            </div>
           </div>
         </section>
 
@@ -584,12 +595,15 @@
         const darkSwitch = document.getElementById("darkModeSwitch");
         const soundSwitch = document.getElementById("soundSwitch");
         const motivationSwitch = document.getElementById("motivationSwitch");
+        const notifySwitch = document.getElementById("notifySwitch");
 
         // hydrate switches
         const isDark = document.documentElement.classList.contains("dark");
         darkSwitch.checked = prefs.darkMode ?? isDark;
         soundSwitch.checked = prefs.sound ?? true;
         motivationSwitch.checked = prefs.motivation ?? true;
+        const notifyState = loadFcState();
+        notifySwitch.checked = !!notifyState.notifications;
 
         // apply dark mode immediately
         if (darkSwitch.checked) {
@@ -621,6 +635,28 @@
         });
         soundSwitch.addEventListener("change", persist);
         motivationSwitch.addEventListener("change", persist);
+        notifySwitch.addEventListener("change", async () => {
+          const s = loadFcState();
+          s.notifications = notifySwitch.checked;
+          saveFcState(s);
+          if (notifySwitch.checked) {
+            if (window.FCPush?.requestPermissionAndSubscribe) {
+              try {
+                await window.FCPush.requestPermissionAndSubscribe();
+              } catch {
+                // ignore
+              }
+            }
+          } else {
+            if (window.FCPush?.disable) {
+              try {
+                await window.FCPush.disable();
+              } catch {
+                // ignore
+              }
+            }
+          }
+        });
       })();
 
       // Daily goal selector UI

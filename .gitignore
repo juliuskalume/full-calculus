@@ -1,0 +1,4 @@
+.firebase/
+node_modules/
+functions/node_modules/
+.DS_Store
