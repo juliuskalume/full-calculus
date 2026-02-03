@@ -494,6 +494,37 @@
           return (isFirefox && isAndroid && isPwa) || (isAndroid && isTwa);
         };
 
+        window.fcNativeAuth = async (idToken, accessToken) => {
+          try {
+            if (!idToken && !accessToken) {
+              setMessage(errorEl, "Google sign-in failed. Try again.");
+              return;
+            }
+            const credential = firebase.auth.GoogleAuthProvider.credential(idToken, accessToken);
+            const userCredential = await firebase.auth().signInWithCredential(credential);
+            const user = userCredential?.user;
+            if (user) {
+              const s = readState();
+              s.email = user.email || s.email || "";
+              s.name = user.displayName || s.name || "";
+              s.avatarUrl = user.photoURL || s.avatarUrl || "";
+              saveState(s);
+              if (window.FCAuth?.syncToRemote) {
+                await FCAuth.syncToRemote({ name: s.name, avatarUrl: s.avatarUrl, email: s.email });
+              }
+            }
+            setMessage(statusEl, "Signed in. Redirecting...");
+            setTimeout(() => (location.href = "done.html"), 600);
+          } catch (err) {
+            setMessage(errorEl, friendlyAuthMessage(err, "Google sign-in failed."));
+            logDevError("account-google-native", err);
+          }
+        };
+
+        window.fcNativeAuthError = (message) => {
+          setMessage(errorEl, message || "Google sign-in failed. Try again.");
+        };
+
         const updateSavedProfile = () => {
           const s = readState();
           s.email = emailInput?.value.trim() || s.email || "";
@@ -576,6 +607,10 @@
           if (!window.FCAuth?.enabled) {
             setMessage(errorEl, "Sign-up is unavailable right now. Please try again later.");
             logDevError("account-google-disabled", new Error("Firebase auth not configured."));
+            return;
+          }
+          if (window.AndroidAuth?.signInWithGoogle) {
+            window.AndroidAuth.signInWithGoogle();
             return;
           }
           if (isRestrictedAuthEnv()) {

@@ -4,16 +4,30 @@ import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.tasks.Task;
+
+import org.json.JSONObject;
 
 public class MainActivity extends AppCompatActivity {
   private WebView webView;
+  private GoogleSignInClient signInClient;
+  private ActivityResultLauncher<Intent> signInLauncher;
 
   @SuppressLint("SetJavaScriptEnabled")
   @Override
@@ -22,6 +36,7 @@ public class MainActivity extends AppCompatActivity {
     setContentView(R.layout.activity_main);
 
     webView = findViewById(R.id.webview);
+    webView.addJavascriptInterface(new AuthBridge(), "AndroidAuth");
     WebSettings settings = webView.getSettings();
     settings.setJavaScriptEnabled(true);
     settings.setDomStorageEnabled(true);
@@ -54,7 +69,57 @@ public class MainActivity extends AppCompatActivity {
     });
     webView.setWebChromeClient(new WebChromeClient());
 
+    GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+        .requestIdToken(getString(R.string.default_web_client_id))
+        .requestEmail()
+        .build();
+    signInClient = GoogleSignIn.getClient(this, gso);
+    signInLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+      Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(result.getData());
+      try {
+        GoogleSignInAccount account = task.getResult(ApiException.class);
+        if (account != null) {
+          String idToken = account.getIdToken();
+          String accessToken = account.getServerAuthCode();
+          sendAuthToWeb(idToken, accessToken);
+        } else {
+          sendAuthError("Google sign-in failed.");
+        }
+      } catch (ApiException e) {
+        sendAuthError("Google sign-in failed.");
+      }
+    });
+
     webView.loadUrl(getString(R.string.launch_url));
+  }
+
+  private void startGoogleSignIn() {
+    if (signInClient == null || signInLauncher == null) {
+      sendAuthError("Google sign-in is not available.");
+      return;
+    }
+    signInLauncher.launch(signInClient.getSignInIntent());
+  }
+
+  private void sendAuthToWeb(String idToken, String accessToken) {
+    try {
+      String safeId = JSONObject.quote(idToken == null ? "" : idToken);
+      String safeAccess = JSONObject.quote(accessToken == null ? "" : accessToken);
+      String js = "window.fcNativeAuth && window.fcNativeAuth(" + safeId + "," + safeAccess + ");";
+      runOnUiThread(() -> webView.evaluateJavascript(js, null));
+    } catch (Exception ignored) {
+      // ignore
+    }
+  }
+
+  private void sendAuthError(String message) {
+    try {
+      String safeMsg = JSONObject.quote(message == null ? "Sign-in failed." : message);
+      String js = "window.fcNativeAuthError && window.fcNativeAuthError(" + safeMsg + ");";
+      runOnUiThread(() -> webView.evaluateJavascript(js, null));
+    } catch (Exception ignored) {
+      // ignore
+    }
   }
 
   @Override
@@ -64,5 +129,12 @@ public class MainActivity extends AppCompatActivity {
       return;
     }
     super.onBackPressed();
+  }
+
+  private class AuthBridge {
+    @JavascriptInterface
+    public void signInWithGoogle() {
+      runOnUiThread(() -> startGoogleSignIn());
+    }
   }
 }

@@ -17,6 +17,8 @@ Change in:
 - This is a WebView wrapper. It renders your web app full-screen without a URL bar.
 - Android 13+ requires notification permission at the app level. You can request it in-app if needed.
 - WebView does **not** support Web Push; keep that in mind if notifications are critical.
+- Google Sign-In in WebView requires native Google Sign-In. This wrapper uses the Android SDK and injects the credential into the web app.
+  You must add `android-pwa/app/google-services.json` from your Firebase project for this to work.
 
 ## Build
 - Build → Build Bundle(s) / APK(s) → Build APK(s)

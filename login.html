@@ -286,10 +286,30 @@
             return (isFirefox && isAndroid && isPwa) || (isAndroid && isTwa);
           };
 
-        loginBtn?.addEventListener("click", async () => {
-          setMessage(errorEl, "");
-          if (!window.FCAuth?.enabled) {
-            setMessage(errorEl, "Sign-in is unavailable right now. Please try again later.");
+          window.fcNativeAuth = async (idToken, accessToken) => {
+            try {
+              if (!idToken && !accessToken) {
+                setMessage(errorEl, "Google sign-in failed. Try again.");
+                return;
+              }
+              const credential = firebase.auth.GoogleAuthProvider.credential(idToken, accessToken);
+              await firebase.auth().signInWithCredential(credential);
+              setMessage(statusEl, "Signed in. Redirecting...");
+              setTimeout(() => (location.href = "path.html"), 600);
+            } catch (err) {
+              setMessage(errorEl, friendlyAuthMessage(err, "Google sign-in failed."));
+              logDevError("login-google-native", err);
+            }
+          };
+
+          window.fcNativeAuthError = (message) => {
+            setMessage(errorEl, message || "Google sign-in failed. Try again.");
+          };
+
+          loginBtn?.addEventListener("click", async () => {
+            setMessage(errorEl, "");
+            if (!window.FCAuth?.enabled) {
+              setMessage(errorEl, "Sign-in is unavailable right now. Please try again later.");
             logDevError("login-disabled", new Error("Firebase auth not configured."));
             return;
           }
@@ -319,6 +339,10 @@
             logDevError("login-google-disabled", new Error("Firebase auth not configured."));
             return;
           }
+            if (window.AndroidAuth?.signInWithGoogle) {
+              window.AndroidAuth.signInWithGoogle();
+              return;
+            }
             if (isRestrictedAuthEnv()) {
               location.href = "auth-restriction.html";
               return;
