@@ -491,11 +491,6 @@
       closeQuitOverlay();
     });
 
-    quitTestBtn?.addEventListener("click", () => {
-      if (window.FCEngine?.clearTestSession) FCEngine.clearTestSession();
-      window.location.href = "path.html";
-    });
-
     // Intercept back button to show quit confirmation
     (function () {
       let allowExit = false;
@@ -508,11 +503,14 @@
       history.pushState({ testQuitPrompt: true }, "");
       window.addEventListener("popstate", onPopState);
 
-      quitTestBtn?.addEventListener("click", () => {
+      const handleQuit = () => {
         allowExit = true;
         window.removeEventListener("popstate", onPopState);
-        history.back();
-      });
+        if (window.FCEngine?.clearTestSession) FCEngine.clearTestSession();
+        window.location.href = "path.html";
+      };
+
+      quitTestBtn?.addEventListener("click", handleQuit);
     })();
 
     loadTest();

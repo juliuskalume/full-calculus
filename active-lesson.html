@@ -735,11 +735,6 @@
         closeQuitOverlay();
       });
 
-      quitLessonBtn?.addEventListener("click", () => {
-        if (window.FCEngine?.clearSession) FCEngine.clearSession();
-        window.location.href = "path.html";
-      });
-
       // Intercept back button to show quit confirmation
       (function () {
         let allowExit = false;
@@ -752,11 +747,14 @@
         history.pushState({ lessonQuitPrompt: true }, "");
         window.addEventListener("popstate", onPopState);
 
-        quitLessonBtn?.addEventListener("click", () => {
+        const handleQuit = () => {
           allowExit = true;
           window.removeEventListener("popstate", onPopState);
-          history.back();
-        });
+          if (window.FCEngine?.clearSession) FCEngine.clearSession();
+          window.location.href = "path.html";
+        };
+
+        quitLessonBtn?.addEventListener("click", handleQuit);
 
       })();
 
