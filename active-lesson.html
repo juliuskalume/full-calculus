@@ -620,7 +620,7 @@
             const beforeLives = FC.get()?.lives ?? 0;
             FC.loseLife();
             const afterLives = FC.get()?.lives ?? 0;
-            if (afterLives < beforeLives && window.FCSound?.play) {
+            if (afterLives === 0 && beforeLives > 0 && window.FCSound?.play) {
               FCSound.play("lives", { volume: 0.5 });
             }
           }
