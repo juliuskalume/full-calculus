@@ -1,2 +1,2 @@
-﻿rootProject.name = "FullCalculusPWA"
+rootProject.name = "FullCalculusPWA"
 include(":app")
