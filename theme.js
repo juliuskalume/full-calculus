@@ -672,8 +672,8 @@
       <div class="absolute inset-0 bg-[#141414]/60 backdrop-blur-sm"></div>
       <div class="absolute inset-0 flex items-center justify-center px-4">
         <div class="fc-help-card w-full max-w-[360px] rounded-2xl p-6 shadow-2xl">
-          <h3 class="text-lg font-extrabold mb-2">Hide help button?</h3>
-          <p class="text-sm text-slate-600 dark:text-slate-300">
+          <h3 class="text-lg font-extrabold mb-2 text-primary">Hide help button?</h3>
+          <p class="text-sm text-white">
             You can turn it back on anytime in Settings.
           </p>
           <div class="mt-5 flex gap-3">
