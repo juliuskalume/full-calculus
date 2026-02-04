@@ -364,6 +364,29 @@
     </div>
   </div>
 
+  <!-- Remove Friend Confirmation -->
+  <div id="friendRemoveModal" class="fixed inset-0 z-[90] hidden">
+    <div class="absolute inset-0 bg-[#141414]/60 backdrop-blur-sm" data-friend-remove-close></div>
+    <div class="absolute inset-0 flex items-center justify-center px-4">
+      <div class="w-full max-w-[360px] bg-white dark:bg-surface-dark rounded-2xl p-6 shadow-2xl">
+        <h3 class="text-lg font-extrabold text-slate-900 dark:text-white mb-2">Remove friend?</h3>
+        <p id="friendRemoveText" class="text-sm text-slate-600 dark:text-slate-300">
+          This will remove them from your friends list.
+        </p>
+        <div class="mt-5 flex gap-3">
+          <button id="friendRemoveCancel" type="button"
+            class="flex-1 h-11 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+            Cancel
+          </button>
+          <button id="friendRemoveConfirm" type="button"
+            class="flex-1 h-11 rounded-xl bg-primary text-black font-bold shadow-md hover:bg-primary-dark transition-colors">
+            Remove
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Content data (for achievements) -->
   <script src="content-structure.js"></script>
   <script src="content-sections.js"></script>
@@ -521,6 +544,11 @@
       const detailLessons = document.getElementById("friendDetailLessons");
       const detailAchievements = document.getElementById("friendDetailAchievements");
       const detailAchievementsNote = document.getElementById("friendDetailAchievementsNote");
+      const removeModal = document.getElementById("friendRemoveModal");
+      const removeBackdrop = document.querySelector("[data-friend-remove-close]");
+      const removeCancel = document.getElementById("friendRemoveCancel");
+      const removeConfirm = document.getElementById("friendRemoveConfirm");
+      const removeText = document.getElementById("friendRemoveText");
 
       if (!addBtn || !authHint || !friendsList || !modal) return;
 
@@ -538,6 +566,7 @@
       let searchTimer = null;
       let profilesByUid = {};
       let profileRefreshTimer = null;
+      let pendingRemoveId = null;
 
       const getLocalProfile = () => {
         try {
@@ -673,6 +702,25 @@
         document.body.classList.remove("overflow-hidden");
       };
 
+      const openRemoveConfirm = (docId, name) => {
+        if (!removeModal) return;
+        pendingRemoveId = docId;
+        if (removeText) {
+          removeText.textContent = name
+            ? `Remove ${name} from your friends list?`
+            : "This will remove them from your friends list.";
+        }
+        removeModal.classList.remove("hidden");
+        document.body.classList.add("overflow-hidden");
+      };
+
+      const closeRemoveConfirm = () => {
+        if (!removeModal) return;
+        pendingRemoveId = null;
+        removeModal.classList.add("hidden");
+        document.body.classList.remove("overflow-hidden");
+      };
+
       const showAuth = () => {
         authHint.classList.remove("hidden");
         addBtn.setAttribute("disabled", "disabled");
@@ -716,6 +764,13 @@
       modalBackdrop?.addEventListener("click", closeModal);
       detailClose?.addEventListener("click", closeFriendDetail);
       detailBackdrop?.addEventListener("click", closeFriendDetail);
+      removeBackdrop?.addEventListener("click", closeRemoveConfirm);
+      removeCancel?.addEventListener("click", closeRemoveConfirm);
+      removeConfirm?.addEventListener("click", () => {
+        if (!pendingRemoveId) return;
+        handleRequestAction("remove", pendingRemoveId);
+        closeRemoveConfirm();
+      });
       loginBtn?.addEventListener("click", () => {
         window.location.href = "login.html";
       });
@@ -934,7 +989,9 @@
         const removeBtn = event.target.closest("button[data-action='remove']");
         if (removeBtn) {
           const id = removeBtn.getAttribute("data-id");
-          handleRequestAction("remove", id);
+          const record = acceptedFriends.find((item) => item.id === id);
+          const info = record ? getFriendMeta(record, currentUser.uid) : null;
+          openRemoveConfirm(id, info?.name || "");
           return;
         }
         const card = event.target.closest("[data-friend-card]");
