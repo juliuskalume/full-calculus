@@ -1,4 +1,46 @@
 (function () {
+  const injectFonts = () => {
+    if (document.getElementById("fc-fonts")) return;
+    const style = document.createElement("style");
+    style.id = "fc-fonts";
+    style.textContent = `
+      @font-face {
+        font-family: "DIN Next Rounded";
+        src: url("fonts/DINNextRounded-Regular.woff2") format("woff2"),
+             url("fonts/DINNextRounded-Regular.woff") format("woff");
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "Feather Bold";
+        src: url("fonts/Feather-Bold.woff2") format("woff2"),
+             url("fonts/Feather-Bold.woff") format("woff");
+        font-weight: 700;
+        font-style: normal;
+        font-display: swap;
+      }
+      :root {
+        --fc-font-body: "DIN Next Rounded", "Arial Rounded MT Bold", "Arial Rounded MT", Arial, sans-serif;
+        --fc-font-heading: "Feather Bold", "DIN Next Rounded", "Arial Rounded MT Bold", "Arial Rounded MT", Arial, sans-serif;
+      }
+      body {
+        font-family: var(--fc-font-body) !important;
+      }
+      h1, h2, h3, h4, h5, h6, .font-display, .heading-font {
+        font-family: var(--fc-font-heading) !important;
+        font-weight: 700 !important;
+      }
+    `;
+    document.head.appendChild(style);
+  };
+
+  if (document.head) {
+    injectFonts();
+  } else {
+    document.addEventListener("DOMContentLoaded", injectFonts, { once: true });
+  }
+
   const applyTheme = () => {
     const html = document.documentElement;
     let prefs = {};
