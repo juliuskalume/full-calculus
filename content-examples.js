@@ -7,7 +7,7 @@ window.FCContentData = window.FCContentData || {};
   {
     "id": "ex-c1-limits-intro-1",
     "sectionId": "c1-limits-intro",
-    "prompt": "Compute \\(\lim_{x \to 2} (x^2 - 4)/(x - 2)\\).",
+    "prompt": "Compute \\(\lim_{x \\to 2} (x^2 - 4)/(x - 2)\\).",
     "steps": [
       {
         "kind": "setup",
@@ -33,7 +33,7 @@ window.FCContentData = window.FCContentData || {};
   {
     "id": "ex-c1-limits-one-sided-1",
     "sectionId": "c1-limits-one-sided",
-    "prompt": "Evaluate \\(\lim_{x \to 0^-} |x| / x\\).",
+    "prompt": "Evaluate \\(\lim_{x \\to 0^-} |x| / x\\).",
     "steps": [
       {
         "kind": "analyze",
@@ -54,7 +54,7 @@ window.FCContentData = window.FCContentData || {};
   {
     "id": "ex-c1-limits-laws-1",
     "sectionId": "c1-limits-laws",
-    "prompt": "Compute \\(\lim_{x \to 1} (x^2 + 3x - 4)\\).",
+    "prompt": "Compute \\(\lim_{x \\to 1} (x^2 + 3x - 4)\\).",
     "steps": [
       {
         "kind": "apply",

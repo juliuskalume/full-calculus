@@ -8,7 +8,7 @@ window.FCContentData = window.FCContentData || {};
     "id": "it-c1-limits-intro-mcq-1",
     "sectionId": "c1-limits-intro",
     "type": "mcq",
-    "prompt": "If \\(f(x)\\) gets close to 5 as x approaches 2, what is \\(lim_{x \to 2} f(x)\\)?",
+    "prompt": "If \\(f(x)\\) gets close to 5 as x approaches 2, what is \\(lim_{x \\to 2} f(x)\\)?",
     "choices": [
       "\\(2\\)",
       "\\(5\\)",
@@ -37,7 +37,7 @@ window.FCContentData = window.FCContentData || {};
     "id": "it-c1-limits-intro-num-1",
     "sectionId": "c1-limits-intro",
     "type": "numeric",
-    "prompt": "Compute \\(lim_{x \to 3} (x^2 - 9)/(x - 3)\\).",
+    "prompt": "Compute \\(lim_{x \\to 3} (x^2 - 9)/(x - 3)\\).",
     "choices": null,
     "answer": {
       "kind": "number",
@@ -118,7 +118,7 @@ window.FCContentData = window.FCContentData || {};
     "id": "it-c1-limits-one-sided-num-1",
     "sectionId": "c1-limits-one-sided",
     "type": "numeric",
-    "prompt": "Evaluate \\(lim_{x \to 0^-} |x|/x\\).",
+    "prompt": "Evaluate \\(lim_{x \\to 0^-} |x|/x\\).",
     "choices": null,
     "answer": {
       "kind": "number",
@@ -174,7 +174,7 @@ window.FCContentData = window.FCContentData || {};
     "id": "it-c1-limits-laws-num-1",
     "sectionId": "c1-limits-laws",
     "type": "numeric",
-    "prompt": "Compute \\(lim_{x \to 1} (x^2 + 3x - 4)\\).",
+    "prompt": "Compute \\(lim_{x \\to 1} (x^2 + 3x - 4)\\).",
     "choices": null,
     "answer": {
       "kind": "number",
@@ -201,7 +201,7 @@ window.FCContentData = window.FCContentData || {};
     "id": "it-c1-limits-laws-exp-1",
     "sectionId": "c1-limits-laws",
     "type": "expression",
-    "prompt": "Simplify \\(lim_{x \to 0} (sin(x))/x\\).",
+    "prompt": "Simplify \\(lim_{x \\to 0} (sin(x))/x\\).",
     "choices": null,
     "answer": {
       "kind": "expression",
@@ -349,7 +349,7 @@ window.FCContentData = window.FCContentData || {};
     "id": "it-c1-limits-intro-mcq-2",
     "sectionId": "c1-limits-intro",
     "type": "mcq",
-    "prompt": "If \\(lim_{x \to 1} f(x)=4\\), which statement must be true?",
+    "prompt": "If \\(lim_{x \\to 1} f(x)=4\\), which statement must be true?",
     "choices": [
       "\\(f(1)=4\\)",
       "\\(f(x)\\) is close to 4 when x is near 1",
@@ -378,7 +378,7 @@ window.FCContentData = window.FCContentData || {};
     "id": "it-c1-limits-intro-num-2",
     "sectionId": "c1-limits-intro",
     "type": "numeric",
-    "prompt": "Compute \\(lim_{x \to 2} (x + 3)\\).",
+    "prompt": "Compute \\(lim_{x \\to 2} (x + 3)\\).",
     "choices": null,
     "answer": {
       "kind": "number",
@@ -405,7 +405,7 @@ window.FCContentData = window.FCContentData || {};
     "id": "it-c1-limits-one-sided-mcq-2",
     "sectionId": "c1-limits-one-sided",
     "type": "mcq",
-    "prompt": "Evaluate \\(lim_{x \to 0^+} |x|/x\\).",
+    "prompt": "Evaluate \\(lim_{x \\to 0^+} |x|/x\\).",
     "choices": [
       "\\(1\\)",
       "\\(-1\\)",
@@ -434,7 +434,7 @@ window.FCContentData = window.FCContentData || {};
     "id": "it-c1-limits-one-sided-num-2",
     "sectionId": "c1-limits-one-sided",
     "type": "numeric",
-    "prompt": "Evaluate \\(lim_{x \to 2^-} (x-2)/|x-2|\\).",
+    "prompt": "Evaluate \\(lim_{x \\to 2^-} (x-2)/|x-2|\\).",
     "choices": null,
     "answer": {
       "kind": "number",
@@ -490,7 +490,7 @@ window.FCContentData = window.FCContentData || {};
     "id": "it-c1-limits-laws-num-2",
     "sectionId": "c1-limits-laws",
     "type": "numeric",
-    "prompt": "Compute \\(lim_{x \to -1} (x^2 + x)/(x + 1)\\).",
+    "prompt": "Compute \\(lim_{x \\to -1} (x^2 + x)/(x + 1)\\).",
     "choices": null,
     "answer": {
       "kind": "number",
@@ -8873,7 +8873,7 @@ window.FCContentData = window.FCContentData || {};
       "Limit 0 is necessary but not sufficient."
     ],
     "solutionSteps": [
-      "The series can converge or diverge when \\(a_n\to 0\\)."
+      "The series can converge or diverge when \\(a_n\\to 0\\)."
     ],
     "difficulty": "hard",
     "tags": [

@@ -27,7 +27,7 @@
       body {
         font-family: var(--fc-font-body) !important;
       }
-      h1, h2, h3, h4, h5, h6, .font-display, .heading-font {
+      h1, h2, h3, h4, h5, h6, .heading-font {
         font-family: var(--fc-font-heading) !important;
         font-weight: 700 !important;
       }
