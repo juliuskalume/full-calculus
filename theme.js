@@ -940,7 +940,7 @@
         bar.classList.add("hidden");
         document.documentElement.style.setProperty("--fc-offline-bar-height", "0px");
         setNavOffset(false);
-      }, 3000);
+      }, 5000);
     };
 
     let wasOffline = !navigator.onLine;
