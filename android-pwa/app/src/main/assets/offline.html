@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Connection Lost</title>
+    <style>
+      :root {
+        --primary: #1cb0f6;
+        --bg: #f8f9fc;
+        --text: #0d121c;
+        --sub: #4e658e;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+      }
+      .wrap {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        text-align: center;
+      }
+      .hero {
+        width: 200px;
+        height: 200px;
+        background: #e6f4ff;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 20px;
+        position: relative;
+      }
+      .hero img {
+        width: 160px;
+        height: 160px;
+        object-fit: contain;
+      }
+      .badge {
+        position: absolute;
+        right: 8px;
+        bottom: 8px;
+        width: 48px;
+        height: 48px;
+        border-radius: 999px;
+        background: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+        color: var(--primary);
+        font-weight: 700;
+      }
+      h1 {
+        font-size: 28px;
+        margin: 0 0 10px;
+      }
+      p {
+        margin: 0 0 24px;
+        color: var(--sub);
+        max-width: 320px;
+      }
+      .btn {
+        width: 100%;
+        max-width: 320px;
+        height: 52px;
+        border: none;
+        border-radius: 999px;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .btn-primary {
+        background: var(--primary);
+        color: #ffffff;
+        margin-bottom: 12px;
+        box-shadow: 0 10px 20px rgba(28,176,246,0.25);
+      }
+      .btn-secondary {
+        background: #eef2f8;
+        color: var(--primary);
+      }
+      .footer {
+        padding: 16px 24px 28px;
+        text-align: center;
+      }
+      .footer a {
+        color: var(--sub);
+        text-decoration: underline;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="hero">
+        <img src="icons/apologetic-fox.png" alt="Connection lost" />
+        <div class="badge">Wi-Fi</div>
+      </div>
+      <h1>Connection Lost</h1>
+      <p>You're offline. Check your internet connection to keep your streak alive.</p>
+      <button id="retryBtn" class="btn btn-primary">Try Again</button>
+      <button id="offlineBtn" class="btn btn-secondary">Play Offline Mode</button>
+    </div>
+    <div class="footer">
+      <a href="mailto:sentira.official@gmail.com">Need help?</a>
+    </div>
+    <script>
+      const retry = () => {
+        if (window.AndroidAuth && window.AndroidAuth.retryConnection) {
+          window.AndroidAuth.retryConnection();
+        } else {
+          location.reload();
+        }
+      };
+      document.getElementById('retryBtn')?.addEventListener('click', retry);
+      document.getElementById('offlineBtn')?.addEventListener('click', () => {
+        if (window.AndroidAuth && window.AndroidAuth.openOfflineMode) {
+          window.AndroidAuth.openOfflineMode();
+        }
+      });
+    </script>
+  </body>
+</html>

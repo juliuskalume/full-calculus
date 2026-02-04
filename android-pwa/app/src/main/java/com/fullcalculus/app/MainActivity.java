@@ -2,10 +2,14 @@ package com.fullcalculus.app;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.net.Uri;
 import android.os.Bundle;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -67,6 +71,13 @@ public class MainActivity extends AppCompatActivity {
         }
         return true;
       }
+
+      @Override
+      public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+        if (request != null && request.isForMainFrame()) {
+          loadOfflinePage();
+        }
+      }
     });
     webView.setWebChromeClient(new WebChromeClient());
 
@@ -91,7 +102,11 @@ public class MainActivity extends AppCompatActivity {
       }
     });
 
-    webView.loadUrl(getString(R.string.launch_url));
+    if (isOnline()) {
+      loadLaunchUrl();
+    } else {
+      loadOfflinePage();
+    }
   }
 
   private void startGoogleSignIn() {
@@ -128,6 +143,28 @@ public class MainActivity extends AppCompatActivity {
       runOnUiThread(() -> webView.evaluateJavascript(js, null));
     } catch (Exception ignored) {
       // ignore
+    }
+  }
+
+  private void loadLaunchUrl() {
+    webView.loadUrl(getString(R.string.launch_url));
+  }
+
+  private void loadOfflinePage() {
+    webView.loadUrl("file:///android_asset/offline.html");
+  }
+
+  private boolean isOnline() {
+    try {
+      ConnectivityManager cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+      if (cm == null) return false;
+      Network network = cm.getActiveNetwork();
+      if (network == null) return false;
+      NetworkCapabilities caps = cm.getNetworkCapabilities(network);
+      if (caps == null) return false;
+      return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
+    } catch (Exception ignored) {
+      return false;
     }
   }
 
@@ -179,6 +216,22 @@ public class MainActivity extends AppCompatActivity {
     @JavascriptInterface
     public void exitApp() {
       runOnUiThread(() -> finish());
+    }
+
+    @JavascriptInterface
+    public void retryConnection() {
+      runOnUiThread(() -> {
+        if (isOnline()) {
+          loadLaunchUrl();
+        } else {
+          loadOfflinePage();
+        }
+      });
+    }
+
+    @JavascriptInterface
+    public void openOfflineMode() {
+      runOnUiThread(() -> loadLaunchUrl());
     }
   }
 }
