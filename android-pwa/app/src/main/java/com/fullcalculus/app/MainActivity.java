@@ -8,6 +8,7 @@ import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
 import android.net.Uri;
 import android.os.Bundle;
+import android.content.SharedPreferences;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
@@ -34,12 +35,17 @@ public class MainActivity extends AppCompatActivity {
   private GoogleSignInClient signInClient;
   private ActivityResultLauncher<Intent> signInLauncher;
   private ConnectivityManager.NetworkCallback networkCallback;
+  private SharedPreferences prefs;
+  private static final String PREFS_NAME = "fc_prefs";
+  private static final String KEY_HAS_LOADED = "hasLoadedOnce";
 
   @SuppressLint("SetJavaScriptEnabled")
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
+
+    prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
 
     webView = findViewById(R.id.webview);
     webView.addJavascriptInterface(new AuthBridge(), "AndroidAuth");
@@ -77,7 +83,16 @@ public class MainActivity extends AppCompatActivity {
       @Override
       public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
         if (request != null && request.isForMainFrame()) {
-          loadOfflinePage();
+          if (!hasLoadedOnce()) {
+            loadOfflinePage();
+          }
+        }
+      }
+
+      @Override
+      public void onPageFinished(WebView view, String url) {
+        if (url != null && (url.startsWith("http://") || url.startsWith("https://"))) {
+          markLoadedOnce();
         }
       }
     });
@@ -106,8 +121,10 @@ public class MainActivity extends AppCompatActivity {
 
     if (isOnline()) {
       loadLaunchUrl();
-    } else {
+    } else if (!hasLoadedOnce()) {
       loadOfflinePage();
+    } else {
+      loadLaunchUrl();
     }
 
     registerNetworkCallback();
@@ -158,6 +175,24 @@ public class MainActivity extends AppCompatActivity {
     webView.loadUrl("file:///android_asset/offline.html");
   }
 
+  private boolean hasLoadedOnce() {
+    try {
+      return prefs != null && prefs.getBoolean(KEY_HAS_LOADED, false);
+    } catch (Exception ignored) {
+      return false;
+    }
+  }
+
+  private void markLoadedOnce() {
+    try {
+      if (prefs != null) {
+        prefs.edit().putBoolean(KEY_HAS_LOADED, true).apply();
+      }
+    } catch (Exception ignored) {
+      // ignore
+    }
+  }
+
   private boolean isOnline() {
     try {
       ConnectivityManager cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
@@ -182,7 +217,12 @@ public class MainActivity extends AppCompatActivity {
       networkCallback = new ConnectivityManager.NetworkCallback() {
         @Override
         public void onAvailable(Network network) {
-          runOnUiThread(() -> loadLaunchUrl());
+          runOnUiThread(() -> {
+            String current = webView != null ? webView.getUrl() : "";
+            if (current != null && current.startsWith("file:///android_asset/offline.html")) {
+              loadLaunchUrl();
+            }
+          });
         }
       };
       cm.registerNetworkCallback(request, networkCallback);
