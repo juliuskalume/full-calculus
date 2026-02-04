@@ -413,7 +413,7 @@
               </label>
             </div>
 
-            <div class="flex items-center gap-4 px-4 min-h-[56px] justify-between border-t border-slate-100/60 dark:border-slate-800">
+            <div id="hapticRow" class="flex items-center gap-4 px-4 min-h-[56px] justify-between border-t border-slate-100/60 dark:border-slate-800">
               <div class="flex items-center gap-3">
                 <span class="material-symbols-outlined text-slate-500">vibration</span>
                 <p class="text-base font-semibold">Vibration</p>
@@ -608,6 +608,7 @@
         const soundSwitch = document.getElementById("soundSwitch");
         const motivationSwitch = document.getElementById("motivationSwitch");
         const hapticSwitch = document.getElementById("hapticSwitch");
+        const hapticRow = document.getElementById("hapticRow");
         const notifySwitch = document.getElementById("notifySwitch");
         const notifyStatus = document.getElementById("notifyStatus");
 
@@ -619,6 +620,11 @@
         hapticSwitch.checked = prefs.vibration ?? true;
         const notifyState = loadFcState();
         notifySwitch.checked = !!notifyState.notifications;
+
+        const supportsVibration = typeof navigator !== "undefined" && typeof navigator.vibrate === "function";
+        if (!supportsVibration && hapticRow) {
+          hapticRow.classList.add("hidden");
+        }
 
         // apply dark mode immediately
         if (darkSwitch.checked) {
