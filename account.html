@@ -739,14 +739,19 @@
             s.dob = dob;
             updateSavedProfile();
             if (window.FCAuth?.syncToRemote && user) {
-              await FCAuth.syncToRemote({
+              const payload = {
                 username: s.username,
                 fullName,
                 nationality,
                 dob,
                 avatarUrl,
                 email,
-              });
+              };
+              try {
+                await FCAuth.syncToRemote(payload);
+              } catch {
+                FCAuth.queueProfileSync?.(payload);
+              }
             }
             location.href = "done.html";
           } catch (err) {

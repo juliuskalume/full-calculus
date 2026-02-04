@@ -361,6 +361,7 @@
   };
 
   const normalizeEmail = (value) => String(value || "").trim().toLowerCase();
+  const PENDING_PROFILE_SYNC_KEY = "fc_pending_profile_sync";
 
   if (!enabledFlag || !window.firebase || !isConfigValid(config)) {
     window.FCAuth = {
@@ -627,6 +628,30 @@
     return payload;
   };
 
+  const queueProfileSync = (extra) => {
+    if (!extra || typeof extra !== "object") return;
+    const existing = safeParse(PENDING_PROFILE_SYNC_KEY, {});
+    const merged = mergeSparseObject(existing, extra);
+    safeSet(PENDING_PROFILE_SYNC_KEY, merged);
+  };
+
+  const flushQueuedProfileSync = async () => {
+    const pending = safeParse(PENDING_PROFILE_SYNC_KEY, null);
+    if (!pending || typeof pending !== "object") return false;
+    if (!auth.currentUser) return false;
+    try {
+      await syncToRemote(pending);
+      try {
+        localStorage.removeItem(PENDING_PROFILE_SYNC_KEY);
+      } catch {
+        // ignore
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   const syncFromRemote = async () => {
     const user = auth.currentUser;
     if (!user) return null;
@@ -790,6 +815,8 @@
     getCurrentUser,
     syncFromRemote,
     syncToRemote,
+    queueProfileSync,
+    flushQueuedProfileSync,
     syncPublicProfile,
     reserveUsername,
     ensureUserDoc,
@@ -927,6 +954,7 @@
     }
 
     syncFromRemote().catch(() => {});
+    flushQueuedProfileSync().catch(() => {});
     syncPublicProfile().catch(() => {});
     startPresenceTimer();
     document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -935,4 +963,10 @@
       ensurePushSubscription(user).catch(() => {});
     }
   });
+
+  if (typeof window !== "undefined") {
+    window.addEventListener("online", () => {
+      flushQueuedProfileSync().catch(() => {});
+    });
+  }
 })();
