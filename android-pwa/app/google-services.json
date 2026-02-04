@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "810918393440-h6tud2g26j985c6r5gnncd5pffldstki.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.fullcalculus.app",
+            "certificate_hash": "6b08b4a5438040417c86c568bbec055e1d51c512"
+          }
+        },
+        {
           "client_id": "810918393440-kl2bcioak73e8i53odr0t2a4401168ek.apps.googleusercontent.com",
           "client_type": 3
         }

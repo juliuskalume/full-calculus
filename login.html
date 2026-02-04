@@ -281,9 +281,7 @@
             isPwa = false;
             }
             if (!isPwa && window.navigator?.standalone === true) isPwa = true;
-            const referrer = document.referrer || "";
-            const isTwa = /^android-app:\/\//i.test(referrer);
-            return (isFirefox && isAndroid && isPwa) || (isAndroid && isTwa);
+            return isFirefox && isAndroid && isPwa;
           };
 
           window.fcNativeAuth = async (idToken, accessToken) => {
