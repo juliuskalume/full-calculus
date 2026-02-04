@@ -110,7 +110,6 @@
       <h1>Connection Lost</h1>
       <p>You're offline. Check your internet connection to keep your streak alive.</p>
       <button id="retryBtn" class="btn btn-primary">Try Again</button>
-      <button id="offlineBtn" class="btn btn-secondary">Play Offline Mode</button>
     </div>
     <div class="footer">
       <a href="mailto:sentira.official@gmail.com">Need help?</a>
@@ -124,11 +123,6 @@
         }
       };
       document.getElementById('retryBtn')?.addEventListener('click', retry);
-      document.getElementById('offlineBtn')?.addEventListener('click', () => {
-        if (window.AndroidAuth && window.AndroidAuth.openOfflineMode) {
-          window.AndroidAuth.openOfflineMode();
-        }
-      });
     </script>
   </body>
 </html>
