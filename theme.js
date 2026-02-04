@@ -846,6 +846,121 @@
 
   initOfflineRedirect();
 
+  const initOfflineIndicator = () => {
+    if (document.getElementById("fc-offline-bar")) return;
+
+    if (!document.getElementById("fc-offline-style")) {
+      const style = document.createElement("style");
+      style.id = "fc-offline-style";
+      style.textContent = `
+        :root { --fc-offline-bar-height: 0px; }
+        #fc-offline-bar {
+          position: fixed;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          height: 22px;
+          padding-bottom: env(safe-area-inset-bottom, 0);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.01em;
+          z-index: 60;
+          transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+        #fc-offline-bar.hidden {
+          opacity: 0;
+          transform: translateY(100%);
+          pointer-events: none;
+        }
+        #fc-offline-bar.offline {
+          background: #ef4444;
+          color: #ffffff;
+        }
+        #fc-offline-bar.online {
+          background: #1cb0f6;
+          color: #ffffff;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    const bar = document.createElement("div");
+    bar.id = "fc-offline-bar";
+    bar.className = "hidden";
+    bar.textContent = "You are offline. Some features may break.";
+
+    const attach = () => {
+      document.body.appendChild(bar);
+    };
+
+    if (document.body) attach();
+    else document.addEventListener("DOMContentLoaded", attach, { once: true });
+
+    const adjustedNavs = new Map();
+
+    const setNavOffset = (enabled) => {
+      const navs = document.querySelectorAll("nav");
+      navs.forEach((nav) => {
+        const style = window.getComputedStyle(nav);
+        if (style.position !== "fixed") return;
+        const bottom = parseFloat(style.bottom || "0");
+        if (enabled) {
+          if (bottom > 2) return;
+          if (!adjustedNavs.has(nav)) {
+            adjustedNavs.set(nav, nav.style.bottom || "");
+          }
+          nav.style.bottom = "var(--fc-offline-bar-height)";
+        } else if (adjustedNavs.has(nav)) {
+          nav.style.bottom = adjustedNavs.get(nav) || "";
+          adjustedNavs.delete(nav);
+        }
+      });
+    };
+
+    const showOffline = () => {
+      bar.textContent = "You are offline. Some features may break.";
+      bar.classList.remove("hidden");
+      bar.classList.remove("online");
+      bar.classList.add("offline");
+      document.documentElement.style.setProperty("--fc-offline-bar-height", "22px");
+      setNavOffset(true);
+    };
+
+    const showOnline = () => {
+      bar.textContent = "Back online";
+      bar.classList.remove("hidden");
+      bar.classList.remove("offline");
+      bar.classList.add("online");
+      document.documentElement.style.setProperty("--fc-offline-bar-height", "22px");
+      setNavOffset(true);
+      setTimeout(() => {
+        bar.classList.add("hidden");
+        document.documentElement.style.setProperty("--fc-offline-bar-height", "0px");
+        setNavOffset(false);
+      }, 3000);
+    };
+
+    let wasOffline = !navigator.onLine;
+    if (wasOffline) showOffline();
+
+    window.addEventListener("offline", () => {
+      wasOffline = true;
+      showOffline();
+    });
+
+    window.addEventListener("online", () => {
+      if (wasOffline) {
+        wasOffline = false;
+        showOnline();
+      }
+    });
+  };
+
+  initOfflineIndicator();
+
   const initHaptics = () => {
     const shouldVibrate = () => {
       try {
