@@ -15,9 +15,19 @@ android {
     versionName "1.0"
   }
 
+  signingConfigs {
+    release {
+      storeFile file(project.findProperty("FULLCALCULUS_STORE_FILE") ?: "")
+      storePassword project.findProperty("FULLCALCULUS_STORE_PASSWORD") ?: ""
+      keyAlias project.findProperty("FULLCALCULUS_KEY_ALIAS") ?: ""
+      keyPassword project.findProperty("FULLCALCULUS_KEY_PASSWORD") ?: ""
+    }
+  }
+
   buildTypes {
     release {
       minifyEnabled false
+      signingConfig signingConfigs.release
       proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
     }
   }

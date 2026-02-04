@@ -19,6 +19,7 @@ Change in:
 - WebView does **not** support Web Push; keep that in mind if notifications are critical.
 - Google Sign-In in WebView requires native Google Sign-In. This wrapper uses the Android SDK and injects the credential into the web app.
   You must add `android-pwa/app/google-services.json` from your Firebase project for this to work.
+- Release signing is configured via `android-pwa/gradle.properties`.
 
 ## Build
 - Build → Build Bundle(s) / APK(s) → Build APK(s)
