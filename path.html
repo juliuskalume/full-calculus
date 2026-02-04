@@ -740,11 +740,11 @@
         const exitBtn = document.getElementById("exitAppBtn");
         if (!exitOverlay) return;
 
+        const isNativeShell = !!window.AndroidAuth;
         const isStandalone =
           window.matchMedia("(display-mode: standalone)").matches ||
           window.matchMedia("(display-mode: fullscreen)").matches ||
           window.navigator.standalone === true;
-        const isNativeShell = !!window.AndroidAuth;
 
         let allowExit = false;
 
@@ -759,7 +759,7 @@
           document.body.classList.remove("overflow-hidden");
         };
 
-        if (isStandalone) {
+        if (!isNativeShell) {
           const onPopState = () => {
             if (allowExit) return;
             showExit();
