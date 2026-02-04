@@ -796,9 +796,29 @@
     const filename = (location.pathname.split("/").pop() || "").toLowerCase();
     if (filename === "offline.html" || filename === "auth-restriction.html") return;
 
+    const isOfflineBypass = () => {
+      try {
+        return sessionStorage.getItem("fc_offline_mode") === "1";
+      } catch {
+        return false;
+      }
+    };
+
+    const clearOfflineBypass = () => {
+      try {
+        sessionStorage.removeItem("fc_offline_mode");
+      } catch {
+        // ignore
+      }
+    };
+
     const goOffline = () => {
-      if (!navigator.onLine) {
+      if (!navigator.onLine && !isOfflineBypass()) {
         location.replace("offline.html");
+        return;
+      }
+      if (navigator.onLine) {
+        clearOfflineBypass();
       }
     };
 
@@ -807,6 +827,8 @@
     } else {
       window.addEventListener("load", goOffline, { once: true });
     }
+
+    window.addEventListener("online", clearOfflineBypass);
   };
 
   initOfflineRedirect();

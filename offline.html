@@ -112,6 +112,11 @@
         location.reload();
       });
       document.getElementById("offlineBtn")?.addEventListener("click", () => {
+        try {
+          sessionStorage.setItem("fc_offline_mode", "1");
+        } catch {
+          // ignore
+        }
         location.href = "path.html";
       });
     </script>
