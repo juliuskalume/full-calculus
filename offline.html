@@ -113,7 +113,7 @@
       });
       document.getElementById("offlineBtn")?.addEventListener("click", () => {
         try {
-          sessionStorage.setItem("fc_offline_mode", "1");
+          localStorage.setItem("fc_offline_mode", "1");
         } catch {
           // ignore
         }

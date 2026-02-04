@@ -798,7 +798,7 @@
 
     const isOfflineBypass = () => {
       try {
-        return sessionStorage.getItem("fc_offline_mode") === "1";
+        return localStorage.getItem("fc_offline_mode") === "1";
       } catch {
         return false;
       }
@@ -806,7 +806,7 @@
 
     const clearOfflineBypass = () => {
       try {
-        sessionStorage.removeItem("fc_offline_mode");
+        localStorage.removeItem("fc_offline_mode");
       } catch {
         // ignore
       }
