@@ -117,7 +117,14 @@
         } catch {
           // ignore
         }
-        location.href = "path.html";
+        if (window.AndroidAuth?.setOfflineMode) {
+          try {
+            window.AndroidAuth.setOfflineMode(true);
+          } catch {
+            // ignore
+          }
+        }
+        location.href = "path.html?offline=1";
       });
     </script>
   </body>

@@ -796,6 +796,19 @@
     const filename = (location.pathname.split("/").pop() || "").toLowerCase();
     if (filename === "offline.html" || filename === "auth-restriction.html") return;
 
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("offline") === "1") {
+      try {
+        localStorage.setItem("fc_offline_mode", "1");
+      } catch {
+        // ignore
+      }
+      url.searchParams.delete("offline");
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState({}, "", url.toString());
+      }
+    }
+
     const isOfflineBypass = () => {
       try {
         return localStorage.getItem("fc_offline_mode") === "1";

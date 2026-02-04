@@ -38,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
   private SharedPreferences prefs;
   private static final String PREFS_NAME = "fc_prefs";
   private static final String KEY_HAS_LOADED = "hasLoadedOnce";
+  private static final String KEY_OFFLINE_MODE = "offlineModeEnabled";
 
   @SuppressLint("SetJavaScriptEnabled")
   @Override
@@ -83,7 +84,7 @@ public class MainActivity extends AppCompatActivity {
       @Override
       public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
         if (request != null && request.isForMainFrame()) {
-          if (!hasLoadedOnce()) {
+          if (!isOfflineModeEnabled()) {
             loadOfflinePage();
           }
         }
@@ -121,7 +122,7 @@ public class MainActivity extends AppCompatActivity {
 
     if (isOnline()) {
       loadLaunchUrl();
-    } else if (!hasLoadedOnce()) {
+    } else if (!isOfflineModeEnabled() && !hasLoadedOnce()) {
       loadOfflinePage();
     } else {
       loadLaunchUrl();
@@ -173,6 +174,24 @@ public class MainActivity extends AppCompatActivity {
 
   private void loadOfflinePage() {
     webView.loadUrl("file:///android_asset/offline.html");
+  }
+
+  private boolean isOfflineModeEnabled() {
+    try {
+      return prefs != null && prefs.getBoolean(KEY_OFFLINE_MODE, false);
+    } catch (Exception ignored) {
+      return false;
+    }
+  }
+
+  private void setOfflineModeEnabled(boolean enabled) {
+    try {
+      if (prefs != null) {
+        prefs.edit().putBoolean(KEY_OFFLINE_MODE, enabled).apply();
+      }
+    } catch (Exception ignored) {
+      // ignore
+    }
   }
 
   private boolean hasLoadedOnce() {
@@ -308,6 +327,11 @@ public class MainActivity extends AppCompatActivity {
     @JavascriptInterface
     public void openOfflineMode() {
       runOnUiThread(() -> loadLaunchUrl());
+    }
+
+    @JavascriptInterface
+    public void setOfflineMode(boolean enabled) {
+      runOnUiThread(() -> setOfflineModeEnabled(enabled));
     }
   }
 }
