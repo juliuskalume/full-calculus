@@ -261,49 +261,57 @@
           </button>
         </div>
 
-        <div class="flex flex-col gap-3">
-          <div
-            class="flex items-center gap-3 p-3 bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-white/5 shadow-soft">
-            <div class="relative">
-              <div class="w-12 h-12 rounded-full bg-cover bg-center bg-indigo-100"
-                style="background-image:url('https://lh3.googleusercontent.com/aida-public/AB6AXuCgrcMJmEWQnfCh3JDhY83MfjPzUypjNpNdPKHiX3haNkY1694oYERR78c9JqLV6eui2Dv1OcLn8r4zLq1w1vU_mfA7KsWKqPPwaw2JNyd0OQ50kLzC_c8ZizPYgjxidzw6nG6GKgmDy0_YnEVh09Tq1cQ-X13bApwUW3oDUizXfLpV0wiDifu6QMmBv7u8eMqWufLwuGNKS6eMPz5II1xxo4SmzdbIXz1I8ws7D3Gz3-8Ue5lL2HSu8AkH85odZcbj49Yw015QN6I');">
-              </div>
-              <div
-                class="absolute -bottom-1 -right-1 bg-green-500 w-4 h-4 border-2 border-white dark:border-surface-dark rounded-full">
-              </div>
-            </div>
-
-            <div class="flex-1 min-w-0">
-              <div class="flex justify-between items-center">
-                <h4 class="font-extrabold text-sm truncate">Sarah D.</h4>
-                <span class="text-[10px] font-extrabold text-slate-400">2m ago</span>
-              </div>
-              <p class="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">Completed Derivatives Unit 1</p>
-            </div>
-          </div>
-
-          <div
-            class="flex items-center gap-3 p-3 bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-white/5 shadow-soft">
-            <div class="relative">
-              <div class="w-12 h-12 rounded-full bg-cover bg-center bg-green-100"
-                style="background-image:url('https://lh3.googleusercontent.com/aida-public/AB6AXuAco0rwNMFrp7LOXeTMuud5MYY9Lzwy2aYtqXbF94ocxPWl-ZlKHnJ86YDU66a7iIIHk4B64s62GdHJhXVxSUeJfr_DX5hUVqxisdmGyBAL95ERowgVTjt8vgQvFwARFkD_ejIubXembNDOzhnfAVejS_vwgXoIYAdzGXiZfgAmvbwsm4UXAUOr6hkP_99rbUQfoNqf57qrIYAIROcOHpPWigo5qVUJ3p5qchktCrJkJ2PUE2tTzEENFXBCcc8Ot0Ri7xHu7N5OiqQ');">
-              </div>
-              <div
-                class="absolute -bottom-1 -right-1 bg-amber-400 w-4 h-4 border-2 border-white dark:border-surface-dark rounded-full">
-              </div>
-            </div>
-
-            <div class="flex-1 min-w-0">
-              <div class="flex justify-between items-center">
-                <h4 class="font-extrabold text-sm truncate">Mike R.</h4>
-                <span class="text-[10px] font-extrabold text-slate-400">1h ago</span>
-              </div>
-              <p class="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">Just earned 50 XP in Limits</p>
-            </div>
-          </div>
+        <div id="friendsAuthHint"
+          class="hidden mb-4 px-3 py-3 rounded-2xl bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 text-sm text-slate-600 dark:text-slate-300">
+          Sign in to add friends and view requests.
+          <button id="friendsLoginBtn" class="text-primary font-extrabold ml-2">Log in</button>
         </div>
+
+        <div id="friendRequestsWrap" class="hidden mb-4">
+          <p class="text-xs uppercase font-extrabold text-slate-400 px-1 mb-2">Requests</p>
+          <div id="friendRequestsList" class="flex flex-col gap-3"></div>
+        </div>
+
+        <div id="friendsList" class="flex flex-col gap-3"></div>
+        <p id="friendsEmpty" class="text-sm text-slate-500 dark:text-slate-400 px-1">
+          No friends yet. Add a classmate to get started.
+        </p>
       </section>
     </main>
+  </div>
+
+  <!-- Friend Finder Modal -->
+  <div id="friendModal" class="fixed inset-0 z-[80] hidden">
+    <div class="absolute inset-0 bg-[#141414]/60 backdrop-blur-sm" data-friend-close></div>
+    <div class="absolute inset-0 flex flex-col justify-end sm:justify-center items-center px-4">
+      <div
+        class="w-full max-w-[440px] bg-white dark:bg-surface-dark rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+        <div class="flex items-center justify-between px-6 pt-6">
+          <h3 class="text-lg font-extrabold">Find Friends</h3>
+          <button id="friendModalClose" type="button"
+            class="w-9 h-9 rounded-full flex items-center justify-center text-slate-500 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            aria-label="Close">
+            <span class="material-symbols-outlined text-[20px]">close</span>
+          </button>
+        </div>
+
+        <div class="px-6 pb-6">
+          <label class="text-xs font-bold text-slate-400">Search by name</label>
+          <div class="relative mt-2">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+            <input id="friendSearchInput" type="text" placeholder="Start typing..."
+              class="w-full pl-10 pr-3 py-3 rounded-2xl bg-slate-100 dark:bg-slate-900/60 text-sm font-semibold border border-transparent focus:border-primary focus:ring-0" />
+          </div>
+          <p id="friendSearchHint" class="text-xs text-slate-400 mt-2">
+            Search for classmates already on Full Calculus.
+          </p>
+
+          <div id="friendSearchResults" class="mt-4 flex flex-col gap-3"></div>
+          <p id="friendSearchEmpty" class="hidden text-xs text-slate-400 mt-3">No matches yet.</p>
+          <p id="friendModalStatus" class="text-xs text-slate-500 mt-3"></p>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Content data (for achievements) -->
@@ -317,6 +325,11 @@
   <!-- Shared state -->
   <script src="state.js"></script>
   <script src="progress.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="auth.js"></script>
 
   <script>
     // Navigation
@@ -425,32 +438,463 @@
       document.getElementById("joinedText").textContent = `Joined ${joined}`;
     })();
 
-
-    // Demo interactions
     document.getElementById("settingsBtn")?.addEventListener("click", () => {
       location.href = "settings.html";
     });
-      document.getElementById("addFriendBtn")?.addEventListener("click", () => {
-        if (window.FCUI?.showComingSoon) {
-          window.FCUI.showComingSoon({
-            title: "Friends Coming Soon",
-            message: "The friend system is in the works. You’ll be able to follow classmates soon.",
-          });
+
+    (function initFriends() {
+      const addBtn = document.getElementById("addFriendBtn");
+      const authHint = document.getElementById("friendsAuthHint");
+      const loginBtn = document.getElementById("friendsLoginBtn");
+      const requestsWrap = document.getElementById("friendRequestsWrap");
+      const requestsList = document.getElementById("friendRequestsList");
+      const friendsList = document.getElementById("friendsList");
+      const friendsEmpty = document.getElementById("friendsEmpty");
+
+      const modal = document.getElementById("friendModal");
+      const modalClose = document.getElementById("friendModalClose");
+      const modalBackdrop = document.querySelector("[data-friend-close]");
+      const searchInput = document.getElementById("friendSearchInput");
+      const searchResults = document.getElementById("friendSearchResults");
+      const searchEmpty = document.getElementById("friendSearchEmpty");
+      const searchHint = document.getElementById("friendSearchHint");
+      const statusEl = document.getElementById("friendModalStatus");
+
+      if (!addBtn || !authHint || !friendsList || !modal) return;
+
+      const DEFAULT_AVATAR =
+        "https://github.com/juliuskalume/full-calculus/blob/main/icons/icon-192.png?raw=true";
+
+      let currentUser = null;
+      let db = null;
+      let subscriptions = [];
+      let friendStateByUid = {};
+      let incomingRequests = [];
+      let outgoingRequests = [];
+      let acceptedFriends = [];
+      let lastSearchResults = [];
+      let searchTimer = null;
+
+      const getLocalProfile = () => {
+        try {
+          return JSON.parse(localStorage.getItem("fc_state") || "{}");
+        } catch {
+          return {};
+        }
+      };
+
+      const setStatus = (message = "", tone = "normal") => {
+        if (!statusEl) return;
+        statusEl.textContent = message;
+        statusEl.className =
+          tone === "error" ? "text-xs text-red-500 mt-3" : "text-xs text-slate-500 mt-3";
+      };
+
+      const showAuth = () => {
+        authHint.classList.remove("hidden");
+        addBtn.setAttribute("disabled", "disabled");
+        addBtn.classList.add("opacity-60", "cursor-not-allowed");
+        requestsWrap.classList.add("hidden");
+        requestsList.innerHTML = "";
+        friendsList.innerHTML = "";
+        friendsEmpty.classList.remove("hidden");
+      };
+
+      const showAuthed = () => {
+        authHint.classList.add("hidden");
+        addBtn.removeAttribute("disabled");
+        addBtn.classList.remove("opacity-60", "cursor-not-allowed");
+      };
+
+      const openModal = () => {
+        if (!currentUser) {
+          window.location.href = "login.html";
           return;
         }
-        alert("Friend system (coming soon).");
+        modal.classList.remove("hidden");
+        document.body.classList.add("overflow-hidden");
+        if (searchInput) {
+          searchInput.value = "";
+          searchInput.focus();
+        }
+        if (searchResults) searchResults.innerHTML = "";
+        if (searchEmpty) searchEmpty.classList.add("hidden");
+        if (searchHint) searchHint.classList.remove("hidden");
+        setStatus("");
+      };
+
+      const closeModal = () => {
+        modal.classList.add("hidden");
+        document.body.classList.remove("overflow-hidden");
+      };
+
+      addBtn.addEventListener("click", openModal);
+      modalClose?.addEventListener("click", closeModal);
+      modalBackdrop?.addEventListener("click", closeModal);
+      loginBtn?.addEventListener("click", () => {
+        window.location.href = "login.html";
       });
-      document.getElementById("viewAllAchievements")?.addEventListener("click", () => {
-        if (window.FCUI?.showComingSoon) {
-          window.FCUI.showComingSoon({
-            title: "Achievements Coming Soon",
-            message: "More achievements are being crafted. New badges will arrive soon.",
-          });
+
+      const friendDocId = (uidA, uidB) => [uidA, uidB].sort().join("__");
+
+      const getFriendMeta = (record, uid) => {
+        const isIncoming = record.to === uid;
+        return {
+          uid: isIncoming ? record.from : record.to,
+          name: (isIncoming ? record.fromName : record.toName) || "Learner",
+          photo: (isIncoming ? record.fromPhoto : record.toPhoto) || DEFAULT_AVATAR,
+          incoming: isIncoming,
+        };
+      };
+
+      const renderRequests = () => {
+        if (!requestsList || !requestsWrap) return;
+        const combined = [...incomingRequests, ...outgoingRequests];
+        if (!combined.length) {
+          requestsWrap.classList.add("hidden");
+          requestsList.innerHTML = "";
           return;
         }
-        alert("All achievements (coming soon).");
+        requestsWrap.classList.remove("hidden");
+        requestsList.innerHTML = combined
+          .map((record) => {
+            const info = getFriendMeta(record, currentUser.uid);
+            const isIncoming = info.incoming;
+            const actionButtons = isIncoming
+              ? `
+                <button data-action="accept" data-id="${record.id}" class="px-3 py-1.5 rounded-full bg-primary text-black text-xs font-bold">Accept</button>
+                <button data-action="decline" data-id="${record.id}" class="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs font-bold">Decline</button>
+              `
+              : `
+                <button data-action="cancel" data-id="${record.id}" class="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs font-bold">Cancel</button>
+              `;
+            return `
+              <div class="flex items-center gap-3 p-3 bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-white/5 shadow-soft">
+                <div class="w-12 h-12 rounded-full bg-cover bg-center border border-slate-200 dark:border-slate-700"
+                  style="background-image:url('${info.photo}')"></div>
+                <div class="flex-1 min-w-0">
+                  <h4 class="font-extrabold text-sm truncate">${info.name}</h4>
+                  <p class="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">${isIncoming ? "Sent you a request" : "Request pending"}</p>
+                </div>
+                <div class="flex items-center gap-2">${actionButtons}</div>
+              </div>
+            `;
+          })
+          .join("");
+      };
+
+      const renderFriends = () => {
+        if (!friendsList || !friendsEmpty) return;
+        if (!acceptedFriends.length) {
+          friendsList.innerHTML = "";
+          friendsEmpty.classList.remove("hidden");
+          return;
+        }
+        friendsEmpty.classList.add("hidden");
+        friendsList.innerHTML = acceptedFriends
+          .map((record) => {
+            const info = getFriendMeta(record, currentUser.uid);
+            return `
+              <div class="flex items-center gap-3 p-3 bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-white/5 shadow-soft">
+                <div class="w-12 h-12 rounded-full bg-cover bg-center border border-slate-200 dark:border-slate-700"
+                  style="background-image:url('${info.photo}')"></div>
+                <div class="flex-1 min-w-0">
+                  <h4 class="font-extrabold text-sm truncate">${info.name}</h4>
+                  <p class="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">Friends on Full Calculus</p>
+                </div>
+                <button data-action="remove" data-id="${record.id}"
+                  class="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs font-bold">
+                  Remove
+                </button>
+              </div>
+            `;
+          })
+          .join("");
+      };
+
+      const updateFriendState = () => {
+        friendStateByUid = {};
+        incomingRequests.forEach((record) => {
+          friendStateByUid[record.from] = { status: "incoming", id: record.id };
+        });
+        outgoingRequests.forEach((record) => {
+          friendStateByUid[record.to] = { status: "outgoing", id: record.id };
+        });
+        acceptedFriends.forEach((record) => {
+          const other = record.from === currentUser.uid ? record.to : record.from;
+          friendStateByUid[other] = { status: "friends", id: record.id };
+        });
+      };
+
+      const refreshLists = () => {
+        updateFriendState();
+        renderRequests();
+        renderFriends();
+        if (lastSearchResults.length) {
+          renderSearchResults(lastSearchResults);
+        }
+      };
+
+      const clearSubscriptions = () => {
+        subscriptions.forEach((unsub) => {
+          try {
+            unsub();
+          } catch {
+            // ignore
+          }
+        });
+        subscriptions = [];
+      };
+
+      const subscribeFriends = () => {
+        if (!db || !currentUser) return;
+        clearSubscriptions();
+        const uid = currentUser.uid;
+        const toPending = db.collection("friendships").where("to", "==", uid).where("status", "==", "pending");
+        const fromPending = db.collection("friendships").where("from", "==", uid).where("status", "==", "pending");
+        const fromAccepted = db.collection("friendships").where("from", "==", uid).where("status", "==", "accepted");
+        const toAccepted = db.collection("friendships").where("to", "==", uid).where("status", "==", "accepted");
+
+        subscriptions.push(
+          toPending.onSnapshot((snap) => {
+            incomingRequests = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+            refreshLists();
+          })
+        );
+        subscriptions.push(
+          fromPending.onSnapshot((snap) => {
+            outgoingRequests = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+            refreshLists();
+          })
+        );
+        subscriptions.push(
+          fromAccepted.onSnapshot((snap) => {
+            const outgoingAccepted = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+            acceptedFriends = [...outgoingAccepted, ...acceptedFriends.filter((record) => record.to === uid)];
+            refreshLists();
+          })
+        );
+        subscriptions.push(
+          toAccepted.onSnapshot((snap) => {
+            const incomingAccepted = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+            acceptedFriends = [...acceptedFriends.filter((record) => record.from === uid), ...incomingAccepted];
+            refreshLists();
+          })
+        );
+      };
+
+      const handleRequestAction = async (action, docId) => {
+        if (!db || !docId) return;
+        try {
+          if (action === "accept") {
+            await db.collection("friendships").doc(docId).update({
+              status: "accepted",
+              acceptedAt: new Date().toISOString(),
+            });
+            return;
+          }
+          if (["decline", "cancel", "remove"].includes(action)) {
+            await db.collection("friendships").doc(docId).delete();
+          }
+        } catch (err) {
+          setStatus("Could not update friend request. Try again.", "error");
+        }
+      };
+
+      requestsList?.addEventListener("click", (event) => {
+        const btn = event.target.closest("button[data-action]");
+        if (!btn) return;
+        const action = btn.getAttribute("data-action");
+        const id = btn.getAttribute("data-id");
+        handleRequestAction(action, id);
       });
+
+      friendsList?.addEventListener("click", (event) => {
+        const btn = event.target.closest("button[data-action='remove']");
+        if (!btn) return;
+        const id = btn.getAttribute("data-id");
+        handleRequestAction("remove", id);
+      });
+
+      const renderSearchResults = (items) => {
+        lastSearchResults = items;
+        if (!searchResults || !searchEmpty) return;
+        searchResults.innerHTML = "";
+        if (!items.length) {
+          searchEmpty.classList.remove("hidden");
+          return;
+        }
+        searchEmpty.classList.add("hidden");
+        items.forEach((user) => {
+          const state = friendStateByUid[user.uid]?.status || "";
+          let label = "Add";
+          let disabled = false;
+          let action = "add";
+          if (user.uid === currentUser.uid) {
+            label = "You";
+            disabled = true;
+          } else if (state === "friends") {
+            label = "Friends";
+            disabled = true;
+          } else if (state === "outgoing") {
+            label = "Pending";
+            disabled = true;
+          } else if (state === "incoming") {
+            label = "Accept";
+            action = "accept";
+          }
+
+          const card = document.createElement("div");
+          card.className =
+            "flex items-center gap-3 p-3 rounded-2xl bg-slate-100 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800";
+          card.innerHTML = `
+            <div class="w-11 h-11 rounded-full bg-cover bg-center border border-slate-200 dark:border-slate-700"
+              style="background-image:url('${user.photoURL || DEFAULT_AVATAR}')"></div>
+            <div class="flex-1 min-w-0">
+              <p class="font-extrabold text-sm truncate">${user.displayName || "Learner"}</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400">XP ${Number(user.xp || 0)}</p>
+            </div>
+            <button
+              data-action="${action}"
+              data-uid="${user.uid}"
+              class="px-3 py-1.5 rounded-full ${disabled ? "bg-slate-200 dark:bg-slate-800 text-slate-400" : "bg-primary text-black"} text-xs font-bold"
+              ${disabled ? "disabled" : ""}
+            >
+              ${label}
+            </button>
+          `;
+          searchResults.appendChild(card);
+        });
+      };
+
+      const searchUsers = async (query) => {
+        if (!db) return;
+        setStatus("Searching...");
+        const q = String(query || "").trim();
+        if (q.length < 2) {
+          if (searchResults) searchResults.innerHTML = "";
+          if (searchEmpty) searchEmpty.classList.add("hidden");
+          if (searchHint) searchHint.classList.remove("hidden");
+          setStatus("");
+          return;
+        }
+        if (searchHint) searchHint.classList.add("hidden");
+
+        const qLower = q.toLowerCase();
+        const queries = [
+          db.collection("leaderboard").orderBy("displayNameLower").startAt(qLower).endAt(qLower + "\uf8ff").limit(10),
+          db.collection("leaderboard").orderBy("displayName").startAt(q).endAt(q + "\uf8ff").limit(10),
+        ];
+
+        try {
+          const results = [];
+          const seen = new Set();
+          const snapshots = await Promise.allSettled(queries.map((ref) => ref.get()));
+          snapshots.forEach((result) => {
+            if (result.status !== "fulfilled") return;
+            result.value.forEach((doc) => {
+              const data = doc.data() || {};
+              if (!data.uid || seen.has(data.uid)) return;
+              seen.add(data.uid);
+              results.push({
+                uid: data.uid,
+                displayName: data.displayName || "Learner",
+                photoURL: data.photoURL || DEFAULT_AVATAR,
+                xp: data.xp || 0,
+              });
+            });
+          });
+
+          const filtered = results.filter((user) => user.uid !== currentUser.uid);
+          renderSearchResults(filtered);
+          setStatus(filtered.length ? "" : "No matches. Try another name.");
+        } catch (err) {
+          setStatus("Search failed. Try again.", "error");
+        }
+      };
+
+      searchInput?.addEventListener("input", (event) => {
+        const value = event.target.value;
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => searchUsers(value), 300);
+      });
+
+      searchResults?.addEventListener("click", async (event) => {
+        const btn = event.target.closest("button[data-action]");
+        if (!btn || !currentUser || !db) return;
+        const action = btn.getAttribute("data-action");
+        const uid = btn.getAttribute("data-uid");
+        if (!uid) return;
+        if (action === "accept") {
+          const existing = friendStateByUid[uid];
+          if (existing?.id) await handleRequestAction("accept", existing.id);
+          return;
+        }
+        if (action !== "add") return;
+
+        if (uid === currentUser.uid) {
+          setStatus("You cannot add yourself.", "error");
+          return;
+        }
+
+        const docId = friendDocId(currentUser.uid, uid);
+        const docRef = db.collection("friendships").doc(docId);
+        try {
+          const existing = await docRef.get();
+          if (existing.exists) {
+            setStatus("Friend request already exists.");
+            return;
+          }
+
+          const localProfile = getLocalProfile();
+          const payload = {
+            from: currentUser.uid,
+            to: uid,
+            status: "pending",
+            createdAt: new Date().toISOString(),
+            fromName: currentUser.displayName || localProfile.name || "Learner",
+            fromPhoto: currentUser.photoURL || localProfile.avatarUrl || DEFAULT_AVATAR,
+          };
+
+          const target = lastSearchResults.find((item) => item.uid === uid);
+          if (target) {
+            payload.toName = target.displayName || "Learner";
+            payload.toPhoto = target.photoURL || DEFAULT_AVATAR;
+          }
+
+          await docRef.set(payload);
+          setStatus("Friend request sent!");
+        } catch (err) {
+          setStatus("Unable to send request. Try again.", "error");
+        }
+      });
+
+      const ensureAuthReady = () => {
+        if (!window.FCAuth || !window.FCAuth.enabled) {
+          showAuth();
+          return;
+        }
+        db = window.FCAuth.db;
+        window.FCAuth.onAuthStateChanged((user) => {
+          currentUser = user;
+          if (!user) {
+            clearSubscriptions();
+            incomingRequests = [];
+            outgoingRequests = [];
+            acceptedFriends = [];
+            refreshLists();
+            showAuth();
+            return;
+          }
+          showAuthed();
+          subscribeFriends();
+        });
+      };
+
+      ensureAuthReady();
+    })();
   </script>
+
 </body>
 
 </html>

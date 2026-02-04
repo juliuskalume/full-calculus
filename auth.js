@@ -440,6 +440,7 @@
     return {
       uid: user.uid,
       displayName,
+      displayNameLower: String(displayName || "").toLowerCase(),
       photoURL,
       xp: Number(meta.xp) || 0,
       streak: Number(meta.streak) || 0,
