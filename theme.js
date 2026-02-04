@@ -792,6 +792,25 @@
 
   initHelpFab();
 
+  const initOfflineRedirect = () => {
+    const filename = (location.pathname.split("/").pop() || "").toLowerCase();
+    if (filename === "offline.html" || filename === "auth-restriction.html") return;
+
+    const goOffline = () => {
+      if (!navigator.onLine) {
+        location.replace("offline.html");
+      }
+    };
+
+    if (document.readyState === "complete") {
+      goOffline();
+    } else {
+      window.addEventListener("load", goOffline, { once: true });
+    }
+  };
+
+  initOfflineRedirect();
+
   const initHaptics = () => {
     const shouldVibrate = () => {
       try {
