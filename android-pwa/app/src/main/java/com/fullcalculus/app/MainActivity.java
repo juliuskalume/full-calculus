@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
+import android.net.NetworkRequest;
 import android.net.Uri;
 import android.os.Bundle;
 import android.webkit.JavascriptInterface;
@@ -32,6 +33,7 @@ public class MainActivity extends AppCompatActivity {
   private WebView webView;
   private GoogleSignInClient signInClient;
   private ActivityResultLauncher<Intent> signInLauncher;
+  private ConnectivityManager.NetworkCallback networkCallback;
 
   @SuppressLint("SetJavaScriptEnabled")
   @Override
@@ -107,6 +109,8 @@ public class MainActivity extends AppCompatActivity {
     } else {
       loadOfflinePage();
     }
+
+    registerNetworkCallback();
   }
 
   private void startGoogleSignIn() {
@@ -165,6 +169,38 @@ public class MainActivity extends AppCompatActivity {
       return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
     } catch (Exception ignored) {
       return false;
+    }
+  }
+
+  private void registerNetworkCallback() {
+    try {
+      ConnectivityManager cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+      if (cm == null) return;
+      NetworkRequest request = new NetworkRequest.Builder()
+          .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+          .build();
+      networkCallback = new ConnectivityManager.NetworkCallback() {
+        @Override
+        public void onAvailable(Network network) {
+          runOnUiThread(() -> loadLaunchUrl());
+        }
+      };
+      cm.registerNetworkCallback(request, networkCallback);
+    } catch (Exception ignored) {
+      // ignore
+    }
+  }
+
+  @Override
+  protected void onDestroy() {
+    super.onDestroy();
+    try {
+      ConnectivityManager cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+      if (cm != null && networkCallback != null) {
+        cm.unregisterNetworkCallback(networkCallback);
+      }
+    } catch (Exception ignored) {
+      // ignore
     }
   }
 
