@@ -83,10 +83,10 @@ public class MainActivity extends AppCompatActivity {
           String accessToken = account.getServerAuthCode();
           sendAuthToWeb(idToken, accessToken);
         } else {
-          sendAuthError("Google sign-in failed.");
+          sendAuthError("Google sign-in failed.", null);
         }
       } catch (ApiException e) {
-        sendAuthError("Google sign-in failed.");
+        sendAuthError("Google sign-in failed.", e);
       }
     });
 
@@ -112,9 +112,17 @@ public class MainActivity extends AppCompatActivity {
     }
   }
 
-  private void sendAuthError(String message) {
+  private void sendAuthError(String message, Exception error) {
     try {
-      String safeMsg = JSONObject.quote(message == null ? "Sign-in failed." : message);
+      String base = message == null ? "Sign-in failed." : message;
+      String detail = "";
+      if (error instanceof ApiException) {
+        int code = ((ApiException) error).getStatusCode();
+        detail = " (code: " + code + ")";
+      } else if (error != null) {
+        detail = " (" + error.getClass().getSimpleName() + ")";
+      }
+      String safeMsg = JSONObject.quote(base + detail);
       String js = "window.fcNativeAuthError && window.fcNativeAuthError(" + safeMsg + ");";
       runOnUiThread(() -> webView.evaluateJavascript(js, null));
     } catch (Exception ignored) {
