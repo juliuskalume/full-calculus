@@ -347,6 +347,320 @@
     document.addEventListener("DOMContentLoaded", whenReady, { once: true });
   }
 
+  const initHelpFab = () => {
+    const existingFab = document.getElementById("helpFab");
+    const existingOverlay = document.getElementById("helpOverlay");
+    if (existingFab || existingOverlay) return;
+
+    const filename = (location.pathname.split("/").pop() || "").toLowerCase();
+    if (["offline.html", "auth-restriction.html"].includes(filename)) return;
+
+    const step = document.body?.getAttribute("data-step") || "";
+    const context = step || filename.replace(".html", "");
+
+    const helpMap = {
+      practice: {
+        title: "Practice Hub Help",
+        message: "Boost your skills fast with short, focused sessions.",
+        tips: [
+          "Start a Daily Warmup for quick XP.",
+          "Fix mistakes to reinforce weak topics.",
+          "Set a daily XP goal to stay consistent.",
+        ],
+        primary: "Start Warmup",
+        action: "startWarmup",
+      },
+      notes: {
+        title: "Notes Help",
+        message: "Review explanations and jump straight into practice.",
+        tips: ["Switch Calc tabs to change course.", "Use Search to find topics fast.", "Tap Go to practice a section."],
+        primary: "Search Notes",
+        action: "focusSearch",
+      },
+      path: {
+        title: "Learning Path Help",
+        message: "Follow the path to unlock the next unit.",
+        tips: ["Tap a green node to start a lesson.", "Complete a unit test to advance.", "Check Daily Quest for extra XP."],
+        primary: "Daily Quest",
+        action: "openDailyQuest",
+      },
+      leaderboard: {
+        title: "Leaderboard Help",
+        message: "See how you rank against other learners.",
+        tips: ["Sign in to see your position.", "XP and streaks update after lessons.", "Check often to track progress."],
+        primary: "Back to Path",
+        action: "openPath",
+      },
+      profile: {
+        title: "Profile Help",
+        message: "Track your progress and achievements.",
+        tips: ["Achievements unlock as you finish units.", "Keep your streak alive daily.", "Update your avatar in Settings."],
+        primary: "Open Settings",
+        action: "openSettings",
+      },
+      settings: {
+        title: "Settings Help",
+        message: "Personalize your learning experience.",
+        tips: ["Update your name and avatar.", "Change preferences like sound and vibration.", "Adjust your daily goal pace."],
+        primary: "Back to Path",
+        action: "openPath",
+      },
+      "daily-quest": {
+        title: "Daily Quest Help",
+        message: "Complete quests to earn bonus XP and streak boosts.",
+        tips: ["Finish lessons to complete quest steps.", "Claim rewards once a quest is done.", "Quests refresh daily."],
+        primary: "Go to Path",
+        action: "openPath",
+      },
+      streak: {
+        title: "Streak Help",
+        message: "Keep your streak alive by practicing every day.",
+        tips: ["Complete any lesson to maintain streak.", "Missed a day? Start a new streak."],
+        primary: "Go to Path",
+        action: "openPath",
+      },
+      skill: {
+        title: "Getting Started",
+        message: "Pick the level that matches your confidence.",
+        tips: ["You can change this later in Settings.", "Be honest to get the best path."],
+        primary: "Continue",
+        action: "continueOnboarding",
+      },
+      goal: {
+        title: "Set Your Goal",
+        message: "Choose a pace you can stick to.",
+        tips: ["Consistency beats intensity.", "You can change this later."],
+        primary: "Continue",
+        action: "continueOnboarding",
+      },
+      time: {
+        title: "Reminder Time",
+        message: "Pick a time you’re most likely to study.",
+        tips: ["Choose a consistent time.", "You can update this later."],
+        primary: "Continue",
+        action: "continueOnboarding",
+      },
+      notify: {
+        title: "Learning Reminders",
+        message: "Enable reminders so you don’t miss a day.",
+        tips: ["You can turn this off anytime.", "Reminders help protect your streak."],
+        primary: "Continue",
+        action: "continueOnboarding",
+      },
+      account: {
+        title: "Create Your Account",
+        message: "Save your progress across devices.",
+        tips: ["Google sign-in is fastest.", "Email sign-up works too."],
+        primary: "Continue",
+        action: "continueOnboarding",
+      },
+      done: {
+        title: "You’re Ready",
+        message: "Your path is set. Start learning now.",
+        tips: ["You can adjust goals later.", "Practice every day for streaks."],
+        primary: "Start Learning",
+        action: "continueOnboarding",
+      },
+      "active-lesson": {
+        title: "Lesson Help",
+        message: "Answer each question to earn XP.",
+        tips: ["Use hints if you’re stuck.", "Your streak grows with daily activity."],
+        primary: "Got it",
+        action: "close",
+      },
+      "unit-test": {
+        title: "Unit Test Help",
+        message: "Prove mastery to unlock the next unit.",
+        tips: ["No hints during tests.", "Aim for accuracy to pass."],
+        primary: "Got it",
+        action: "close",
+      },
+      test: {
+        title: "Test Help",
+        message: "Complete the test to unlock progress.",
+        tips: ["Answer carefully — accuracy matters.", "You can retry later if needed."],
+        primary: "Got it",
+        action: "close",
+      },
+      "lesson-complete": {
+        title: "Lesson Complete",
+        message: "Nice work! Your XP and streak are updated.",
+        tips: ["Keep going to build momentum.", "Daily goal progress updates here."],
+        primary: "Back to Path",
+        action: "openPath",
+      },
+      "unit-test-pass": {
+        title: "Test Passed",
+        message: "You unlocked the next unit.",
+        tips: ["Head back to the path to continue.", "Keep your streak alive."],
+        primary: "Back to Path",
+        action: "openPath",
+      },
+      "unit-test-fail": {
+        title: "Test Review",
+        message: "Review weak areas and try again.",
+        tips: ["Practice mistakes before retrying.", "Accuracy improves with repetition."],
+        primary: "Practice Hub",
+        action: "openPractice",
+      },
+      login: {
+        title: "Login Help",
+        message: "Sign in to sync progress across devices.",
+        tips: ["Use Google for quickest sign-in.", "Forgot password? Tap the link below."],
+        primary: "Got it",
+        action: "close",
+      },
+      index: {
+        title: "Getting Started",
+        message: "Pick your experience level to start.",
+        tips: ["This helps us personalize your path.", "You can change it later."],
+        primary: "Continue",
+        action: "continueOnboarding",
+      },
+      default: {
+        title: "Need Help?",
+        message: "Quick tips for this screen.",
+        tips: ["Complete lessons to earn XP.", "Practice daily to keep your streak."],
+        primary: "Got it",
+        action: "close",
+      },
+    };
+
+    const help = helpMap[context] || helpMap.default;
+
+    const wrap = document.createElement("div");
+    wrap.id = "fc-help-fab-wrap";
+    wrap.className = "fixed bottom-24 right-4 md:right-[calc(50%-220px+1rem)] z-40";
+    wrap.innerHTML = `
+      <button
+        id="helpFab"
+        type="button"
+        class="bg-surface-light dark:bg-surface-dark p-3 rounded-full shadow-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-primary transition-colors"
+        aria-label="Help"
+      >
+        <span class="material-symbols-outlined">help</span>
+      </button>
+    `;
+
+    const overlay = document.createElement("div");
+    overlay.id = "helpOverlay";
+    overlay.className = "fixed inset-0 z-[80] hidden";
+    overlay.innerHTML = `
+      <div class="absolute inset-0 bg-[#141414]/60 backdrop-blur-sm" data-help-close></div>
+      <div class="absolute inset-0 flex flex-col justify-end sm:justify-center items-center px-0 sm:px-4">
+        <div class="w-full max-w-[440px] bg-white dark:bg-surface-dark rounded-t-3xl sm:rounded-3xl flex flex-col shadow-2xl">
+          <div class="flex h-6 w-full items-center justify-center sm:hidden">
+            <div class="h-1.5 w-12 rounded-full bg-gray-300 dark:bg-gray-700"></div>
+          </div>
+          <div class="flex items-center justify-between px-6 pt-6">
+            <h2 id="fc-help-title" class="text-xl font-extrabold text-slate-900 dark:text-white">Help</h2>
+            <button
+              type="button"
+              id="fc-help-close"
+              class="w-9 h-9 rounded-full flex items-center justify-center text-slate-500 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              aria-label="Close help"
+            >
+              <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
+          </div>
+          <div class="px-6 pt-4 pb-3 flex items-start gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center overflow-hidden">
+              <img src="icons/apologetic-fox.png" alt="Help mascot" class="w-full h-full object-cover" />
+            </div>
+            <p id="fc-help-message" class="text-sm text-slate-600 dark:text-slate-300 font-medium leading-relaxed"></p>
+          </div>
+          <div class="px-6 pb-4">
+            <ul id="fc-help-tips" class="space-y-2 text-sm text-slate-600 dark:text-slate-300"></ul>
+          </div>
+          <div class="px-6 pb-8 flex flex-col gap-3">
+            <button
+              id="fc-help-primary"
+              type="button"
+              class="w-full flex items-center justify-center gap-2 rounded-xl h-12 bg-primary text-black font-bold shadow-md hover:bg-primary-dark transition-colors"
+            >
+              Got it
+            </button>
+            <div class="flex items-center justify-between text-sm">
+              <button id="fc-help-support" type="button" class="text-primary font-semibold hover:text-primary-dark">
+                Email support
+              </button>
+              <button id="fc-help-privacy" type="button" class="text-slate-500 dark:text-slate-400 hover:text-primary">
+                Privacy Policy
+              </button>
+            </div>
+          </div>
+          <div class="h-2 sm:hidden"></div>
+        </div>
+      </div>
+    `;
+
+    const attach = () => {
+      document.body.appendChild(wrap);
+      document.body.appendChild(overlay);
+
+      const open = () => {
+        const titleEl = document.getElementById("fc-help-title");
+        const msgEl = document.getElementById("fc-help-message");
+        const tipsEl = document.getElementById("fc-help-tips");
+        const primaryBtn = document.getElementById("fc-help-primary");
+        if (titleEl) titleEl.textContent = help.title || "Help";
+        if (msgEl) msgEl.textContent = help.message || "";
+        if (tipsEl) {
+          tipsEl.innerHTML = (help.tips || [])
+            .map((tip) => `<li class="flex gap-2"><span class="material-symbols-outlined text-primary text-[18px]">check_circle</span><span>${tip}</span></li>`)
+            .join("");
+        }
+        if (primaryBtn) primaryBtn.textContent = help.primary || "Got it";
+        overlay.classList.remove("hidden");
+        document.body.classList.add("overflow-hidden");
+      };
+
+      const close = () => {
+        overlay.classList.add("hidden");
+        document.body.classList.remove("overflow-hidden");
+      };
+
+      const actions = {
+        close,
+        startWarmup: () => document.getElementById("startWarmupBtn")?.click(),
+        openDailyQuest: () => (window.location.href = "daily-quest.html"),
+        openNotes: () => (window.location.href = "notes.html"),
+        openSettings: () => (window.location.href = "settings.html"),
+        openPath: () => (window.location.href = "path.html"),
+        openPractice: () => (window.location.href = "practice.html"),
+        focusSearch: () => {
+          const row = document.getElementById("searchRow");
+          const input = document.getElementById("searchInput");
+          if (row) row.classList.remove("hidden");
+          input?.focus();
+        },
+        continueOnboarding: () => document.getElementById("continueBtn")?.click(),
+      };
+
+      document.getElementById("helpFab")?.addEventListener("click", open);
+      overlay.querySelector("[data-help-close]")?.addEventListener("click", close);
+      document.getElementById("fc-help-close")?.addEventListener("click", close);
+      document.getElementById("fc-help-primary")?.addEventListener("click", () => {
+        const action = actions[help.action] || close;
+        action();
+        if (help.action !== "startWarmup" && help.action !== "continueOnboarding") {
+          close();
+        }
+      });
+      document.getElementById("fc-help-support")?.addEventListener("click", () => {
+        window.location.href = "mailto:sentira.official@gmail.com";
+      });
+      document.getElementById("fc-help-privacy")?.addEventListener("click", () => {
+        window.location.href = "privacy.html";
+      });
+    };
+
+    if (document.body) attach();
+    else document.addEventListener("DOMContentLoaded", attach, { once: true });
+  };
+
+  initHelpFab();
+
   const initHaptics = () => {
     const shouldVibrate = () => {
       try {
