@@ -135,18 +135,18 @@
 
         <!-- Form Fields -->
         <div class="flex flex-col gap-4">
-          <!-- Age & Username Row -->
+          <!-- Date of Birth & Username Row -->
           <div class="flex gap-4">
             <div class="flex flex-col w-1/3">
               <label class="text-text-main dark:text-gray-300 text-sm font-bold uppercase tracking-wider mb-2 ml-2">
-                Age <span class="text-text-light font-normal normal-case">(Required)</span>
+                Date of Birth <span class="text-text-light font-normal normal-case">(Required)</span>
               </label>
               <input
-                id="ageInput"
+                id="dobInput"
                 class="form-input w-full rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:border-primary focus:ring-0 h-14 px-4 text-lg font-semibold text-center text-text-main dark:text-white transition-all"
-                placeholder="18"
-                type="number"
-                inputmode="numeric"
+                placeholder="YYYY-MM-DD"
+                type="date"
+                autocomplete="bday"
               />
             </div>
 
@@ -200,8 +200,10 @@
               placeholder="Kenyan"
               type="text"
               autocomplete="country-name"
+              list="countryList"
             />
           </div>
+          <datalist id="countryList"></datalist>
 
           <!-- Email -->
           <div class="flex flex-col">
@@ -404,6 +406,7 @@
         });
       })();
     </script>
+    <script src="countries.js"></script>
     <script src="./app.js"></script>
     <script src="state.js"></script>
     <script src="progress.js"></script>
@@ -415,7 +418,7 @@
         const nameInput = document.getElementById("nameInput");
         const fullNameInput = document.getElementById("fullNameInput");
         const nationalityInput = document.getElementById("nationalityInput");
-        const ageInput = document.getElementById("ageInput");
+        const dobInput = document.getElementById("dobInput");
         const googleBtn = document.getElementById("googleSignupBtn");
         const errorEl = document.getElementById("authError");
         const statusEl = document.getElementById("authStatus");
@@ -447,9 +450,27 @@
             .replace(/[^\w]/g, "");
 
         const normalizeFullName = (value) => String(value || "").trim().replace(/\s+/g, " ");
+        const normalizeCountry =
+          window.FCNormalizeCountry ||
+          ((value) =>
+            String(value || "")
+              .replace(/[\u{1F1E6}-\u{1F1FF}]/gu, "")
+              .replace(/\s+/g, " ")
+              .trim());
 
         const generateFallbackUsername = () =>
           `Cal${String(Math.floor(Math.random() * 1000)).padStart(3, "0")}`;
+
+        if (window.FCBuildCountryOptions) {
+          window.FCBuildCountryOptions("countryList");
+        }
+        if (dobInput) {
+          try {
+            dobInput.max = new Date().toISOString().split("T")[0];
+          } catch {
+            // ignore
+          }
+        }
 
         const setBusy = (busy, label) => {
           continueBtn.disabled = !!busy;
@@ -457,6 +478,11 @@
           continueBtn.classList.toggle("cursor-not-allowed", !!busy);
           if (label) document.getElementById("continueLabel").textContent = label;
         };
+
+        const initialState = readState();
+        if (fullNameInput && initialState.fullName) fullNameInput.value = initialState.fullName;
+        if (dobInput && initialState.dob) dobInput.value = initialState.dob;
+        if (nationalityInput && initialState.nationality) nationalityInput.value = initialState.nationality;
 
         const logDevError = (context, err) => {
           const entry = {
@@ -540,9 +566,9 @@
               return;
             }
             const fullName = normalizeFullName(fullNameInput?.value || "");
-            const ageVal = ageInput?.value ? Number(ageInput.value) : 0;
-            if (!fullName || !ageVal) {
-              setMessage(errorEl, "Please enter your full name and age before signing in.");
+            const dobVal = dobInput?.value || "";
+            if (!fullName || !dobVal) {
+              setMessage(errorEl, "Please enter your full name and date of birth before signing in.");
               return;
             }
             const credential = firebase.auth.GoogleAuthProvider.credential(idToken, accessToken);
@@ -552,8 +578,8 @@
               const s = readState();
               s.email = user.email || s.email || "";
               s.fullName = fullName;
-              s.nationality = (nationalityInput?.value || s.nationality || "").trim();
-              s.age = ageVal;
+              s.nationality = normalizeCountry(nationalityInput?.value || s.nationality || "");
+              s.dob = dobVal;
               s.avatarUrl = user.photoURL || s.avatarUrl || "";
               let desiredUsername =
                 normalizeUsername(nameInput?.value || s.username || user.displayName || "");
@@ -570,13 +596,13 @@
                 }
               }
               s.username = desiredUsername;
-              saveState(s);
+              writeState(s);
               if (window.FCAuth?.syncToRemote) {
                 await FCAuth.syncToRemote({
                   username: s.username,
                   fullName: s.fullName,
                   nationality: s.nationality,
-                  age: s.age,
+                  dob: s.dob,
                   avatarUrl: s.avatarUrl,
                   email: s.email,
                 });
@@ -597,10 +623,10 @@
         const updateSavedProfile = () => {
           const s = readState();
           s.email = emailInput?.value.trim() || s.email || "";
-          s.age = ageInput?.value ? Number(ageInput.value) : s.age || "";
+          s.dob = dobInput?.value || s.dob || "";
           s.username = normalizeUsername(nameInput?.value || s.username || "");
           s.fullName = normalizeFullName(fullNameInput?.value || s.fullName || "");
-          s.nationality = (nationalityInput?.value || s.nationality || "").trim();
+          s.nationality = normalizeCountry(nationalityInput?.value || s.nationality || "");
           writeState(s);
         };
 
@@ -608,8 +634,8 @@
           const email = emailInput?.value.trim() || "";
           const password = passwordInput?.value || "";
           const fullName = normalizeFullName(fullNameInput?.value || "");
-          const ageVal = ageInput?.value ? Number(ageInput.value) : 0;
-          const ok = email.length > 3 && password.length >= 6 && fullName.length >= 2 && ageVal > 0;
+          const dobVal = dobInput?.value || "";
+          const ok = email.length > 3 && password.length >= 6 && fullName.length >= 2 && !!dobVal;
           continueBtn.disabled = !ok;
           continueBtn.classList.toggle("opacity-60", !ok);
           continueBtn.classList.toggle("cursor-not-allowed", !ok);
@@ -625,7 +651,7 @@
           updateContinueState();
         });
         nationalityInput?.addEventListener("input", updateSavedProfile);
-        ageInput?.addEventListener("input", () => {
+        dobInput?.addEventListener("input", () => {
           updateSavedProfile();
           updateContinueState();
         });
@@ -637,14 +663,14 @@
           const password = passwordInput?.value || "";
           const username = normalizeUsername(nameInput?.value || "");
           const fullName = normalizeFullName(fullNameInput?.value || "");
-          const nationality = (nationalityInput?.value || "").trim();
-          const age = ageInput?.value ? Number(ageInput.value) : 0;
+          const nationality = normalizeCountry(nationalityInput?.value || "");
+          const dob = dobInput?.value || "";
 
           if (window.FCAuth?.getCurrentUser && FCAuth.getCurrentUser()) {
             setBusy(true, "Continuing...");
             try {
-              if (!fullName || !age) {
-                setMessage(errorEl, "Please enter your full name and age.");
+              if (!fullName || !dob) {
+                setMessage(errorEl, "Please enter your full name and date of birth.");
                 setBusy(false, "Continue");
                 return;
               }
@@ -666,7 +692,7 @@
               const s = readState();
               s.username = finalUsername;
               writeState(s);
-              await FCAuth.syncToRemote({ username: finalUsername, fullName, nationality, age, email });
+              await FCAuth.syncToRemote({ username: finalUsername, fullName, nationality, dob, email });
               location.href = "done.html";
             } catch (err) {
               setMessage(errorEl, friendlyAuthMessage(err, "Unable to continue. Please try again."));
@@ -683,8 +709,8 @@
             return;
           }
 
-          if (!fullName || !age) {
-            setMessage(errorEl, "Please enter your full name and age.");
+          if (!fullName || !dob) {
+            setMessage(errorEl, "Please enter your full name and date of birth.");
             return;
           }
 
@@ -703,7 +729,7 @@
               username,
               fullName,
               nationality,
-              age,
+              dob,
               avatarUrl,
             });
             const user = FCAuth.getCurrentUser();
@@ -728,9 +754,9 @@
             return;
           }
           const fullName = normalizeFullName(fullNameInput?.value || "");
-          const ageVal = ageInput?.value ? Number(ageInput.value) : 0;
-          if (!fullName || !ageVal) {
-            setMessage(errorEl, "Please enter your full name and age before continuing.");
+          const dobVal = dobInput?.value || "";
+          if (!fullName || !dobVal) {
+            setMessage(errorEl, "Please enter your full name and date of birth before continuing.");
             return;
           }
           if (window.AndroidAuth?.signInWithGoogle) {
@@ -762,15 +788,15 @@
             }
             s.username = finalUsername;
             s.fullName = fullName;
-            s.nationality = (nationalityInput?.value || s.nationality || "").trim();
-            s.age = ageVal;
+            s.nationality = normalizeCountry(nationalityInput?.value || s.nationality || "");
+            s.dob = dobVal;
             s.avatarUrl = user?.photoURL || s.avatarUrl || "";
             writeState(s);
             await FCAuth.ensureUserDoc({
               username: s.username,
               fullName: s.fullName,
               nationality: s.nationality,
-              age: s.age,
+              dob: s.dob,
               avatarUrl: s.avatarUrl,
               email: s.email,
             });
@@ -789,6 +815,9 @@
             const s = readState();
             if (emailInput && user.email) emailInput.value = user.email;
             if (nameInput && user.displayName) nameInput.value = user.displayName;
+            if (fullNameInput && s.fullName) fullNameInput.value = s.fullName;
+            if (dobInput && s.dob) dobInput.value = s.dob;
+            if (nationalityInput && s.nationality) nationalityInput.value = s.nationality;
             s.email = user.email || s.email || "";
             s.username = user.displayName || s.username || s.name || "";
             s.avatarUrl = user.photoURL || s.avatarUrl || "";

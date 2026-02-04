@@ -313,7 +313,7 @@
       const remote = toObject(remoteData?.onboarding);
       const local = toObject(localState?.onboarding);
       const merged = mergeSparseObject(remote, local);
-      const preferRemoteKeys = ["username", "fullName", "nationality", "email", "age", "avatarUrl"];
+      const preferRemoteKeys = ["username", "fullName", "nationality", "email", "dob", "age", "avatarUrl"];
       preferRemoteKeys.forEach((key) => {
         const value = remote[key];
         if (value == null) return;
@@ -409,6 +409,7 @@
       if (extra.fullName) onboarding.fullName = extra.fullName;
       if (extra.nationality) onboarding.nationality = extra.nationality;
       if (extra.avatarUrl) onboarding.avatarUrl = extra.avatarUrl;
+      if (extra.dob) onboarding.dob = extra.dob;
       if (extra.age) onboarding.age = extra.age;
       if (extra.email) onboarding.email = extra.email;
     }
@@ -425,6 +426,7 @@
       usernameLower: String(username || "").toLowerCase(),
       fullName: onboarding.fullName || "",
       nationality: onboarding.nationality || "",
+      dob: onboarding.dob || "",
       photoURL: user.photoURL || onboarding.avatarUrl || "",
       onboarding,
       progress: local.progress || {},
@@ -675,7 +677,7 @@
     return doc.data();
   };
 
-  const signUpWithEmail = async ({ email, password, username, fullName, nationality, age, avatarUrl }) => {
+  const signUpWithEmail = async ({ email, password, username, fullName, nationality, dob, age, avatarUrl }) => {
     const cleanEmail = normalizeEmail(email);
     const result = await auth.createUserWithEmailAndPassword(cleanEmail, password);
     const usernameResult = await reserveUsername(username, { attempts: 30 });
@@ -691,6 +693,7 @@
     if (finalUsername) local.onboarding.username = finalUsername;
     if (fullName) local.onboarding.fullName = fullName;
     if (nationality) local.onboarding.nationality = nationality;
+    if (dob) local.onboarding.dob = dob;
     if (age) local.onboarding.age = age;
     if (avatarUrl) local.onboarding.avatarUrl = avatarUrl;
     if (cleanEmail) local.onboarding.email = cleanEmail;
@@ -699,6 +702,7 @@
       username: finalUsername,
       fullName,
       nationality,
+      dob,
       age,
       avatarUrl,
       email: cleanEmail,
