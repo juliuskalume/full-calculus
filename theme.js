@@ -987,4 +987,22 @@
   };
 
   initHaptics();
+
+  const initBackToPathOverride = () => {
+    const filename = (location.pathname.split("/").pop() || "").toLowerCase();
+    const forcePages = new Set(["practice.html", "leaderboard.html", "notes.html", "profile.html"]);
+    if (!forcePages.has(filename)) return;
+
+    try {
+      history.pushState({ fcForcePath: true }, "");
+    } catch {
+      // ignore
+    }
+
+    window.addEventListener("popstate", () => {
+      window.location.href = "path.html";
+    });
+  };
+
+  initBackToPathOverride();
 })();
