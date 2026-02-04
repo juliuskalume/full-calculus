@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "810918393440",
+    "project_id": "full-calculus",
+    "storage_bucket": "full-calculus.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:810918393440:android:cbc6a15cdc75a40e2f3505",
+        "android_client_info": {
+          "package_name": "com.fullcalculus.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "810918393440-h4rhpumer57u8h09equohk0802p01dqn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.fullcalculus.app",
+            "certificate_hash": "0d874ffc9073f342c1a7d5c687e98827c4c47ec3"
+          }
+        },
+        {
+          "client_id": "810918393440-kl2bcioak73e8i53odr0t2a4401168ek.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDVXUb3J5VowuJ5cxYoKyYSO3e5nOF_PWE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "810918393440-kl2bcioak73e8i53odr0t2a4401168ek.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
