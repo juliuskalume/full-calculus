@@ -745,11 +745,31 @@
         history.pushState({ lessonQuitPrompt: true }, "");
         window.addEventListener("popstate", onPopState);
 
+        const goBackOrPath = () => {
+          const ref = document.referrer || "";
+          if (ref) {
+            try {
+              const refUrl = new URL(ref, window.location.href);
+              if (refUrl.origin === window.location.origin) {
+                window.location.href = refUrl.href;
+                return;
+              }
+            } catch {
+              // ignore
+            }
+          }
+          if (history.length > 1) {
+            history.back();
+            return;
+          }
+          window.location.href = "path.html";
+        };
+
         const handleQuit = () => {
           allowExit = true;
           window.removeEventListener("popstate", onPopState);
           if (window.FCEngine?.clearSession) FCEngine.clearSession();
-          window.location.href = "path.html";
+          goBackOrPath();
         };
 
         quitLessonBtn?.addEventListener("click", handleQuit);
