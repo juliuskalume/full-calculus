@@ -213,7 +213,22 @@
         streakText.textContent = `${FC.get().streak ?? 0} Days`;
       }
 
-      const DAILY_GOAL = 100;
+      function loadPrefs() {
+        try {
+          return JSON.parse(localStorage.getItem("fc_prefs") || "{}");
+        } catch {
+          return {};
+        }
+      }
+
+      function getDailyGoal() {
+        const prefs = loadPrefs();
+        const raw = Number(prefs.dailyGoalXp ?? 100);
+        if (!Number.isFinite(raw)) return 100;
+        return Math.min(1000, Math.max(10, Math.round(raw)));
+      }
+
+      const DAILY_GOAL = getDailyGoal();
       const daily = FCProgress.get().daily || { xp: 0 };
       const dailyText = document.getElementById("dailyGoalText");
       if (dailyText) {
