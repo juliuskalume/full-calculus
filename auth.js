@@ -309,7 +309,19 @@
   };
 
   const mergeLocalAndRemoteState = (localState, remoteData) => ({
-    onboarding: mergeSparseObject(remoteData?.onboarding, localState?.onboarding),
+    onboarding: (() => {
+      const remote = toObject(remoteData?.onboarding);
+      const local = toObject(localState?.onboarding);
+      const merged = mergeSparseObject(remote, local);
+      const preferRemoteKeys = ["username", "fullName", "nationality", "email", "age", "avatarUrl"];
+      preferRemoteKeys.forEach((key) => {
+        const value = remote[key];
+        if (value == null) return;
+        if (typeof value === "string" && !value.trim()) return;
+        merged[key] = value;
+      });
+      return merged;
+    })(),
     progress: mergeProgress(localState?.progress, remoteData?.progress),
     meta: mergeMeta(localState?.meta, remoteData?.meta),
   });
@@ -393,18 +405,26 @@
     }
 
     if (extra && typeof extra === "object") {
-      if (extra.name) onboarding.name = extra.name;
+      if (extra.username) onboarding.username = extra.username;
+      if (extra.fullName) onboarding.fullName = extra.fullName;
+      if (extra.nationality) onboarding.nationality = extra.nationality;
       if (extra.avatarUrl) onboarding.avatarUrl = extra.avatarUrl;
       if (extra.age) onboarding.age = extra.age;
       if (extra.email) onboarding.email = extra.email;
     }
 
     if (!onboarding.email && user.email) onboarding.email = user.email;
+    if (!onboarding.username && onboarding.name) onboarding.username = onboarding.name;
 
+    const username = onboarding.username || user.displayName || "";
     const payload = {
       uid: user.uid,
       email: user.email || onboarding.email || "",
-      displayName: user.displayName || onboarding.name || "",
+      displayName: username,
+      username,
+      usernameLower: String(username || "").toLowerCase(),
+      fullName: onboarding.fullName || "",
+      nationality: onboarding.nationality || "",
       photoURL: user.photoURL || onboarding.avatarUrl || "",
       onboarding,
       progress: local.progress || {},
@@ -428,8 +448,9 @@
     const onboarding = { ...(local.onboarding || {}) };
     const meta = local.meta || {};
     const displayName =
+      extra?.username ||
+      onboarding.username ||
       user.displayName ||
-      extra?.name ||
       onboarding.name ||
       "Learner";
     const photoURL =
@@ -441,6 +462,7 @@
       uid: user.uid,
       displayName,
       displayNameLower: String(displayName || "").toLowerCase(),
+      username: displayName,
       photoURL,
       xp: Number(meta.xp) || 0,
       streak: Number(meta.streak) || 0,
@@ -462,8 +484,9 @@
     const progress = normalizeProgress(local.progress);
     const meta = local.meta || {};
     const displayName =
+      extra?.username ||
+      onboarding.username ||
       user.displayName ||
-      extra?.name ||
       onboarding.name ||
       "Learner";
     const photoURL =
@@ -476,6 +499,8 @@
       uid: user.uid,
       displayName,
       displayNameLower: String(displayName || "").toLowerCase(),
+      username: displayName,
+      usernameLower: String(displayName || "").toLowerCase(),
       photoURL,
       xp: Number(meta.xp) || 0,
       streak: Number(meta.streak) || 0,
@@ -518,6 +543,76 @@
     const payload = buildPublicProfile(user, extra, options);
     await db.collection("public_profiles").doc(user.uid).set(payload, { merge: true });
     return payload;
+  };
+
+  const USERNAME_REGISTRY = "name_registry";
+  const USERNAME_LOCAL_KEY = "fc_username_registry";
+
+  const normalizeUsername = (value) =>
+    String(value || "")
+      .trim()
+      .replace(/\s+/g, "")
+      .replace(/[^\w]/g, "");
+
+  const generateUsername = () => {
+    const num = Math.floor(Math.random() * 1000);
+    return `Cal${String(num).padStart(3, "0")}`;
+  };
+
+  const reserveUsername = async (desired, options = {}) => {
+    const user = auth.currentUser;
+    if (!user) return { ok: false, message: "Not signed in." };
+    const attempts = Number(options.attempts) || 25;
+    let candidate = normalizeUsername(desired);
+    if (candidate && (candidate.length < 3 || candidate.length > 20)) {
+      return { ok: false, message: "Username must be 3-20 characters." };
+    }
+    let generated = !candidate;
+
+    for (let i = 0; i < attempts; i += 1) {
+      const name = candidate || generateUsername();
+      const lower = name.toLowerCase();
+      try {
+        await db
+          .collection(USERNAME_REGISTRY)
+          .doc(lower)
+          .set(
+            {
+              uid: user.uid,
+              username: name,
+              usernameLower: lower,
+              name,
+              nameLower: lower,
+              updatedAt: new Date().toISOString(),
+            },
+            { merge: true }
+          );
+
+        try {
+          const prev = localStorage.getItem(USERNAME_LOCAL_KEY);
+          if (prev && prev !== lower) {
+            db.collection(USERNAME_REGISTRY).doc(prev).delete().catch(() => {});
+          }
+          localStorage.setItem(USERNAME_LOCAL_KEY, lower);
+        } catch {
+          // ignore
+        }
+
+        return { ok: true, username: name };
+      } catch (err) {
+        const code = err?.code || "";
+        if (code === "permission-denied" || code === "already-exists") {
+          if (!generated && candidate) {
+            return { ok: false, message: "That username is already taken." };
+          }
+          candidate = "";
+          generated = true;
+          continue;
+        }
+        return { ok: false, message: "Unable to save that username." };
+      }
+    }
+    return { ok: false, message: "Unable to find an available username." };
   };
 
   const syncToRemote = async (extra) => {
@@ -580,20 +675,34 @@
     return doc.data();
   };
 
-  const signUpWithEmail = async ({ email, password, name, age, avatarUrl }) => {
+  const signUpWithEmail = async ({ email, password, username, fullName, nationality, age, avatarUrl }) => {
     const cleanEmail = normalizeEmail(email);
     const result = await auth.createUserWithEmailAndPassword(cleanEmail, password);
-    if (name) {
-      await result.user.updateProfile({ displayName: name });
+    const usernameResult = await reserveUsername(username, { attempts: 30 });
+    if (!usernameResult.ok) {
+      throw new Error(usernameResult.message || "Username unavailable.");
+    }
+    const finalUsername = usernameResult.username || "";
+    if (finalUsername) {
+      await result.user.updateProfile({ displayName: finalUsername });
     }
     const local = exportLocalState();
     local.onboarding = local.onboarding || {};
-    if (name) local.onboarding.name = name;
+    if (finalUsername) local.onboarding.username = finalUsername;
+    if (fullName) local.onboarding.fullName = fullName;
+    if (nationality) local.onboarding.nationality = nationality;
     if (age) local.onboarding.age = age;
     if (avatarUrl) local.onboarding.avatarUrl = avatarUrl;
     if (cleanEmail) local.onboarding.email = cleanEmail;
     safeSet(DEFAULT_STATE_KEY, local.onboarding);
-    await syncToRemote({ name, age, avatarUrl, email: cleanEmail });
+    await syncToRemote({
+      username: finalUsername,
+      fullName,
+      nationality,
+      age,
+      avatarUrl,
+      email: cleanEmail,
+    });
     return result.user;
   };
 
@@ -621,9 +730,23 @@
     const result = await auth.signInWithPopup(provider);
     const data = await syncFromRemote();
     if (!data) {
+      let finalUsername = result.user.displayName || "";
+      if (finalUsername) {
+        const reserve = await reserveUsername(finalUsername, { attempts: 30 });
+        if (reserve.ok && reserve.username) {
+          finalUsername = reserve.username;
+          await result.user.updateProfile({ displayName: finalUsername });
+        }
+      } else {
+        const reserve = await reserveUsername("", { attempts: 30 });
+        if (reserve.ok && reserve.username) {
+          finalUsername = reserve.username;
+          await result.user.updateProfile({ displayName: finalUsername });
+        }
+      }
       await syncToRemote({
         email: result.user.email || "",
-        name: result.user.displayName || "",
+        username: finalUsername,
         avatarUrl: result.user.photoURL || "",
       });
     }
@@ -664,6 +787,7 @@
     syncFromRemote,
     syncToRemote,
     syncPublicProfile,
+    reserveUsername,
     ensureUserDoc,
     syncLeaderboard,
     exportLocalState,

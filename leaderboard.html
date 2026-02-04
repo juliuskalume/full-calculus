@@ -193,7 +193,7 @@
 
       const getDisplayName = (data) => {
         const fallback = "Learner";
-        return String(data?.displayName || data?.name || fallback).trim() || fallback;
+        return String(data?.displayName || data?.username || data?.name || fallback).trim() || fallback;
       };
 
       const getAvatar = (data) => data?.photoURL || DEFAULT_AVATAR;
@@ -339,10 +339,16 @@
 
       const renderFallback = () => {
         const meta = window.FC?.get ? FC.get() : {};
+        let localState = {};
+        try {
+          localState = JSON.parse(localStorage.getItem("fc_state") || "{}");
+        } catch {
+          localState = {};
+        }
         const fallbackUser = {
           uid: "local",
-          displayName: meta.name || "CalcHero",
-          photoURL: meta.avatarUrl || DEFAULT_AVATAR,
+          displayName: localState.username || localState.name || "CalcHero",
+          photoURL: localState.avatarUrl || meta.avatarUrl || DEFAULT_AVATAR,
           xp: Number(meta.xp || 0),
           streak: Number(meta.streak || 0),
         };

@@ -272,12 +272,17 @@ function initAccountPage() {
     saveState(s);
   }
 
-  if (input) input.value = s.name || "";
+  if (!s.username && s.name) {
+    s.username = s.name;
+    saveState(s);
+  }
+
+  if (input) input.value = s.username || "";
 
   const validName = (v) => {
     const trimmed = (v || "").trim();
     if (!trimmed) return true;
-    return trimmed.length >= 2;
+    return trimmed.length >= 3 && trimmed.length <= 20;
   };
 
   const update = (v) => {
@@ -291,13 +296,13 @@ function initAccountPage() {
     }
   };
 
-  update(s.name || "");
+  update(s.username || "");
 
   if (input) {
     input.addEventListener("input", (e) => {
       const v = e.target.value;
       const next = loadState();
-      next.name = v;
+      next.username = v;
 
       // keep avatarUrl stable
       if (!next.avatarUrl) next.avatarUrl = DEFAULT_AVATAR;
@@ -330,7 +335,7 @@ function initDonePage() {
   setText("sumGoal", s.goal || "—");
   setText("sumTime", s.minutesPerDay ? `${s.minutesPerDay} min` : "—");
   setText("sumNotif", s.notifications ? "on" : "off");
-  setText("sumName", s.name ? s.name.trim() : "—");
+  setText("sumName", s.username ? s.username.trim() : s.name ? s.name.trim() : "—");
 }
 
 function initPage() {

@@ -135,12 +135,12 @@
 
         <!-- Form Fields -->
         <div class="flex flex-col gap-4">
-          <!-- Age & Name Row -->
+          <!-- Age & Username Row -->
           <div class="flex gap-4">
             <div class="flex flex-col w-1/3">
-              <label class="text-text-main dark:text-gray-300 text-sm font-bold uppercase tracking-wider mb-2 ml-2"
-                >Age</label
-              >
+              <label class="text-text-main dark:text-gray-300 text-sm font-bold uppercase tracking-wider mb-2 ml-2">
+                Age <span class="text-text-light font-normal normal-case">(Required)</span>
+              </label>
               <input
                 id="ageInput"
                 class="form-input w-full rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:border-primary focus:ring-0 h-14 px-4 text-lg font-semibold text-center text-text-main dark:text-white transition-all"
@@ -152,16 +152,16 @@
 
             <div class="flex flex-col w-2/3">
               <label class="text-text-main dark:text-gray-300 text-sm font-bold uppercase tracking-wider mb-2 ml-2">
-                Name <span class="text-text-light font-normal normal-case">(Optional)</span>
+                Username <span class="text-text-light font-normal normal-case">(Optional)</span>
               </label>
 
               <!-- IMPORTANT: id="nameInput" for app.js -->
               <input
                 id="nameInput"
                 class="form-input w-full rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:border-primary focus:ring-0 h-14 px-5 text-lg font-medium text-text-main dark:text-white transition-all"
-                placeholder="Ada Lovelace"
+                placeholder="Cal123"
                 type="text"
-                autocomplete="name"
+                autocomplete="username"
               />
 
               <!-- IMPORTANT: id="nameDot" for app.js validation indicator -->
@@ -170,9 +170,37 @@
                   id="nameDot"
                   class="inline-block w-2.5 h-2.5 rounded-full bg-zinc-300 dark:bg-zinc-700"
                 ></span>
-                <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">At least 2 characters</span>
+                <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">3-20 characters (optional)</span>
               </div>
             </div>
+          </div>
+
+          <!-- Full Name -->
+          <div class="flex flex-col">
+            <label class="text-text-main dark:text-gray-300 text-sm font-bold uppercase tracking-wider mb-2 ml-2">
+              Full Name <span class="text-text-light font-normal normal-case">(Required)</span>
+            </label>
+            <input
+              id="fullNameInput"
+              class="form-input w-full rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:border-primary focus:ring-0 h-14 px-5 text-lg font-medium text-text-main dark:text-white transition-all"
+              placeholder="Ada Lovelace"
+              type="text"
+              autocomplete="name"
+            />
+          </div>
+
+          <!-- Nationality -->
+          <div class="flex flex-col">
+            <label class="text-text-main dark:text-gray-300 text-sm font-bold uppercase tracking-wider mb-2 ml-2">
+              Nationality <span class="text-text-light font-normal normal-case">(Optional)</span>
+            </label>
+            <input
+              id="nationalityInput"
+              class="form-input w-full rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:border-primary focus:ring-0 h-14 px-5 text-lg font-medium text-text-main dark:text-white transition-all"
+              placeholder="Kenyan"
+              type="text"
+              autocomplete="country-name"
+            />
           </div>
 
           <!-- Email -->
@@ -385,6 +413,8 @@
         const emailInput = document.getElementById("emailInput");
         const passwordInput = document.getElementById("passwordInput");
         const nameInput = document.getElementById("nameInput");
+        const fullNameInput = document.getElementById("fullNameInput");
+        const nationalityInput = document.getElementById("nationalityInput");
         const ageInput = document.getElementById("ageInput");
         const googleBtn = document.getElementById("googleSignupBtn");
         const errorEl = document.getElementById("authError");
@@ -409,6 +439,17 @@
           el.textContent = msg;
           el.classList.remove("hidden");
         };
+
+        const normalizeUsername = (value) =>
+          String(value || "")
+            .trim()
+            .replace(/\s+/g, "")
+            .replace(/[^\w]/g, "");
+
+        const normalizeFullName = (value) => String(value || "").trim().replace(/\s+/g, " ");
+
+        const generateFallbackUsername = () =>
+          `Cal${String(Math.floor(Math.random() * 1000)).padStart(3, "0")}`;
 
         const setBusy = (busy, label) => {
           continueBtn.disabled = !!busy;
@@ -498,17 +539,47 @@
               setMessage(errorEl, "Google sign-in failed. Try again.");
               return;
             }
+            const fullName = normalizeFullName(fullNameInput?.value || "");
+            const ageVal = ageInput?.value ? Number(ageInput.value) : 0;
+            if (!fullName || !ageVal) {
+              setMessage(errorEl, "Please enter your full name and age before signing in.");
+              return;
+            }
             const credential = firebase.auth.GoogleAuthProvider.credential(idToken, accessToken);
             const userCredential = await firebase.auth().signInWithCredential(credential);
             const user = userCredential?.user;
             if (user) {
               const s = readState();
               s.email = user.email || s.email || "";
-              s.name = user.displayName || s.name || "";
+              s.fullName = fullName;
+              s.nationality = (nationalityInput?.value || s.nationality || "").trim();
+              s.age = ageVal;
               s.avatarUrl = user.photoURL || s.avatarUrl || "";
+              let desiredUsername =
+                normalizeUsername(nameInput?.value || s.username || user.displayName || "");
+              if (!desiredUsername) desiredUsername = generateFallbackUsername();
+              if (window.FCAuth?.reserveUsername) {
+                const reserve = await FCAuth.reserveUsername(desiredUsername);
+                if (!reserve?.ok) {
+                  setMessage(errorEl, reserve?.message || "Username unavailable.");
+                  return;
+                }
+                desiredUsername = reserve.username || desiredUsername;
+                if (user?.updateProfile) {
+                  await user.updateProfile({ displayName: desiredUsername });
+                }
+              }
+              s.username = desiredUsername;
               saveState(s);
               if (window.FCAuth?.syncToRemote) {
-                await FCAuth.syncToRemote({ name: s.name, avatarUrl: s.avatarUrl, email: s.email });
+                await FCAuth.syncToRemote({
+                  username: s.username,
+                  fullName: s.fullName,
+                  nationality: s.nationality,
+                  age: s.age,
+                  avatarUrl: s.avatarUrl,
+                  email: s.email,
+                });
               }
             }
             setMessage(statusEl, "Signed in. Redirecting...");
@@ -527,13 +598,18 @@
           const s = readState();
           s.email = emailInput?.value.trim() || s.email || "";
           s.age = ageInput?.value ? Number(ageInput.value) : s.age || "";
+          s.username = normalizeUsername(nameInput?.value || s.username || "");
+          s.fullName = normalizeFullName(fullNameInput?.value || s.fullName || "");
+          s.nationality = (nationalityInput?.value || s.nationality || "").trim();
           writeState(s);
         };
 
         const updateContinueState = () => {
           const email = emailInput?.value.trim() || "";
           const password = passwordInput?.value || "";
-          const ok = email.length > 3 && password.length >= 6;
+          const fullName = normalizeFullName(fullNameInput?.value || "");
+          const ageVal = ageInput?.value ? Number(ageInput.value) : 0;
+          const ok = email.length > 3 && password.length >= 6 && fullName.length >= 2 && ageVal > 0;
           continueBtn.disabled = !ok;
           continueBtn.classList.toggle("opacity-60", !ok);
           continueBtn.classList.toggle("cursor-not-allowed", !ok);
@@ -543,21 +619,54 @@
           updateSavedProfile();
           updateContinueState();
         });
-        ageInput?.addEventListener("input", updateSavedProfile);
+        nameInput?.addEventListener("input", updateSavedProfile);
+        fullNameInput?.addEventListener("input", () => {
+          updateSavedProfile();
+          updateContinueState();
+        });
+        nationalityInput?.addEventListener("input", updateSavedProfile);
+        ageInput?.addEventListener("input", () => {
+          updateSavedProfile();
+          updateContinueState();
+        });
         passwordInput?.addEventListener("input", updateContinueState);
 
         continueBtn.addEventListener("click", async () => {
           setMessage(errorEl, "");
           const email = emailInput?.value.trim() || "";
           const password = passwordInput?.value || "";
-          const name = nameInput?.value.trim() || "";
-          const age = ageInput?.value ? Number(ageInput.value) : "";
+          const username = normalizeUsername(nameInput?.value || "");
+          const fullName = normalizeFullName(fullNameInput?.value || "");
+          const nationality = (nationalityInput?.value || "").trim();
+          const age = ageInput?.value ? Number(ageInput.value) : 0;
 
           if (window.FCAuth?.getCurrentUser && FCAuth.getCurrentUser()) {
             setBusy(true, "Continuing...");
             try {
+              if (!fullName || !age) {
+                setMessage(errorEl, "Please enter your full name and age.");
+                setBusy(false, "Continue");
+                return;
+              }
               updateSavedProfile();
-              await FCAuth.syncToRemote({ name, age, email });
+              const user = FCAuth.getCurrentUser();
+              let finalUsername = username || user.displayName || "";
+              if (window.FCAuth?.reserveUsername) {
+                const reserve = await FCAuth.reserveUsername(finalUsername);
+                if (!reserve?.ok) {
+                  setMessage(errorEl, reserve?.message || "Username unavailable.");
+                  setBusy(false, "Continue");
+                  return;
+                }
+                finalUsername = reserve.username || finalUsername;
+              }
+              if (finalUsername && user?.updateProfile) {
+                await user.updateProfile({ displayName: finalUsername });
+              }
+              const s = readState();
+              s.username = finalUsername;
+              writeState(s);
+              await FCAuth.syncToRemote({ username: finalUsername, fullName, nationality, age, email });
               location.href = "done.html";
             } catch (err) {
               setMessage(errorEl, friendlyAuthMessage(err, "Unable to continue. Please try again."));
@@ -574,6 +683,11 @@
             return;
           }
 
+          if (!fullName || !age) {
+            setMessage(errorEl, "Please enter your full name and age.");
+            return;
+          }
+
           if (!email || password.length < 6) {
             setMessage(errorEl, "Enter a valid email and a password with at least 6 characters.");
             return;
@@ -586,10 +700,16 @@
             await FCAuth.signUpWithEmail({
               email,
               password,
-              name,
+              username,
+              fullName,
+              nationality,
               age,
               avatarUrl,
             });
+            const user = FCAuth.getCurrentUser();
+            s.username = user?.displayName || username || "";
+            s.fullName = fullName;
+            s.nationality = nationality;
             updateSavedProfile();
             location.href = "done.html";
           } catch (err) {
@@ -607,6 +727,12 @@
             logDevError("account-google-disabled", new Error("Firebase auth not configured."));
             return;
           }
+          const fullName = normalizeFullName(fullNameInput?.value || "");
+          const ageVal = ageInput?.value ? Number(ageInput.value) : 0;
+          if (!fullName || !ageVal) {
+            setMessage(errorEl, "Please enter your full name and age before continuing.");
+            return;
+          }
           if (window.AndroidAuth?.signInWithGoogle) {
             window.AndroidAuth.signInWithGoogle();
             return;
@@ -620,10 +746,34 @@
             const user = await FCAuth.signInWithGoogle();
             const s = readState();
             s.email = user?.email || s.email || "";
-            s.name = user?.displayName || s.name || "";
+            let finalUsername = normalizeUsername(nameInput?.value || s.username || user?.displayName || "");
+            if (!finalUsername) finalUsername = generateFallbackUsername();
+            if (window.FCAuth?.reserveUsername) {
+              const reserve = await FCAuth.reserveUsername(finalUsername);
+              if (!reserve?.ok) {
+                setMessage(errorEl, reserve?.message || "Username unavailable.");
+                setBusy(false, "Create Profile");
+                return;
+              }
+              finalUsername = reserve.username || finalUsername;
+              if (user?.updateProfile) {
+                await user.updateProfile({ displayName: finalUsername });
+              }
+            }
+            s.username = finalUsername;
+            s.fullName = fullName;
+            s.nationality = (nationalityInput?.value || s.nationality || "").trim();
+            s.age = ageVal;
             s.avatarUrl = user?.photoURL || s.avatarUrl || "";
             writeState(s);
-            await FCAuth.ensureUserDoc({ name: s.name, avatarUrl: s.avatarUrl, email: s.email });
+            await FCAuth.ensureUserDoc({
+              username: s.username,
+              fullName: s.fullName,
+              nationality: s.nationality,
+              age: s.age,
+              avatarUrl: s.avatarUrl,
+              email: s.email,
+            });
             location.href = "done.html";
           } catch (err) {
             setMessage(errorEl, friendlyAuthMessage(err, "Google sign-in failed. Please try again."));
@@ -640,7 +790,7 @@
             if (emailInput && user.email) emailInput.value = user.email;
             if (nameInput && user.displayName) nameInput.value = user.displayName;
             s.email = user.email || s.email || "";
-            s.name = user.displayName || s.name || "";
+            s.username = user.displayName || s.username || s.name || "";
             s.avatarUrl = user.photoURL || s.avatarUrl || "";
             writeState(s);
             setMessage(statusEl, `Signed in as ${user.email || "your account"}`);

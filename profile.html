@@ -296,7 +296,7 @@
         </div>
 
         <div class="px-6 pb-6">
-          <label class="text-xs font-bold text-slate-400">Search by name</label>
+          <label class="text-xs font-bold text-slate-400">Search by username</label>
           <div class="relative mt-2">
             <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
             <input id="friendSearchInput" type="text" placeholder="Start typing..."
@@ -426,7 +426,15 @@
       const DEFAULT_AVATAR =
         "https://github.com/juliuskalume/full-calculus/blob/main/icons/icon-192.png?raw=true";
 
-      const name = (s.name && String(s.name).trim()) || "CalcHero";
+      if (!s.username && s.name) {
+        s.username = s.name;
+        try {
+          localStorage.setItem("fc_state", JSON.stringify(s));
+        } catch {
+          // ignore
+        }
+      }
+      const name = (s.username && String(s.username).trim()) || (s.name && String(s.name).trim()) || "CalcHero";
       const avatarUrl = s.avatarUrl || DEFAULT_AVATAR;
 
       document.getElementById("nameText").textContent = name;
@@ -1134,7 +1142,7 @@
             to: uid,
             status: "pending",
             createdAt: new Date().toISOString(),
-            fromName: currentUser.displayName || localProfile.name || "Learner",
+            fromName: currentUser.displayName || localProfile.username || localProfile.name || "Learner",
             fromPhoto: currentUser.photoURL || localProfile.avatarUrl || DEFAULT_AVATAR,
           };
 

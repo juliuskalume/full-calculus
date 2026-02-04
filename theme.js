@@ -409,7 +409,7 @@
       settings: {
         title: "Settings Help",
         message: "Personalize your learning experience.",
-        tips: ["Update your name and avatar.", "Change preferences like sound and vibration.", "Adjust your daily goal pace."],
+        tips: ["Update your username and avatar.", "Change preferences like sound and vibration.", "Adjust your daily goal pace."],
         primary: "Back to Path",
         action: "openPath",
       },

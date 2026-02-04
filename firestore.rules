@@ -20,16 +20,30 @@ service cloud.firestore {
       allow read: if request.auth != null && request.auth.uid == resource.data.uid;
       allow create: if request.auth != null &&
         request.resource.data.uid == request.auth.uid &&
-        request.resource.data.nameLower is string &&
-        request.resource.data.nameLower == nameId &&
-        request.resource.data.name is string &&
-        request.resource.data.name.size() >= 3 &&
-        request.resource.data.name.size() <= 20 &&
+        (
+          (request.resource.data.usernameLower is string &&
+            request.resource.data.usernameLower == nameId &&
+            request.resource.data.username is string &&
+            request.resource.data.username.size() >= 3 &&
+            request.resource.data.username.size() <= 20)
+          ||
+          (request.resource.data.nameLower is string &&
+            request.resource.data.nameLower == nameId &&
+            request.resource.data.name is string &&
+            request.resource.data.name.size() >= 3 &&
+            request.resource.data.name.size() <= 20)
+        ) &&
         !exists(/databases/$(database)/documents/name_registry/$(nameId));
       allow update: if request.auth != null &&
         request.auth.uid == resource.data.uid &&
         request.resource.data.uid == resource.data.uid &&
-        request.resource.data.nameLower == resource.data.nameLower;
+        (
+          (request.resource.data.usernameLower is string &&
+            request.resource.data.usernameLower == nameId)
+          ||
+          (request.resource.data.nameLower is string &&
+            request.resource.data.nameLower == nameId)
+        );
       allow delete: if request.auth != null && request.auth.uid == resource.data.uid;
     }
 

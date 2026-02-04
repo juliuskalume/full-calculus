@@ -329,7 +329,15 @@
           s = {};
         }
 
-        const name = (s.name && String(s.name).trim()) || "";
+        if (!s.username && s.name) {
+          s.username = s.name;
+          try {
+            localStorage.setItem("fc_state", JSON.stringify(s));
+          } catch {
+            // ignore
+          }
+        }
+        const name = (s.username && String(s.username).trim()) || (s.name && String(s.name).trim()) || "";
         const avatarUrl = s.avatarUrl || DEFAULT_AVATAR;
 
         const navAvatar = document.getElementById("navAvatar");
