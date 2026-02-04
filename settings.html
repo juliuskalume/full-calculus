@@ -630,12 +630,14 @@
         }
 
         function persist() {
+          const current = loadPrefs();
           savePrefs({
+            ...current,
             darkMode: darkSwitch.checked,
             sound: soundSwitch.checked,
             motivation: motivationSwitch.checked,
             vibration: hapticSwitch.checked,
-            dailyGoal: loadPrefs().dailyGoal || "regular",
+            dailyGoal: current.dailyGoal || "regular",
           });
         }
 

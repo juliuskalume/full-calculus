@@ -2,6 +2,7 @@
   const DEFAULT_STATE_KEY = "fc_state";
   const DEFAULT_PROGRESS_KEY = "fc_progress";
   const DEFAULT_META_KEY = "fc_meta";
+  const DEFAULT_PREFS_KEY = "fc_prefs";
 
   const config = window.FC_FIREBASE_CONFIG || null;
   const enabledFlag = window.FC_FIREBASE_ENABLED !== false;
@@ -82,6 +83,63 @@
       merged[key] = val;
     });
     return merged;
+  };
+
+  const clampDailyGoalXp = (value) => {
+    const num = Number(value);
+    if (!Number.isFinite(num)) return null;
+    return Math.min(1000, Math.max(10, Math.round(num)));
+  };
+
+  const normalizeDailyGoalPrefs = (raw) => {
+    const prefs = toObject(raw);
+    return {
+      dailyGoalXp: clampDailyGoalXp(prefs.dailyGoalXp),
+      dailyGoalUpdatedAt: typeof prefs.dailyGoalUpdatedAt === "string" ? prefs.dailyGoalUpdatedAt : "",
+    };
+  };
+
+  const ensureDailyGoalTimestamp = (prefs) => {
+    if (Number.isFinite(prefs.dailyGoalXp) && !prefs.dailyGoalUpdatedAt) {
+      prefs.dailyGoalUpdatedAt = new Date().toISOString();
+    }
+    return prefs;
+  };
+
+  const mergeDailyGoalPrefs = (localRaw, remoteRaw) => {
+    const local = normalizeDailyGoalPrefs(localRaw);
+    const remote = normalizeDailyGoalPrefs(remoteRaw);
+    const hasLocal = Number.isFinite(local.dailyGoalXp);
+    const hasRemote = Number.isFinite(remote.dailyGoalXp);
+
+    if (!hasLocal && !hasRemote) {
+      return { merged: null, source: "none" };
+    }
+
+    if (!hasLocal && hasRemote) {
+      return { merged: remote, source: "remote" };
+    }
+
+    if (hasLocal && !hasRemote) {
+      return { merged: local, source: "local" };
+    }
+
+    const localTs = Date.parse(local.dailyGoalUpdatedAt || "");
+    const remoteTs = Date.parse(remote.dailyGoalUpdatedAt || "");
+    if (!Number.isNaN(localTs) && !Number.isNaN(remoteTs)) {
+      return localTs >= remoteTs ? { merged: local, source: "local" } : { merged: remote, source: "remote" };
+    }
+    if (!Number.isNaN(localTs)) return { merged: local, source: "local" };
+    if (!Number.isNaN(remoteTs)) return { merged: remote, source: "remote" };
+    return { merged: local, source: "local" };
+  };
+
+  const applyDailyGoalPrefs = (basePrefs, dailyPrefs) => {
+    if (!dailyPrefs) return basePrefs;
+    const next = { ...basePrefs };
+    if (Number.isFinite(dailyPrefs.dailyGoalXp)) next.dailyGoalXp = dailyPrefs.dailyGoalXp;
+    if (dailyPrefs.dailyGoalUpdatedAt) next.dailyGoalUpdatedAt = dailyPrefs.dailyGoalUpdatedAt;
+    return next;
   };
 
   const normalizeProgress = (raw) => {
@@ -327,6 +385,12 @@
     const now = new Date().toISOString();
     const local = exportLocalState();
     const onboarding = { ...(local.onboarding || {}) };
+    const rawPrefs = safeParse(DEFAULT_PREFS_KEY, {});
+    const dailyPrefs = ensureDailyGoalTimestamp(normalizeDailyGoalPrefs(rawPrefs));
+    if (dailyPrefs.dailyGoalXp != null && dailyPrefs.dailyGoalUpdatedAt) {
+      const nextPrefs = applyDailyGoalPrefs(rawPrefs, dailyPrefs);
+      safeSet(DEFAULT_PREFS_KEY, nextPrefs);
+    }
 
     if (extra && typeof extra === "object") {
       if (extra.name) onboarding.name = extra.name;
@@ -337,7 +401,7 @@
 
     if (!onboarding.email && user.email) onboarding.email = user.email;
 
-    return {
+    const payload = {
       uid: user.uid,
       email: user.email || onboarding.email || "",
       displayName: user.displayName || onboarding.name || "",
@@ -349,6 +413,13 @@
       lastLoginAt: user.metadata?.lastSignInTime || now,
       updatedAt: now,
     };
+    if (Number.isFinite(dailyPrefs.dailyGoalXp)) {
+      payload.preferences = {
+        dailyGoalXp: dailyPrefs.dailyGoalXp,
+        dailyGoalUpdatedAt: dailyPrefs.dailyGoalUpdatedAt || now,
+      };
+    }
+    return payload;
   };
 
   const buildLeaderboardEntry = (user, extra) => {
@@ -402,7 +473,31 @@
     const local = exportLocalState();
     const merged = mergeLocalAndRemoteState(local, data);
     applyLocalState(merged);
-    if (needsRemoteUpdate(merged, data)) {
+    const rawPrefs = safeParse(DEFAULT_PREFS_KEY, {});
+    const dailyMerge = mergeDailyGoalPrefs(rawPrefs, toObject(data.preferences));
+    let prefsNeedRemoteUpdate = false;
+    if (dailyMerge.merged) {
+      const dailyWithStamp = ensureDailyGoalTimestamp({ ...dailyMerge.merged });
+      const nextPrefs = applyDailyGoalPrefs(rawPrefs, dailyWithStamp);
+      try {
+        if (JSON.stringify(nextPrefs) !== JSON.stringify(rawPrefs)) {
+          safeSet(DEFAULT_PREFS_KEY, nextPrefs);
+        }
+      } catch {
+        // ignore
+      }
+      if (dailyMerge.source === "local") {
+        const remoteNorm = normalizeDailyGoalPrefs(data.preferences);
+        if (
+          dailyWithStamp.dailyGoalXp !== remoteNorm.dailyGoalXp ||
+          (dailyWithStamp.dailyGoalUpdatedAt &&
+            dailyWithStamp.dailyGoalUpdatedAt !== remoteNorm.dailyGoalUpdatedAt)
+        ) {
+          prefsNeedRemoteUpdate = true;
+        }
+      }
+    }
+    if (needsRemoteUpdate(merged, data) || prefsNeedRemoteUpdate) {
       await syncToRemote();
     }
     await syncLeaderboard();

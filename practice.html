@@ -542,9 +542,13 @@
         if (!Number.isFinite(next)) return;
         const prefs = loadPrefs();
         prefs.dailyGoalXp = Math.min(1000, Math.max(10, Math.round(next)));
+        prefs.dailyGoalUpdatedAt = new Date().toISOString();
         savePrefs(prefs);
         goalSetter?.classList.add("hidden");
         renderDaily();
+        if (window.FCAuth?.syncToRemote) {
+          FCAuth.syncToRemote().catch(() => {});
+        }
       });
 
       function startSession(options) {
