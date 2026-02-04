@@ -348,8 +348,8 @@
   }
 
   const initHelpFab = () => {
-    const existingFab = document.getElementById("helpFab");
-    const existingOverlay = document.getElementById("helpOverlay");
+    const existingFab = document.getElementById("helpFab") || document.getElementById("fcHelpFab");
+    const existingOverlay = document.getElementById("helpOverlay") || document.getElementById("fcHelpOverlay");
     if (existingFab || existingOverlay) return;
 
     const filename = (location.pathname.split("/").pop() || "").toLowerCase();
@@ -528,12 +528,64 @@
 
     const help = helpMap[context] || helpMap.default;
 
+    if (!document.getElementById("fc-help-style")) {
+      const style = document.createElement("style");
+      style.id = "fc-help-style";
+      style.textContent = `
+        #fc-help-fab-wrap {
+          position: fixed;
+          right: 16px;
+          bottom: 96px;
+          z-index: 40;
+        }
+        @media (min-width: 768px) {
+          #fc-help-fab-wrap {
+            right: calc(50% - 220px + 1rem);
+          }
+        }
+        #fcHelpFab {
+          width: 48px;
+          height: 48px;
+          border-radius: 9999px;
+          border: 1px solid #e2e8f0;
+          background: #ffffff;
+          color: #475569;
+          box-shadow: 0 12px 24px rgba(15, 23, 42, 0.15);
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+        }
+        .dark #fcHelpFab {
+          background: #1a2332;
+          border-color: #334155;
+          color: #cbd5e1;
+        }
+        #fcHelpOverlay {
+          position: fixed;
+          inset: 0;
+          z-index: 80;
+        }
+        #fcHelpOverlay.hidden {
+          display: none;
+        }
+        #fcHelpOverlay .fc-help-card {
+          background: #ffffff;
+          color: #0f172a;
+        }
+        .dark #fcHelpOverlay .fc-help-card {
+          background: #1a2332;
+          color: #e2e8f0;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
     const wrap = document.createElement("div");
     wrap.id = "fc-help-fab-wrap";
-    wrap.className = "fixed bottom-24 right-4 md:right-[calc(50%-220px+1rem)] z-40";
     wrap.innerHTML = `
       <button
-        id="helpFab"
+        id="fcHelpFab"
         type="button"
         class="bg-surface-light dark:bg-surface-dark p-3 rounded-full shadow-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-primary transition-colors"
         aria-label="Help"
@@ -543,12 +595,12 @@
     `;
 
     const overlay = document.createElement("div");
-    overlay.id = "helpOverlay";
+    overlay.id = "fcHelpOverlay";
     overlay.className = "fixed inset-0 z-[80] hidden";
     overlay.innerHTML = `
       <div class="absolute inset-0 bg-[#141414]/60 backdrop-blur-sm" data-help-close></div>
       <div class="absolute inset-0 flex flex-col justify-end sm:justify-center items-center px-0 sm:px-4">
-        <div class="w-full max-w-[440px] bg-white dark:bg-surface-dark rounded-t-3xl sm:rounded-3xl flex flex-col shadow-2xl">
+        <div class="fc-help-card w-full max-w-[440px] rounded-t-3xl sm:rounded-3xl flex flex-col shadow-2xl">
           <div class="flex h-6 w-full items-center justify-center sm:hidden">
             <div class="h-1.5 w-12 rounded-full bg-gray-300 dark:bg-gray-700"></div>
           </div>
@@ -637,7 +689,7 @@
         continueOnboarding: () => document.getElementById("continueBtn")?.click(),
       };
 
-      document.getElementById("helpFab")?.addEventListener("click", open);
+      document.getElementById("fcHelpFab")?.addEventListener("click", open);
       overlay.querySelector("[data-help-close]")?.addEventListener("click", close);
       document.getElementById("fc-help-close")?.addEventListener("click", close);
       document.getElementById("fc-help-primary")?.addEventListener("click", () => {
