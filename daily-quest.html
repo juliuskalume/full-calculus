@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <link rel="manifest" href="manifest.webmanifest" />
-    <meta name="theme-color" content="#0d59f2" />
+    <meta name="theme-color" content="#1cb0f6" />
     <link rel="apple-touch-icon" href="icons/icon-192.png" />
     <link rel="icon" type="image/png" href="icons/icon-192.png" />
     <title>Full Calculus - Daily Quests</title>
@@ -28,7 +28,7 @@
         theme: {
           extend: {
             colors: {
-              primary: "#0d59f2",
+              primary: "#1cb0f6",
               "background-light": "#f5f6f8",
               "background-dark": "#101622",
               "surface-dark": "#1a2130",
@@ -44,7 +44,7 @@
               full: "9999px",
             },
             boxShadow: {
-              "press-blue": "0 4px 0 0 #0b4dc9",
+              "press-blue": "0 4px 0 0 #1599d4",
             },
           },
         },
@@ -131,7 +131,7 @@
             <button
               id="quest1ClaimBtn"
               type="button"
-              class="press mt-4 w-full h-11 rounded-xl bg-primary text-white font-extrabold text-sm shadow-[0_4px_0_0_#0b4dc9] hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+              class="press mt-4 w-full h-11 rounded-xl bg-primary text-white font-extrabold text-sm shadow-[0_4px_0_0_#1599d4] hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
             >
               <span class="material-symbols-outlined text-[20px]">workspace_premium</span>
               Claim Reward
@@ -252,7 +252,7 @@
             } else if (progressValue >= quest.goal) {
               claimBtn.disabled = false;
               claimBtn.className =
-                "press mt-4 w-full h-11 rounded-xl bg-primary text-white font-extrabold text-sm shadow-[0_4px_0_0_#0b4dc9] hover:bg-primary/90 transition-colors flex items-center justify-center gap-2";
+                "press mt-4 w-full h-11 rounded-xl bg-primary text-white font-extrabold text-sm shadow-[0_4px_0_0_#1599d4] hover:bg-primary/90 transition-colors flex items-center justify-center gap-2";
               claimBtn.innerHTML = `<span class="material-symbols-outlined text-[20px]">workspace_premium</span>Claim Reward`;
             } else {
               claimBtn.disabled = true;

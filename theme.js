@@ -306,7 +306,9 @@
       (event) => {
         if (!shouldVibrate()) return;
         if (!navigator.vibrate) return;
-        const target = event.target?.closest?.("button, [role='button'], input[type='button'], input[type='submit']");
+        const target = event.target?.closest?.(
+          "button, a, [role='button'], input[type='button'], input[type='submit'], label, summary, [onclick], .press"
+        );
         if (!target) return;
         navigator.vibrate(20);
       },

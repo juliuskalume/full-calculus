@@ -134,11 +134,20 @@ public class MainActivity extends AppCompatActivity {
   @Override
   public void onBackPressed() {
     if (webView != null) {
+      String currentUrl = webView.getUrl();
+      if (isHomeUrl(currentUrl)) {
+        try {
+          webView.evaluateJavascript("window.fcShowExitPrompt && window.fcShowExitPrompt();", null);
+          return;
+        } catch (Exception ignored) {
+          // fall through
+        }
+      }
       if (webView.canGoBack()) {
         webView.goBack();
         return;
       }
-      // Trigger in-app exit confirmation on home screen
+      // Trigger in-app exit confirmation when there's no history
       try {
         webView.evaluateJavascript("window.fcShowExitPrompt && window.fcShowExitPrompt();", null);
         return;
@@ -147,6 +156,18 @@ public class MainActivity extends AppCompatActivity {
       }
     }
     super.onBackPressed();
+  }
+
+  private boolean isHomeUrl(String url) {
+    if (url == null) return false;
+    try {
+      Uri uri = Uri.parse(url);
+      String path = uri.getPath();
+      if (path == null || path.equals("/") || path.equals("/index.html")) return true;
+      return path.endsWith("/path.html");
+    } catch (Exception ignored) {
+      return false;
+    }
   }
 
   private class AuthBridge {
