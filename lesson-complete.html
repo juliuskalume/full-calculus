@@ -228,11 +228,21 @@
         return Math.min(1000, Math.max(10, Math.round(raw)));
       }
 
+      function getDailyXP() {
+        const p = FCProgress.get();
+        const today = new Date().toISOString().slice(0, 10);
+        if (!p.daily || p.daily.date !== today) {
+          p.daily = { ...(p.daily || {}), date: today, xp: 0 };
+          FCProgress.set(p);
+        }
+        return p.daily.xp || 0;
+      }
+
       const DAILY_GOAL = getDailyGoal();
-      const daily = FCProgress.get().daily || { xp: 0 };
+      const dailyXp = getDailyXP();
       const dailyText = document.getElementById("dailyGoalText");
       if (dailyText) {
-        dailyText.innerHTML = `${daily.xp || 0} <span class="text-gray-400 font-normal">/ ${DAILY_GOAL} XP</span>`;
+        dailyText.innerHTML = `${dailyXp} <span class="text-gray-400 font-normal">/ ${DAILY_GOAL} XP</span>`;
       }
 
       document.getElementById("continueBtn").addEventListener("click", () => {
@@ -246,7 +256,7 @@
       window.addEventListener("load", () => {
         const fill = document.getElementById("xpFill");
         if (!fill) return;
-        const pct = Math.min(100, Math.round(((daily.xp || 0) / DAILY_GOAL) * 100));
+        const pct = Math.min(100, Math.round((dailyXp / DAILY_GOAL) * 100));
         setTimeout(() => {
           fill.style.width = `${pct}%`;
         }, 120);
