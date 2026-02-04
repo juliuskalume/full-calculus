@@ -314,6 +314,56 @@
     </div>
   </div>
 
+  <!-- Friend Detail Modal -->
+  <div id="friendDetailModal" class="fixed inset-0 z-[85] hidden">
+    <div class="absolute inset-0 bg-[#141414]/60 backdrop-blur-sm" data-friend-detail-close></div>
+    <div class="absolute inset-0 flex flex-col justify-end sm:justify-center items-center px-4">
+      <div class="w-full max-w-[460px] bg-white dark:bg-surface-dark rounded-3xl shadow-2xl overflow-hidden">
+        <div class="flex items-center justify-between px-6 pt-6">
+          <h3 id="friendDetailName" class="text-lg font-extrabold">Friend</h3>
+          <button id="friendDetailClose" type="button"
+            class="w-9 h-9 rounded-full flex items-center justify-center text-slate-500 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            aria-label="Close">
+            <span class="material-symbols-outlined text-[20px]">close</span>
+          </button>
+        </div>
+        <div class="px-6 pb-6">
+          <div class="flex items-center gap-4 mt-2">
+            <div id="friendDetailAvatar"
+              class="w-16 h-16 rounded-full bg-cover bg-center border border-slate-200 dark:border-slate-700"
+              style="background-image:url('https://github.com/juliuskalume/full-calculus/blob/main/icons/icon-192.png?raw=true');">
+            </div>
+            <div>
+              <p id="friendDetailStatus" class="text-sm font-semibold text-slate-500 dark:text-slate-400">Last seen</p>
+              <p id="friendDetailJoined" class="text-xs text-slate-400">Joined â€”</p>
+            </div>
+          </div>
+
+          <div class="mt-5 grid grid-cols-3 gap-2">
+            <div class="rounded-2xl bg-slate-100 dark:bg-slate-900/60 p-3 text-center">
+              <p class="text-[11px] uppercase font-extrabold text-slate-400">Streak</p>
+              <p id="friendDetailStreak" class="text-lg font-extrabold text-orange-500">0</p>
+            </div>
+            <div class="rounded-2xl bg-slate-100 dark:bg-slate-900/60 p-3 text-center">
+              <p class="text-[11px] uppercase font-extrabold text-slate-400">XP</p>
+              <p id="friendDetailXp" class="text-lg font-extrabold text-yellow-500">0</p>
+            </div>
+            <div class="rounded-2xl bg-slate-100 dark:bg-slate-900/60 p-3 text-center">
+              <p class="text-[11px] uppercase font-extrabold text-slate-400">Lessons</p>
+              <p id="friendDetailLessons" class="text-lg font-extrabold text-primary">0</p>
+            </div>
+          </div>
+
+          <div class="mt-5">
+            <p class="text-xs uppercase font-extrabold text-slate-400 mb-2">Achievements</p>
+            <div id="friendDetailAchievements" class="grid grid-cols-3 gap-3"></div>
+            <p id="friendDetailAchievementsNote" class="text-xs text-slate-400 mt-2"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Content data (for achievements) -->
   <script src="content-structure.js"></script>
   <script src="content-sections.js"></script>
@@ -459,6 +509,18 @@
       const searchEmpty = document.getElementById("friendSearchEmpty");
       const searchHint = document.getElementById("friendSearchHint");
       const statusEl = document.getElementById("friendModalStatus");
+      const detailModal = document.getElementById("friendDetailModal");
+      const detailClose = document.getElementById("friendDetailClose");
+      const detailBackdrop = document.querySelector("[data-friend-detail-close]");
+      const detailName = document.getElementById("friendDetailName");
+      const detailAvatar = document.getElementById("friendDetailAvatar");
+      const detailStatus = document.getElementById("friendDetailStatus");
+      const detailJoined = document.getElementById("friendDetailJoined");
+      const detailStreak = document.getElementById("friendDetailStreak");
+      const detailXp = document.getElementById("friendDetailXp");
+      const detailLessons = document.getElementById("friendDetailLessons");
+      const detailAchievements = document.getElementById("friendDetailAchievements");
+      const detailAchievementsNote = document.getElementById("friendDetailAchievementsNote");
 
       if (!addBtn || !authHint || !friendsList || !modal) return;
 
@@ -474,6 +536,8 @@
       let acceptedFriends = [];
       let lastSearchResults = [];
       let searchTimer = null;
+      let profilesByUid = {};
+      let profileRefreshTimer = null;
 
       const getLocalProfile = () => {
         try {
@@ -488,6 +552,125 @@
         statusEl.textContent = message;
         statusEl.className =
           tone === "error" ? "text-xs text-red-500 mt-3" : "text-xs text-slate-500 mt-3";
+      };
+
+      const formatLastSeen = (iso) => {
+        const time = Date.parse(iso || "");
+        if (Number.isNaN(time)) {
+          return { label: "Last seen unavailable", online: false };
+        }
+        const diff = Date.now() - time;
+        if (diff < 2 * 60 * 1000) {
+          return { label: "Online now", online: true };
+        }
+        if (diff < 60 * 1000) {
+          return { label: "Last seen just now", online: false };
+        }
+        if (diff < 60 * 60 * 1000) {
+          const mins = Math.max(1, Math.round(diff / 60000));
+          return { label: `Last seen ${mins}m ago`, online: false };
+        }
+        if (diff < 24 * 60 * 60 * 1000) {
+          const hrs = Math.max(1, Math.round(diff / 3600000));
+          return { label: `Last seen ${hrs}h ago`, online: false };
+        }
+        const days = Math.max(1, Math.round(diff / 86400000));
+        return { label: `Last seen ${days}d ago`, online: false };
+      };
+
+      const formatJoined = (iso) => {
+        const time = Date.parse(iso || "");
+        if (Number.isNaN(time)) return "Joined —";
+        return `Joined ${new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(
+          new Date(time)
+        )}`;
+      };
+
+      const computeAchievementsFromProfile = (profile) => {
+        if (profile?.achievements && typeof profile.achievements === "object") {
+          return {
+            c1: !!profile.achievements.c1,
+            c2: !!profile.achievements.c2,
+            c3: !!profile.achievements.c3,
+          };
+        }
+        const completed = Array.isArray(profile?.completedSections) ? profile.completedSections : null;
+        const allSections = Array.isArray(window.FCContent?.sections) ? window.FCContent.sections : null;
+        if (!completed || !allSections) return null;
+        const totals = {
+          c1: allSections.filter((section) => String(section.id).startsWith("c1-")).map((s) => s.id),
+          c2: allSections.filter((section) => String(section.id).startsWith("c2-")).map((s) => s.id),
+          c3: allSections.filter((section) => String(section.id).startsWith("c3-")).map((s) => s.id),
+        };
+        const completedSet = new Set(completed.map((id) => String(id)));
+        return {
+          c1: totals.c1.length > 0 && totals.c1.every((id) => completedSet.has(id)),
+          c2: totals.c2.length > 0 && totals.c2.every((id) => completedSet.has(id)),
+          c3: totals.c3.length > 0 && totals.c3.every((id) => completedSet.has(id)),
+        };
+      };
+
+      const renderAchievementCards = (achievementState) => {
+        if (!detailAchievements) return;
+        const data = [
+          { key: "c1", label: "Calc I", subtitle: "Trailblazer", icon: "looks_one" },
+          { key: "c2", label: "Calc II", subtitle: "Pathfinder", icon: "looks_two" },
+          { key: "c3", label: "Calc III", subtitle: "Voyager", icon: "looks_3" },
+        ];
+        detailAchievements.innerHTML = data
+          .map((item) => {
+            const unlocked = achievementState ? !!achievementState[item.key] : false;
+            return `
+              <div class="flex flex-col items-center gap-2 p-3 rounded-2xl border ${
+                unlocked ? "border-primary/30 bg-primary/10" : "border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/60"
+              }">
+                <span class="material-symbols-outlined ${unlocked ? "text-primary" : "text-slate-400"}">${unlocked ? item.icon : "lock"}</span>
+                <span class="text-[11px] font-extrabold text-center leading-tight">
+                  ${item.label}<br />${item.subtitle}
+                </span>
+              </div>
+            `;
+          })
+          .join("");
+      };
+
+      const openFriendDetail = (uid) => {
+        if (!detailModal) return;
+        const profile = profilesByUid[uid];
+        if (!profile) {
+          setStatus("Friend details are still loading.", "error");
+          return;
+        }
+        if (detailName) detailName.textContent = profile.displayName || "Learner";
+        if (detailAvatar) {
+          detailAvatar.style.backgroundImage = `url('${profile.photoURL || DEFAULT_AVATAR}')`;
+        }
+        const lastSeen = formatLastSeen(profile.lastActiveAt);
+        if (detailStatus) {
+          detailStatus.textContent = lastSeen.label;
+          detailStatus.className = lastSeen.online
+            ? "text-sm font-semibold text-emerald-500"
+            : "text-sm font-semibold text-slate-500 dark:text-slate-400";
+        }
+        if (detailJoined) detailJoined.textContent = formatJoined(profile.joinedAt || profile.createdAt);
+        if (detailStreak) detailStreak.textContent = String(profile.streak ?? 0);
+        if (detailXp) detailXp.textContent = String(profile.xp ?? 0);
+        if (detailLessons) detailLessons.textContent = String(profile.lessonsCompleted ?? 0);
+
+        const achievements = computeAchievementsFromProfile(profile);
+        renderAchievementCards(achievements);
+        if (detailAchievementsNote) {
+          detailAchievementsNote.textContent = achievements ? "" : "Achievements data not available yet.";
+        }
+
+        detailModal.classList.remove("hidden");
+        document.body.classList.add("overflow-hidden");
+      };
+
+      const closeFriendDetail = () => {
+        if (!detailModal) return;
+        detailModal.classList.add("hidden");
+        document.body.classList.remove("overflow-hidden");
       };
 
       const showAuth = () => {
@@ -531,6 +714,8 @@
       addBtn.addEventListener("click", openModal);
       modalClose?.addEventListener("click", closeModal);
       modalBackdrop?.addEventListener("click", closeModal);
+      detailClose?.addEventListener("click", closeFriendDetail);
+      detailBackdrop?.addEventListener("click", closeFriendDetail);
       loginBtn?.addEventListener("click", () => {
         window.location.href = "login.html";
       });
@@ -594,13 +779,16 @@
         friendsList.innerHTML = acceptedFriends
           .map((record) => {
             const info = getFriendMeta(record, currentUser.uid);
+            const profile = profilesByUid[info.uid] || {};
+            const presence = formatLastSeen(profile.lastActiveAt);
+            const statusClass = presence.online ? "text-emerald-500" : "text-slate-500 dark:text-slate-400";
             return `
-              <div class="flex items-center gap-3 p-3 bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-white/5 shadow-soft">
+              <div data-friend-card data-uid="${info.uid}" class="flex items-center gap-3 p-3 bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-white/5 shadow-soft cursor-pointer">
                 <div class="w-12 h-12 rounded-full bg-cover bg-center border border-slate-200 dark:border-slate-700"
                   style="background-image:url('${info.photo}')"></div>
                 <div class="flex-1 min-w-0">
                   <h4 class="font-extrabold text-sm truncate">${info.name}</h4>
-                  <p class="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">Friends on Full Calculus</p>
+                  <p class="text-xs ${statusClass} truncate mt-0.5">${presence.label}</p>
                 </div>
                 <button data-action="remove" data-id="${record.id}"
                   class="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs font-bold">
@@ -633,6 +821,7 @@
         if (lastSearchResults.length) {
           renderSearchResults(lastSearchResults);
         }
+        refreshProfiles();
       };
 
       const clearSubscriptions = () => {
@@ -644,6 +833,37 @@
           }
         });
         subscriptions = [];
+      };
+
+      const fetchProfiles = async (uids, force = false) => {
+        if (!db || !uids.length) return;
+        const unique = Array.from(new Set(uids));
+        const targets = force ? unique : unique.filter((uid) => !profilesByUid[uid]);
+        if (!targets.length) return;
+        const chunks = [];
+        while (targets.length) chunks.push(targets.splice(0, 10));
+        try {
+          await Promise.all(
+            chunks.map(async (chunk) => {
+              const snap = await db.collection("public_profiles").where("uid", "in", chunk).get();
+              snap.forEach((doc) => {
+                profilesByUid[doc.id] = doc.data() || {};
+              });
+            })
+          );
+          renderFriends();
+        } catch (err) {
+          setStatus("Could not load friend details.", "error");
+        }
+      };
+
+      const refreshProfiles = async (force = false) => {
+        if (!currentUser) return;
+        const friendUids = acceptedFriends
+          .map((record) => (record.from === currentUser.uid ? record.to : record.from))
+          .filter(Boolean);
+        if (!friendUids.length) return;
+        await fetchProfiles(friendUids, force);
       };
 
       const subscribeFriends = () => {
@@ -711,10 +931,16 @@
       });
 
       friendsList?.addEventListener("click", (event) => {
-        const btn = event.target.closest("button[data-action='remove']");
-        if (!btn) return;
-        const id = btn.getAttribute("data-id");
-        handleRequestAction("remove", id);
+        const removeBtn = event.target.closest("button[data-action='remove']");
+        if (removeBtn) {
+          const id = removeBtn.getAttribute("data-id");
+          handleRequestAction("remove", id);
+          return;
+        }
+        const card = event.target.closest("[data-friend-card]");
+        if (!card) return;
+        const uid = card.getAttribute("data-uid");
+        if (uid) openFriendDetail(uid);
       });
 
       const renderSearchResults = (items) => {
@@ -879,15 +1105,25 @@
           currentUser = user;
           if (!user) {
             clearSubscriptions();
+            if (profileRefreshTimer) {
+              clearInterval(profileRefreshTimer);
+              profileRefreshTimer = null;
+            }
             incomingRequests = [];
             outgoingRequests = [];
             acceptedFriends = [];
+            profilesByUid = {};
+            closeFriendDetail();
             refreshLists();
             showAuth();
             return;
           }
           showAuthed();
           subscribeFriends();
+          refreshProfiles(true);
+          if (!profileRefreshTimer) {
+            profileRefreshTimer = setInterval(() => refreshProfiles(true), 120000);
+          }
         });
       };
 

@@ -448,11 +448,75 @@
     };
   };
 
+  const buildPublicProfile = (user, extra, options = {}) => {
+    const now = new Date().toISOString();
+    if (options.presenceOnly) {
+      return {
+        uid: user.uid,
+        lastActiveAt: now,
+      };
+    }
+
+    const local = exportLocalState();
+    const onboarding = { ...(local.onboarding || {}) };
+    const progress = normalizeProgress(local.progress);
+    const meta = local.meta || {};
+    const displayName =
+      user.displayName ||
+      extra?.name ||
+      onboarding.name ||
+      "Learner";
+    const photoURL =
+      user.photoURL ||
+      extra?.avatarUrl ||
+      onboarding.avatarUrl ||
+      "";
+
+    const payload = {
+      uid: user.uid,
+      displayName,
+      displayNameLower: String(displayName || "").toLowerCase(),
+      photoURL,
+      xp: Number(meta.xp) || 0,
+      streak: Number(meta.streak) || 0,
+      lessonsCompleted: Array.isArray(progress.completedSections)
+        ? progress.completedSections.length
+        : 0,
+      joinedAt: user.metadata?.creationTime || now,
+      lastActiveAt: now,
+    };
+
+    const allSections = Array.isArray(window.FCContent?.sections) ? window.FCContent.sections : null;
+    if (allSections && Array.isArray(progress.completedSections)) {
+      const totals = {
+        c1: allSections.filter((section) => String(section.id).startsWith("c1-")).map((s) => s.id),
+        c2: allSections.filter((section) => String(section.id).startsWith("c2-")).map((s) => s.id),
+        c3: allSections.filter((section) => String(section.id).startsWith("c3-")).map((s) => s.id),
+      };
+      const completedSet = new Set(progress.completedSections.map((id) => String(id)));
+      payload.achievements = {
+        c1: totals.c1.length > 0 && totals.c1.every((id) => completedSet.has(id)),
+        c2: totals.c2.length > 0 && totals.c2.every((id) => completedSet.has(id)),
+        c3: totals.c3.length > 0 && totals.c3.every((id) => completedSet.has(id)),
+      };
+    }
+
+    return payload;
+  };
+
   const syncLeaderboard = async (extra) => {
     const user = auth.currentUser;
     if (!user) return null;
     const payload = buildLeaderboardEntry(user, extra);
     await db.collection("leaderboard").doc(user.uid).set(payload, { merge: true });
+    return payload;
+  };
+
+  const syncPublicProfile = async (extra, options = {}) => {
+    const user = auth.currentUser;
+    if (!user) return null;
+    const payload = buildPublicProfile(user, extra, options);
+    await db.collection("public_profiles").doc(user.uid).set(payload, { merge: true });
     return payload;
   };
 
@@ -462,6 +526,7 @@
     const payload = buildUserDoc(user, extra);
     await db.collection("users").doc(user.uid).set(payload, { merge: true });
     await syncLeaderboard(extra);
+    await syncPublicProfile(extra);
     return payload;
   };
 
@@ -598,6 +663,7 @@
     getCurrentUser,
     syncFromRemote,
     syncToRemote,
+    syncPublicProfile,
     ensureUserDoc,
     syncLeaderboard,
     exportLocalState,
@@ -686,6 +752,26 @@
     disable: disablePush,
   };
 
+  let presenceTimer = null;
+  const startPresenceTimer = () => {
+    if (presenceTimer) return;
+    presenceTimer = setInterval(() => {
+      syncPublicProfile(null, { presenceOnly: true }).catch(() => {});
+    }, 120000);
+  };
+  const stopPresenceTimer = () => {
+    if (presenceTimer) {
+      clearInterval(presenceTimer);
+      presenceTimer = null;
+    }
+  };
+
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === "visible") {
+      syncPublicProfile(null, { presenceOnly: true }).catch(() => {});
+    }
+  };
+
   auth.onAuthStateChanged((user) => {
     const currentUid = user?.uid || "";
     let storedUid = "";
@@ -696,6 +782,8 @@
     }
 
     if (!currentUid) {
+      stopPresenceTimer();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       clearLocalData();
       return;
     }
@@ -711,6 +799,9 @@
     }
 
     syncFromRemote().catch(() => {});
+    syncPublicProfile().catch(() => {});
+    startPresenceTimer();
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     if (user && getNotificationPref()) {
       ensurePushSubscription(user).catch(() => {});
