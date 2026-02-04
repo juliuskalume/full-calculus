@@ -24,7 +24,8 @@ service cloud.firestore {
         request.resource.data.status == "pending" &&
         request.resource.data.from is string &&
         request.resource.data.to is string &&
-        request.resource.data.from != request.resource.data.to;
+        request.resource.data.from != request.resource.data.to &&
+        !exists(/databases/$(database)/documents/friendships/$(friendId));
 
       allow update: if request.auth != null &&
         request.auth.uid == resource.data.to &&

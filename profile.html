@@ -697,7 +697,8 @@
             await db.collection("friendships").doc(docId).delete();
           }
         } catch (err) {
-          setStatus("Could not update friend request. Try again.", "error");
+          const code = err?.code ? ` (${err.code})` : "";
+          setStatus(`Could not update friend request${code}. Try again.`, "error");
         }
       };
 
@@ -836,16 +837,14 @@
           setStatus("You cannot add yourself.", "error");
           return;
         }
+        if (friendStateByUid[uid]) {
+          setStatus("Request already exists.");
+          return;
+        }
 
         const docId = friendDocId(currentUser.uid, uid);
         const docRef = db.collection("friendships").doc(docId);
         try {
-          const existing = await docRef.get();
-          if (existing.exists) {
-            setStatus("Friend request already exists.");
-            return;
-          }
-
           const localProfile = getLocalProfile();
           const payload = {
             from: currentUser.uid,
@@ -865,7 +864,8 @@
           await docRef.set(payload);
           setStatus("Friend request sent!");
         } catch (err) {
-          setStatus("Unable to send request. Try again.", "error");
+          const code = err?.code ? ` (${err.code})` : "";
+          setStatus(`Unable to send request${code}. Try again.`, "error");
         }
       });
 
