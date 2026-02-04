@@ -990,7 +990,14 @@
     if (!currentUid) {
       stopPresenceTimer();
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      clearLocalData();
+      if (storedUid) {
+        clearLocalData();
+        try {
+          localStorage.removeItem(LOCAL_UID_KEY);
+        } catch {
+          // ignore
+        }
+      }
       return;
     }
 
