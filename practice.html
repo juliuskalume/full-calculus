@@ -386,6 +386,76 @@
           </div>
         </div>
 
+        <!-- Placement Tests -->
+        <div class="mt-8 mb-4">
+          <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-4">Placement Tests</h3>
+
+          <div class="grid grid-cols-1 gap-3">
+            <div
+              class="bg-white dark:bg-surface-dark p-4 rounded-2xl border-2 border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-between"
+            >
+              <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center text-emerald-600 dark:text-emerald-300">
+                  <span class="material-symbols-outlined">functions</span>
+                </div>
+                <div>
+                  <p class="font-bold text-slate-800 dark:text-white">Calculus I</p>
+                  <p id="placementC1Status" class="text-xs text-slate-500 dark:text-slate-400 font-medium">Not started</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                data-placement-test="placement-c1"
+                class="press bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm px-4 py-2 rounded-xl shadow-[0_3px_0_0_#047857] transition-all"
+              >
+                Start
+              </button>
+            </div>
+
+            <div
+              class="bg-white dark:bg-surface-dark p-4 rounded-2xl border-2 border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-between"
+            >
+              <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-xl bg-sky-100 dark:bg-sky-900/40 flex items-center justify-center text-sky-600 dark:text-sky-300">
+                  <span class="material-symbols-outlined">percent</span>
+                </div>
+                <div>
+                  <p class="font-bold text-slate-800 dark:text-white">Calculus II</p>
+                  <p id="placementC2Status" class="text-xs text-slate-500 dark:text-slate-400 font-medium">Not started</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                data-placement-test="placement-c2"
+                class="press bg-sky-500 hover:bg-sky-600 text-white font-bold text-sm px-4 py-2 rounded-xl shadow-[0_3px_0_0_#1d4ed8] transition-all"
+              >
+                Start
+              </button>
+            </div>
+
+            <div
+              class="bg-white dark:bg-surface-dark p-4 rounded-2xl border-2 border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-between"
+            >
+              <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-xl bg-fuchsia-100 dark:bg-fuchsia-900/40 flex items-center justify-center text-fuchsia-600 dark:text-fuchsia-300">
+                  <span class="material-symbols-outlined">orbit</span>
+                </div>
+                <div>
+                  <p class="font-bold text-slate-800 dark:text-white">Calculus III</p>
+                  <p id="placementC3Status" class="text-xs text-slate-500 dark:text-slate-400 font-medium">Not started</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                data-placement-test="placement-c3"
+                class="press bg-fuchsia-500 hover:bg-fuchsia-600 text-white font-bold text-sm px-4 py-2 rounded-xl shadow-[0_3px_0_0_#a21caf] transition-all"
+              >
+                Start
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div class="h-8"></div>
       </main>
     </div>
@@ -624,6 +694,55 @@
           count: 5,
           types: ["mcq", "numeric", "expression"],
           xpPerCorrect: 8,
+        });
+      });
+
+      function updatePlacementCards() {
+        const progress = window.FCProgress?.get ? FCProgress.get() : { completedTests: {} };
+        const completedTests = progress.completedTests || {};
+
+        const updateCard = (id, statusId) => {
+          const statusEl = document.getElementById(statusId);
+          const btn = document.querySelector(`[data-placement-test="${id}"]`);
+          if (!statusEl || !btn) return;
+          const result = completedTests[id];
+          if (result?.passed) {
+            statusEl.textContent = "Passed";
+            btn.textContent = "Retake";
+          } else if (result) {
+            statusEl.textContent = "Not passed yet";
+            btn.textContent = "Retry";
+          } else {
+            statusEl.textContent = "Not started";
+            btn.textContent = "Start";
+          }
+        };
+
+        updateCard("placement-c1", "placementC1Status");
+        updateCard("placement-c2", "placementC2Status");
+        updateCard("placement-c3", "placementC3Status");
+      }
+
+      updatePlacementCards();
+
+      document.querySelectorAll("[data-placement-test]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const id = btn.getAttribute("data-placement-test");
+          if (!id) return;
+          let state = {};
+          try {
+            state = JSON.parse(localStorage.getItem("fc_state") || "{}");
+          } catch {
+            state = {};
+          }
+          state.placementTestId = id;
+          state.placementTestStatus = "pending";
+          try {
+            localStorage.setItem("fc_state", JSON.stringify(state));
+          } catch {
+            // ignore
+          }
+          window.location.href = "unit-test.html";
         });
       });
     </script>
