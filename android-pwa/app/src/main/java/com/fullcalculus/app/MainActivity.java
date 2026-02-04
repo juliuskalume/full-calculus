@@ -175,5 +175,10 @@ public class MainActivity extends AppCompatActivity {
     public void signInWithGoogle() {
       runOnUiThread(() -> startGoogleSignIn());
     }
+
+    @JavascriptInterface
+    public void exitApp() {
+      runOnUiThread(() -> finish());
+    }
   }
 }

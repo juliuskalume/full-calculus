@@ -744,8 +744,7 @@
           window.matchMedia("(display-mode: standalone)").matches ||
           window.matchMedia("(display-mode: fullscreen)").matches ||
           window.navigator.standalone === true;
-
-        if (!isStandalone) return;
+        const isNativeShell = !!window.AndroidAuth;
 
         let allowExit = false;
 
@@ -760,31 +759,38 @@
           document.body.classList.remove("overflow-hidden");
         };
 
-        const onPopState = () => {
-          if (allowExit) return;
-          showExit();
-          history.pushState({ exitPrompt: true }, "");
-        };
+        if (isStandalone) {
+          const onPopState = () => {
+            if (allowExit) return;
+            showExit();
+            history.pushState({ exitPrompt: true }, "");
+          };
 
-        history.pushState({ exitPrompt: true }, "");
-        window.addEventListener("popstate", onPopState);
+          history.pushState({ exitPrompt: true }, "");
+          window.addEventListener("popstate", onPopState);
+
+          exitBtn?.addEventListener("click", () => {
+            allowExit = true;
+            hideExit();
+            window.removeEventListener("popstate", onPopState);
+            history.back();
+          });
+        } else if (isNativeShell) {
+          window.fcShowExitPrompt = () => {
+            showExit();
+            return true;
+          };
+          exitBtn?.addEventListener("click", () => {
+            hideExit();
+            if (window.AndroidAuth?.exitApp) {
+              window.AndroidAuth.exitApp();
+            }
+          });
+        }
 
         stayBtn?.addEventListener("click", () => {
           hideExit();
         });
-
-        exitBtn?.addEventListener("click", () => {
-          allowExit = true;
-          hideExit();
-          window.removeEventListener("popstate", onPopState);
-          history.back();
-        });
-
-        // Allow native shells (WebView) to trigger exit prompt
-        window.fcShowExitPrompt = () => {
-          showExit();
-          return true;
-        };
       })();
     </script>
 
