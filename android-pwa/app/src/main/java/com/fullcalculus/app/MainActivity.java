@@ -37,8 +37,7 @@ public class MainActivity extends AppCompatActivity {
   private ConnectivityManager.NetworkCallback networkCallback;
   private SharedPreferences prefs;
   private static final String PREFS_NAME = "fc_prefs";
-  // Keep key name for backwards compatibility (meaning: device has seen internet once)
-  private static final String KEY_HAS_SEEN_ONLINE = "hasLoadedOnce";
+  private static final String KEY_HAS_LOADED = "hasLoadedOnce";
 
   @SuppressLint("SetJavaScriptEnabled")
   @Override
@@ -84,7 +83,7 @@ public class MainActivity extends AppCompatActivity {
       @Override
       public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
         if (request != null && request.isForMainFrame()) {
-          if (!hasSeenOnline()) {
+          if (!hasLoadedOnce()) {
             loadOfflinePage();
           }
         }
@@ -93,7 +92,7 @@ public class MainActivity extends AppCompatActivity {
       @Override
       public void onPageFinished(WebView view, String url) {
         if (url != null && (url.startsWith("http://") || url.startsWith("https://"))) {
-          markSeenOnline();
+          markLoadedOnce();
         }
       }
     });
@@ -121,9 +120,8 @@ public class MainActivity extends AppCompatActivity {
     });
 
     if (isOnline()) {
-      markSeenOnline();
       loadLaunchUrl();
-    } else if (!hasSeenOnline()) {
+    } else if (!hasLoadedOnce()) {
       loadOfflinePage();
     } else {
       loadLaunchUrl();
@@ -177,18 +175,18 @@ public class MainActivity extends AppCompatActivity {
     webView.loadUrl("file:///android_asset/offline.html");
   }
 
-  private boolean hasSeenOnline() {
+  private boolean hasLoadedOnce() {
     try {
-      return prefs != null && prefs.getBoolean(KEY_HAS_SEEN_ONLINE, false);
+      return prefs != null && prefs.getBoolean(KEY_HAS_LOADED, false);
     } catch (Exception ignored) {
       return false;
     }
   }
 
-  private void markSeenOnline() {
+  private void markLoadedOnce() {
     try {
       if (prefs != null) {
-        prefs.edit().putBoolean(KEY_HAS_SEEN_ONLINE, true).apply();
+        prefs.edit().putBoolean(KEY_HAS_LOADED, true).apply();
       }
     } catch (Exception ignored) {
       // ignore
@@ -222,7 +220,6 @@ public class MainActivity extends AppCompatActivity {
           runOnUiThread(() -> {
             String current = webView != null ? webView.getUrl() : "";
             if (current != null && current.startsWith("file:///android_asset/offline.html")) {
-              markSeenOnline();
               loadLaunchUrl();
             }
           });
