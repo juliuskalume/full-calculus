@@ -95,7 +95,7 @@ public class MainActivity extends AppCompatActivity {
 
   private void startGoogleSignIn() {
     if (signInClient == null || signInLauncher == null) {
-      sendAuthError("Google sign-in is not available.");
+      sendAuthError("Google sign-in is not available.", null);
       return;
     }
     signInLauncher.launch(signInClient.getSignInIntent());
