@@ -524,6 +524,12 @@
         };
 
         const initialState = readState();
+        if (!initialState.username) {
+          const generated = generateFallbackUsername();
+          initialState.username = generated;
+          writeState(initialState);
+          if (nameInput && !nameInput.value) nameInput.value = generated;
+        }
         if (fullNameInput && initialState.fullName) fullNameInput.value = initialState.fullName;
         if (dobInput && initialState.dob) dobInput.value = initialState.dob;
         if (nationalityInput && initialState.nationality) nationalityInput.value = initialState.nationality;

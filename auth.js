@@ -618,6 +618,31 @@
     return { ok: false, message: "Unable to find an available username." };
   };
 
+  const ensureUsername = async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+    const local = exportLocalState();
+    const onboarding = toObject(local.onboarding);
+    const existing = String(onboarding.username || user.displayName || "").trim();
+    if (existing) return;
+    const reserve = await reserveUsername("", { attempts: 30 });
+    if (!reserve?.ok || !reserve.username) return;
+    const finalUsername = reserve.username;
+    try {
+      await user.updateProfile({ displayName: finalUsername });
+    } catch {
+      // ignore
+    }
+    onboarding.username = finalUsername;
+    safeSet(DEFAULT_STATE_KEY, onboarding);
+    const payload = { username: finalUsername };
+    try {
+      await syncToRemote(payload);
+    } catch {
+      queueProfileSync(payload);
+    }
+  };
+
   const syncToRemote = async (extra) => {
     const user = auth.currentUser;
     if (!user) return null;
@@ -817,6 +842,7 @@
     syncToRemote,
     queueProfileSync,
     flushQueuedProfileSync,
+    ensureUsername,
     syncPublicProfile,
     reserveUsername,
     ensureUserDoc,
@@ -954,6 +980,7 @@
     }
 
     syncFromRemote().catch(() => {});
+    ensureUsername().catch(() => {});
     flushQueuedProfileSync().catch(() => {});
     syncPublicProfile().catch(() => {});
     startPresenceTimer();
