@@ -736,7 +736,18 @@
             s.username = user?.displayName || username || "";
             s.fullName = fullName;
             s.nationality = nationality;
+            s.dob = dob;
             updateSavedProfile();
+            if (window.FCAuth?.syncToRemote && user) {
+              await FCAuth.syncToRemote({
+                username: s.username,
+                fullName,
+                nationality,
+                dob,
+                avatarUrl,
+                email,
+              });
+            }
             location.href = "done.html";
           } catch (err) {
             setMessage(errorEl, friendlyAuthMessage(err, "Sign up failed. Please try again."));
