@@ -733,7 +733,7 @@
               avatarUrl,
             });
             const user = FCAuth.getCurrentUser();
-            s.username = user?.displayName || username || "";
+            s.username = user?.displayName || s.username || username || "";
             s.fullName = fullName;
             s.nationality = nationality;
             s.dob = dob;
