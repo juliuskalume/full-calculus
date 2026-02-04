@@ -170,7 +170,7 @@
           </div>
 
           <div class="min-w-0">
-            <h3 id="nameText" class="text-xl font-extrabold truncate">Student</h3>
+            <h3 id="nameText" class="text-xl font-extrabold truncate">—</h3>
             <p class="text-primary text-sm font-semibold">
               <span id="courseText">Calculus I</span> • <span id="leagueText">Diamond League</span>
             </p>
@@ -639,7 +639,7 @@
           s.username = s.name;
           saveFcState(s);
         }
-        const username = (s.username && String(s.username).trim()) || authUser?.displayName || "Student";
+        const username = (s.username && String(s.username).trim()) || authUser?.displayName || "—";
         const avatarUrl = s.avatarUrl || authUser?.photoURL || DEFAULT_AVATAR;
 
         document.getElementById("nameText").textContent = username;
@@ -921,7 +921,7 @@
           dobInput.classList.add("opacity-70");
         }
 
-        document.getElementById("nameText").textContent = s.username || "Student";
+        document.getElementById("nameText").textContent = s.username || "—";
         applyAvatar(s.avatarUrl);
 
         if (window.FCAuth?.enabled && FCAuth.getCurrentUser && FCAuth.getCurrentUser()) {
@@ -931,7 +931,7 @@
             if (!nameResult?.ok) {
               s.username = prevUsername;
               saveFcState(s);
-              document.getElementById("nameText").textContent = s.username || "Student";
+              document.getElementById("nameText").textContent = s.username || "—";
               if (nameInput) nameInput.value = s.username || "";
               setMessage(accountError, nameResult?.message || "Username unavailable.");
               setMessage(accountStatus, "");

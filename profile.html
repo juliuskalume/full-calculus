@@ -121,7 +121,7 @@
 
         </div>
 
-        <h1 id="nameText" class="text-2xl font-extrabold text-center mb-1">Student</h1>
+        <h1 id="nameText" class="text-2xl font-extrabold text-center mb-1">—</h1>
 
         <div class="flex items-center gap-1 opacity-70">
           <span class="material-symbols-outlined text-[16px]">calendar_month</span>
@@ -434,7 +434,7 @@
           // ignore
         }
       }
-      const name = (s.username && String(s.username).trim()) || (s.name && String(s.name).trim()) || "CalcHero";
+      const name = (s.username && String(s.username).trim()) || (s.name && String(s.name).trim()) || "—";
       const avatarUrl = s.avatarUrl || DEFAULT_AVATAR;
 
       document.getElementById("nameText").textContent = name;
