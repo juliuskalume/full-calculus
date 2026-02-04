@@ -737,6 +737,7 @@
             s.fullName = fullName;
             s.nationality = nationality;
             s.dob = dob;
+            if (nameInput && s.username) nameInput.value = s.username;
             updateSavedProfile();
             if (window.FCAuth?.syncToRemote && user) {
               const payload = {
