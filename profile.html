@@ -387,6 +387,40 @@
     </div>
   </div>
 
+  <!-- Placement Test Prompt (Achievements) -->
+  <div id="placementModal" class="fixed inset-0 z-[95] hidden">
+    <div class="absolute inset-0 bg-[#141414]/60 backdrop-blur-sm" data-placement-close></div>
+    <div class="absolute inset-0 flex items-center justify-center px-4">
+      <div class="w-full max-w-[380px] bg-white dark:bg-surface-dark rounded-2xl p-6 shadow-2xl">
+        <h3 id="placementModalTitle" class="text-lg font-extrabold text-slate-900 dark:text-white mb-2">
+          Take a placement test?
+        </h3>
+        <p id="placementModalDesc" class="text-sm text-slate-600 dark:text-slate-300">
+          This badge unlocks upon completion of the course.
+        </p>
+        <p id="placementModalNote" class="text-xs text-slate-400 mt-2">
+          You can unlock it quickly by passing a placement test.
+        </p>
+        <div class="mt-5 flex gap-3">
+          <button
+            id="placementModalCancel"
+            type="button"
+            class="flex-1 h-11 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+          >
+            Not now
+          </button>
+          <button
+            id="placementModalStart"
+            type="button"
+            class="flex-1 h-11 rounded-xl bg-primary text-black font-bold shadow-md hover:bg-primary-dark transition-colors"
+          >
+            Yes, start test
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Content data (for achievements) -->
   <script src="content-structure.js"></script>
   <script src="content-sections.js"></script>
@@ -476,6 +510,7 @@
       document.querySelectorAll(".achievement-card").forEach((card) => {
         const key = card.dataset.calc;
         const unlocked = !!calcUnlocked[key];
+        card.dataset.unlocked = unlocked ? "true" : "false";
         const iconWrap = card.querySelector(".achievement-icon");
         const icon = card.querySelector(".achievement-icon span");
         const iconName = card.dataset.icon || "emoji_events";
@@ -517,6 +552,88 @@
         localStorage.setItem(joinedKey, joined);
       }
       document.getElementById("joinedText").textContent = `Joined ${joined}`;
+    })();
+
+    (function initAchievementPlacementPrompt() {
+      const modal = document.getElementById("placementModal");
+      const titleEl = document.getElementById("placementModalTitle");
+      const descEl = document.getElementById("placementModalDesc");
+      const noteEl = document.getElementById("placementModalNote");
+      const startBtn = document.getElementById("placementModalStart");
+      const cancelBtn = document.getElementById("placementModalCancel");
+      const backdrop = document.querySelector("[data-placement-close]");
+
+      if (!modal || !titleEl || !descEl || !startBtn || !cancelBtn) return;
+
+      const configs = {
+        c1: {
+          id: "placement-c1",
+          title: "Calc I • Trailblazer",
+          desc:
+            "This badge unlocks upon completion of Calculus I. You can unlock it quickly by passing a Calculus I placement test.",
+        },
+        c2: {
+          id: "placement-c2",
+          title: "Calc II • Pathfinder",
+          desc:
+            "This badge unlocks upon completion of Calculus II. You can unlock it quickly by passing a Calculus II placement test.",
+        },
+        c3: {
+          id: "placement-c3",
+          title: "Calc III • Voyager",
+          desc:
+            "This badge unlocks upon completion of Calculus III. You can unlock it quickly by passing a Calculus III placement test.",
+        },
+      };
+
+      let current = null;
+
+      const open = (key, unlocked) => {
+        const cfg = configs[key];
+        if (!cfg) return;
+        current = cfg;
+        titleEl.textContent = cfg.title;
+        descEl.textContent = cfg.desc;
+        if (noteEl) noteEl.textContent = unlocked ? "This badge is already unlocked." : "Ready to start?";
+        startBtn.disabled = !!unlocked;
+        startBtn.classList.toggle("opacity-60", !!unlocked);
+        startBtn.classList.toggle("cursor-not-allowed", !!unlocked);
+        modal.classList.remove("hidden");
+      };
+
+      const close = () => {
+        modal.classList.add("hidden");
+        current = null;
+      };
+
+      document.querySelectorAll(".achievement-card").forEach((card) => {
+        card.addEventListener("click", () => {
+          const key = card.dataset.calc;
+          const unlocked = card.dataset.unlocked === "true";
+          open(key, unlocked);
+        });
+      });
+
+      startBtn.addEventListener("click", () => {
+        if (!current || !current.id) return;
+        let state = {};
+        try {
+          state = JSON.parse(localStorage.getItem("fc_state") || "{}");
+        } catch {
+          state = {};
+        }
+        state.placementTestId = current.id;
+        state.placementTestStatus = "pending";
+        try {
+          localStorage.setItem("fc_state", JSON.stringify(state));
+        } catch {
+          // ignore
+        }
+        window.location.href = "unit-test.html";
+      });
+
+      cancelBtn.addEventListener("click", close);
+      backdrop?.addEventListener("click", close);
     })();
 
     document.getElementById("settingsBtn")?.addEventListener("click", () => {

@@ -241,7 +241,11 @@ window.FCProgress = {
       const placementCourse = blueprint?.placementCourse;
       if (placementCourse) {
         const coursesToComplete =
-          placementCourse === "calc-2" ? ["calc-1", "calc-2"] : [placementCourse];
+          placementCourse === "calc-2"
+            ? ["calc-1", "calc-2"]
+            : placementCourse === "calc-3"
+            ? ["calc-1", "calc-2", "calc-3"]
+            : [placementCourse];
 
         coursesToComplete.forEach((courseId) => {
           const course = window.FCContent.getCourse(courseId);

@@ -216,24 +216,46 @@
         const label = document.getElementById("continueLabel");
         const note = document.getElementById("placementNote");
         if (!btn) return;
-        let state = {};
-        try {
-          state = JSON.parse(localStorage.getItem("fc_state") || "{}");
-        } catch {
-          state = {};
-        }
-        const skill = state.skill;
-        const placementId =
+
+        let currentPlacementId = "";
+
+        const readState = () => {
+          try {
+            return JSON.parse(localStorage.getItem("fc_state") || "{}");
+          } catch {
+            return {};
+          }
+        };
+
+        const resolvePlacementId = (skill) =>
           skill === "intermediate" ? "placement-c1" : skill === "advanced" ? "placement-c2" : "";
-        const placementDone = state.placementTestStatus === "passed";
-        if (placementId && !placementDone) {
-          if (label) label.textContent = "Start Placement Test";
-          if (note) note.classList.remove("hidden");
+
+        const applyPlacementUi = (state) => {
+          const placementId = resolvePlacementId(state.skill);
+          const placementDone = state.placementTestStatus === "passed";
+          currentPlacementId = placementId && !placementDone ? placementId : "";
+
+          if (currentPlacementId) {
+            if (label) label.textContent = "Start Placement Test";
+            if (note) note.classList.remove("hidden");
+          } else {
+            if (label) label.textContent = "Start Learning";
+            if (note) note.classList.add("hidden");
+          }
+        };
+
+        applyPlacementUi(readState());
+
+        if (window.FCAuth?.syncFromRemote) {
+          FCAuth.syncFromRemote()
+            .then(() => applyPlacementUi(readState()))
+            .catch(() => {});
         }
 
         btn.addEventListener("click", () => {
-          if (placementId && !placementDone) {
-            state.placementTestId = placementId;
+          const state = readState();
+          if (currentPlacementId) {
+            state.placementTestId = currentPlacementId;
             state.placementTestStatus = "pending";
             try {
               localStorage.setItem("fc_state", JSON.stringify(state));
