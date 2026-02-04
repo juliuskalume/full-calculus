@@ -267,6 +267,10 @@ public class MainActivity extends AppCompatActivity {
   public void onBackPressed() {
     if (webView != null) {
       String currentUrl = webView.getUrl();
+      if (shouldBackToPath(currentUrl)) {
+        webView.loadUrl(getPathUrl());
+        return;
+      }
       if (isHomeUrl(currentUrl)) {
         try {
           webView.evaluateJavascript("window.fcShowExitPrompt && window.fcShowExitPrompt();", null);
@@ -288,6 +292,28 @@ public class MainActivity extends AppCompatActivity {
       }
     }
     super.onBackPressed();
+  }
+
+  private boolean shouldBackToPath(String url) {
+    if (url == null) return false;
+    try {
+      Uri uri = Uri.parse(url);
+      String path = uri.getPath();
+      if (path == null) return false;
+      return path.endsWith("/practice.html")
+          || path.endsWith("/leaderboard.html")
+          || path.endsWith("/notes.html")
+          || path.endsWith("/profile.html");
+    } catch (Exception ignored) {
+      return false;
+    }
+  }
+
+  private String getPathUrl() {
+    String base = getString(R.string.launch_url);
+    if (base == null) return "path.html";
+    if (!base.endsWith("/")) base = base + "/";
+    return base + "path.html";
   }
 
   private boolean isHomeUrl(String url) {
