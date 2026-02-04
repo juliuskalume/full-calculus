@@ -654,9 +654,7 @@
               primaryIcon: "check_circle",
               enableNotifications: false,
             });
-            return;
           }
-          alert("No mistakes queued. Nice work!");
           return;
         }
         startSession({
@@ -672,11 +670,9 @@
         if (window.FCUI?.showComingSoon) {
           window.FCUI.showComingSoon({
             title: "Timed Challenge",
-            message: "Timed challenge mode is under construction. It’ll be ready soon.",
+            message: "Timed challenge mode is under construction. It will be ready soon.",
           });
-          return;
         }
-        alert("Timed Challenge (coming soon).");
       });
       document.getElementById("topicLimitsBtn")?.addEventListener("click", () => {
         startSession({

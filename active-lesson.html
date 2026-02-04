@@ -724,11 +724,9 @@
         if (window.FCUI?.showComingSoon) {
           window.FCUI.showComingSoon({
             title: "Coming Soon!",
-            message: "We’re still building the report flow. This tool will be available soon.",
+            message: "We are still building the report flow. This tool will be available soon.",
           });
-          return;
         }
-        alert("Report flow coming soon.");
       });
 
       keepLearningBtn?.addEventListener("click", () => {
@@ -765,8 +763,20 @@
 
       ensureSession();
       if (!session || !session.itemIds.length) {
-        alert("No lesson items available yet.");
-        window.location.href = "path.html";
+        if (window.FCUI?.showComingSoon) {
+          window.FCUI.showComingSoon({
+            title: "No lesson items yet",
+            message: "This lesson does not have any items available right now.",
+            primaryLabel: "Back to Path",
+            primaryIcon: "arrow_back",
+            enableNotifications: false,
+            onPrimary: () => {
+              window.location.href = "path.html";
+            },
+          });
+        } else {
+          window.location.href = "path.html";
+        }
       } else {
         renderItem();
         setLives();

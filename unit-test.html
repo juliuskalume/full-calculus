@@ -462,7 +462,8 @@
     submitBtn.addEventListener("click", () => {
       if (awaitingAnswer) {
         if (!currentResponse || !String(currentResponse).trim()) {
-          alert("Enter an answer first");
+          feedbackText.textContent = "Enter an answer first.";
+          feedbackText.className = "text-sm font-semibold text-center mb-4 text-amber-300";
           return;
         }
         const result = FCEngine.gradeItem(currentItem, currentResponse);
@@ -525,8 +526,20 @@
 
     loadTest();
     if (!testSession || !testSession.itemIds.length) {
-      alert("No test items available yet.");
-      window.location.href = "path.html";
+      if (window.FCUI?.showComingSoon) {
+        window.FCUI.showComingSoon({
+          title: "No test items yet",
+          message: "This test does not have any items available right now.",
+          primaryLabel: "Back to Path",
+          primaryIcon: "arrow_back",
+          enableNotifications: false,
+          onPrimary: () => {
+            window.location.href = "path.html";
+          },
+        });
+      } else {
+        window.location.href = "path.html";
+      }
     } else {
       renderItem();
     }

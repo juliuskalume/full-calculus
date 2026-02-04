@@ -206,6 +206,15 @@
       </footer>
     </div>
 
+    <div
+      id="copyToast"
+      class="fixed left-1/2 -translate-x-1/2 bottom-6 z-[70] hidden bg-slate-900 text-white text-sm font-semibold px-4 py-2 rounded-full shadow-lg"
+      role="status"
+      aria-live="polite"
+    >
+      Copied to clipboard!
+    </div>
+
     <!-- Shared state -->
     <script src="state.js"></script>
     <script src="progress.js"></script>
@@ -256,12 +265,23 @@
             await navigator.share({ text });
           } else {
             await navigator.clipboard.writeText(text);
-            alert("Copied to clipboard!");
+            showToast("Copied to clipboard!");
           }
         } catch (e) {
           // user canceled share, ignore
         }
       });
+
+      function showToast(message) {
+        const toast = document.getElementById("copyToast");
+        if (!toast) return;
+        toast.textContent = message || "Done";
+        toast.classList.remove("hidden");
+        clearTimeout(window.__fc_toast_timer);
+        window.__fc_toast_timer = setTimeout(() => {
+          toast.classList.add("hidden");
+        }, 2000);
+      }
     </script>
   </body>
 </html>
