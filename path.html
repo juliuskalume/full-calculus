@@ -779,6 +779,12 @@
           window.removeEventListener("popstate", onPopState);
           history.back();
         });
+
+        // Allow native shells (WebView) to trigger exit prompt
+        window.fcShowExitPrompt = () => {
+          showExit();
+          return true;
+        };
       })();
     </script>
 

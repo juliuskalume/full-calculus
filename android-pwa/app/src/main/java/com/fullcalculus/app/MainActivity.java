@@ -133,9 +133,18 @@ public class MainActivity extends AppCompatActivity {
 
   @Override
   public void onBackPressed() {
-    if (webView != null && webView.canGoBack()) {
-      webView.goBack();
-      return;
+    if (webView != null) {
+      if (webView.canGoBack()) {
+        webView.goBack();
+        return;
+      }
+      // Trigger in-app exit confirmation on home screen
+      try {
+        webView.evaluateJavascript("window.fcShowExitPrompt && window.fcShowExitPrompt();", null);
+        return;
+      } catch (Exception ignored) {
+        // fall through
+      }
     }
     super.onBackPressed();
   }
