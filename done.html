@@ -246,6 +246,33 @@
           window.location.href = "path.html";
         });
       })();
+
+      (function () {
+        const updateSummary = (onboarding) => {
+          if (!onboarding || typeof onboarding !== "object") return;
+          const setText = (id, val) => {
+            const el = document.getElementById(id);
+            if (el && val != null && String(val).trim()) el.textContent = val;
+          };
+          const skill = onboarding.skill || "";
+          const goal = onboarding.goal || "";
+          const minutes = Number(onboarding.minutesPerDay) || 0;
+          const notif = typeof onboarding.notifications === "boolean" ? onboarding.notifications : null;
+
+          if (skill) setText("sumSkill", skill);
+          if (goal) setText("sumGoal", goal);
+          if (minutes) setText("sumTime", `${minutes} min`);
+          if (notif != null) setText("sumNotif", notif ? "on" : "off");
+        };
+
+        if (!window.FCAuth?.enabled || !FCAuth.syncFromRemote) return;
+        FCAuth.syncFromRemote()
+          .then((data) => {
+            const onboarding = data?.onboarding || null;
+            updateSummary(onboarding);
+          })
+          .catch(() => {});
+      })();
     </script>
   </body>
 </html>

@@ -518,6 +518,10 @@
           writeState(initialState);
           if (nameInput && !nameInput.value) nameInput.value = generated;
         }
+        if (initialState.notifications == null) {
+          initialState.notifications = true;
+          writeState(initialState);
+        }
         if (fullNameInput && initialState.fullName) fullNameInput.value = initialState.fullName;
         if (dobInput && initialState.dob) dobInput.value = initialState.dob;
         if (nationalityInput && initialState.nationality) nationalityInput.value = initialState.nationality;
@@ -703,6 +707,12 @@
           const fullName = normalizeFullName(fullNameInput?.value || "");
           const nationality = normalizeCountry(nationalityInput?.value || "");
           const dob = dobInput?.value || "";
+          const onboardingState = readState();
+          const skill = onboardingState.skill || "";
+          const goal = onboardingState.goal || "";
+          const minutesPerDay = Number(onboardingState.minutesPerDay) || 0;
+          const notifications =
+            typeof onboardingState.notifications === "boolean" ? onboardingState.notifications : true;
 
           if (window.FCAuth?.getCurrentUser && FCAuth.getCurrentUser()) {
             setBusy(true, "Continuing...");
@@ -730,7 +740,17 @@
               const s = readState();
               s.username = finalUsername;
               writeState(s);
-              await FCAuth.syncToRemote({ username: finalUsername, fullName, nationality, dob, email });
+              await FCAuth.syncToRemote({
+                username: finalUsername,
+                fullName,
+                nationality,
+                dob,
+                email,
+                skill,
+                goal,
+                minutesPerDay,
+                notifications,
+              });
               location.href = "done.html";
             } catch (err) {
               setMessage(errorEl, friendlyAuthMessage(err, "Unable to continue. Please try again."));
@@ -769,6 +789,10 @@
               nationality,
               dob,
               avatarUrl,
+              skill,
+              goal,
+              minutesPerDay,
+              notifications,
             });
             const user = FCAuth.getCurrentUser();
             s.username = user?.displayName || s.username || username || "";
@@ -785,6 +809,10 @@
                 dob,
                 avatarUrl,
                 email,
+                skill,
+                goal,
+                minutesPerDay,
+                notifications,
               };
               try {
                 await FCAuth.syncToRemote(payload);
@@ -854,6 +882,10 @@
               dob: s.dob,
               avatarUrl: s.avatarUrl,
               email: s.email,
+              skill: s.skill || "",
+              goal: s.goal || "",
+              minutesPerDay: Number(s.minutesPerDay) || 0,
+              notifications: typeof s.notifications === "boolean" ? s.notifications : true,
             });
             location.href = "done.html";
           } catch (err) {

@@ -410,6 +410,10 @@
       if (extra.fullName) onboarding.fullName = extra.fullName;
       if (extra.nationality) onboarding.nationality = extra.nationality;
       if (extra.avatarUrl) onboarding.avatarUrl = extra.avatarUrl;
+      if (extra.skill) onboarding.skill = extra.skill;
+      if (extra.goal) onboarding.goal = extra.goal;
+      if (Number.isFinite(extra.minutesPerDay)) onboarding.minutesPerDay = extra.minutesPerDay;
+      if (typeof extra.notifications === "boolean") onboarding.notifications = extra.notifications;
       if (extra.dob) onboarding.dob = extra.dob;
       if (extra.age) onboarding.age = extra.age;
       if (extra.email) onboarding.email = extra.email;
@@ -727,7 +731,20 @@
     return doc.data();
   };
 
-  const signUpWithEmail = async ({ email, password, username, fullName, nationality, dob, age, avatarUrl }) => {
+  const signUpWithEmail = async ({
+    email,
+    password,
+    username,
+    fullName,
+    nationality,
+    dob,
+    age,
+    avatarUrl,
+    skill,
+    goal,
+    minutesPerDay,
+    notifications,
+  }) => {
     const cleanEmail = normalizeEmail(email);
     const result = await auth.createUserWithEmailAndPassword(cleanEmail, password);
     const usernameResult = await reserveUsername(username, { attempts: 30 });
@@ -743,6 +760,10 @@
     if (finalUsername) local.onboarding.username = finalUsername;
     if (fullName) local.onboarding.fullName = fullName;
     if (nationality) local.onboarding.nationality = nationality;
+    if (skill) local.onboarding.skill = skill;
+    if (goal) local.onboarding.goal = goal;
+    if (Number.isFinite(minutesPerDay)) local.onboarding.minutesPerDay = minutesPerDay;
+    if (typeof notifications === "boolean") local.onboarding.notifications = notifications;
     if (dob) local.onboarding.dob = dob;
     if (age) local.onboarding.age = age;
     if (avatarUrl) local.onboarding.avatarUrl = avatarUrl;
@@ -752,6 +773,10 @@
       username: finalUsername,
       fullName,
       nationality,
+      skill,
+      goal,
+      minutesPerDay,
+      notifications,
       dob,
       age,
       avatarUrl,
