@@ -189,6 +189,9 @@
 
     <script src="state.js"></script>
     <script src="progress.js"></script>
+    <script src="content-structure.js"></script>
+    <script src="content-sections.js"></script>
+    <script src="content.js"></script>
 
     <script>
       const session = (() => {
@@ -245,7 +248,29 @@
         dailyText.innerHTML = `${dailyXp} <span class="text-gray-400 font-normal">/ ${DAILY_GOAL} XP</span>`;
       }
 
+      function getNextLessonSectionId() {
+        if (!window.FCContent || !window.FCProgress) return null;
+        const last = session || {};
+        const sectionId = last.sectionId || FCProgress.get().currentSectionId;
+        if (!sectionId) return null;
+        const section = FCContent.getSection(sectionId);
+        if (!section) return null;
+        const sections = FCContent.getChapterSections(section.chapterId);
+        const idx = sections.findIndex((s) => s.id === section.id);
+        if (idx < 0) return null;
+        const next = sections[idx + 1];
+        if (!next) return null;
+        if (!FCProgress.isSectionUnlocked(next.id)) return null;
+        return next.id;
+      }
+
       document.getElementById("continueBtn").addEventListener("click", () => {
+        const nextId = getNextLessonSectionId();
+        if (nextId) {
+          FCProgress.setCurrentSection(nextId);
+          window.location.href = "active-lesson.html";
+          return;
+        }
         window.location.href = "path.html";
       });
 

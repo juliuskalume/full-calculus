@@ -165,6 +165,7 @@
     <script src="state.js"></script>
     <script src="progress.js"></script>
     <script src="content-structure.js"></script>
+    <script src="content-sections.js"></script>
     <script src="content-tests.js"></script>
     <script src="content.js"></script>
 
@@ -223,7 +224,38 @@
       document.getElementById("scoreText").textContent = `${score}%`;
       document.getElementById("xpText").textContent = `+${xp}`;
 
+      function getNextSectionAfterTest() {
+        if (!window.FCContent) return null;
+        if (!testId) return null;
+        const blueprint = FCContent.getTestBlueprint(testId);
+        const chapter = blueprint ? FCContent.getChapter(blueprint.chapterId) : null;
+        const module = chapter ? FCContent.getModule(chapter.moduleId) : null;
+        const courseId = module?.courseId || localStorage.getItem("fc_course") || "calc-1";
+        const modules = FCContent.getCourseModules(courseId);
+        const moduleIndex = module ? modules.findIndex((m) => m.id === module.id) : -1;
+        const moduleChapters = module ? FCContent.getModuleChapters(module.id) : [];
+        const chapterIndex = chapter ? moduleChapters.findIndex((c) => c.id === chapter.id) : -1;
+
+        let nextChapter = null;
+        if (chapterIndex >= 0 && chapterIndex < moduleChapters.length - 1) {
+          nextChapter = moduleChapters[chapterIndex + 1];
+        } else if (moduleIndex >= 0 && moduleIndex < modules.length - 1) {
+          const nextModule = modules[moduleIndex + 1];
+          nextChapter = nextModule ? FCContent.getModuleChapters(nextModule.id)[0] : null;
+        }
+
+        if (!nextChapter) return null;
+        const sections = FCContent.getChapterSections(nextChapter.id);
+        return sections.length ? sections[0].id : null;
+      }
+
       document.getElementById("continueBtn").addEventListener("click", () => {
+        const nextId = getNextSectionAfterTest();
+        if (nextId && window.FCProgress?.setCurrentSection) {
+          FCProgress.setCurrentSection(nextId);
+          window.location.href = "active-lesson.html";
+          return;
+        }
         window.location.href = "path.html";
       });
 
