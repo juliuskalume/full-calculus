@@ -260,8 +260,15 @@
     function loadTest() {
       testSession = FCEngine.getTestSession();
       if (!testSession) {
-        const fallback = FCContent.testBlueprints[0];
-        testSession = FCEngine.createTestSession(fallback?.id || "");
+        let placementId = "";
+        try {
+          const state = JSON.parse(localStorage.getItem("fc_state") || "{}");
+          placementId = state.placementTestId || "";
+        } catch {
+          placementId = "";
+        }
+        const fallbackId = placementId || FCContent.testBlueprints[0]?.id || "";
+        testSession = FCEngine.createTestSession(fallbackId);
         if (testSession) FCEngine.saveTestSession(testSession);
       }
     }

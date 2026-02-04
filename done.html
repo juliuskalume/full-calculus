@@ -179,6 +179,9 @@
           >
             <span id="continueLabel" class="text-lg font-bold leading-normal tracking-wide">Start Learning</span>
           </button>
+          <p id="placementNote" class="hidden text-center text-sm text-slate-500 dark:text-slate-400 font-medium">
+            Placement test required to unlock your next course.
+          </p>
         </div>
       </div>
     </div>
@@ -206,6 +209,42 @@
             if (user) pushProfile();
           });
         }
+      })();
+
+      (function () {
+        const btn = document.getElementById("continueBtn");
+        const label = document.getElementById("continueLabel");
+        const note = document.getElementById("placementNote");
+        if (!btn) return;
+        let state = {};
+        try {
+          state = JSON.parse(localStorage.getItem("fc_state") || "{}");
+        } catch {
+          state = {};
+        }
+        const skill = state.skill;
+        const placementId =
+          skill === "intermediate" ? "placement-c1" : skill === "advanced" ? "placement-c2" : "";
+        const placementDone = state.placementTestStatus === "passed";
+        if (placementId && !placementDone) {
+          if (label) label.textContent = "Start Placement Test";
+          if (note) note.classList.remove("hidden");
+        }
+
+        btn.addEventListener("click", () => {
+          if (placementId && !placementDone) {
+            state.placementTestId = placementId;
+            state.placementTestStatus = "pending";
+            try {
+              localStorage.setItem("fc_state", JSON.stringify(state));
+            } catch {
+              // ignore
+            }
+            window.location.href = "unit-test.html";
+            return;
+          }
+          window.location.href = "path.html";
+        });
       })();
     </script>
   </body>

@@ -52,14 +52,29 @@ window.FCEngine = (function () {
 
     const remaining = Math.max(0, (blueprint.questionCount || 0) - chosen.length);
     if (remaining > 0) {
-      const chapter = window.FCContent.getChapter(blueprint.chapterId);
-      const chapterItems = (chapter
-        ? window.FCContent
-            .getChapterSections(chapter.id)
-            .flatMap((section) => window.FCContent.getSectionItems(section.id))
-        : window.FCContent.items
-      ).filter((item) => item.type !== "free-response");
-      const filler = pickFromPool(chapterItems, remaining, used);
+      let chapterItems = [];
+      if (blueprint.fallbackScope === "course" && blueprint.courseId && window.FCContent.getCourseModules) {
+        const modules = window.FCContent.getCourseModules(blueprint.courseId);
+        const chapterIds = modules.flatMap((m) => m.chapters || []);
+        const sectionIds = chapterIds
+          .map((id) => window.FCContent.getChapter(id))
+          .filter(Boolean)
+          .flatMap((ch) => ch.sections || []);
+        chapterItems = sectionIds
+          .map((id) => window.FCContent.getSection(id))
+          .filter(Boolean)
+          .flatMap((section) => window.FCContent.getSectionItems(section.id));
+      } else {
+        const chapter = window.FCContent.getChapter(blueprint.chapterId);
+        chapterItems = (chapter
+          ? window.FCContent
+              .getChapterSections(chapter.id)
+              .flatMap((section) => window.FCContent.getSectionItems(section.id))
+          : window.FCContent.items
+        );
+      }
+      const filtered = chapterItems.filter((item) => item.type !== "free-response");
+      const filler = pickFromPool(filtered, remaining, used);
       chosen.push(...filler);
     }
 

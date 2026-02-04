@@ -228,6 +228,10 @@ function initNotifyPage() {
     if (current) current.textContent = val ? "on" : "off";
   };
 
+  if (s.notifications == null) {
+    s.notifications = true;
+    saveState(s);
+  }
   updateUI(!!s.notifications);
 
   if (on) {

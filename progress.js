@@ -235,6 +235,77 @@ window.FCProgress = {
         if (!p.unlockedChapterIds.includes(id)) p.unlockedChapterIds.push(id);
       });
     }
+
+    if (result.passed && window.FCContent?.getTestBlueprint) {
+      const blueprint = window.FCContent.getTestBlueprint(blueprintId);
+      const placementCourse = blueprint?.placementCourse;
+      if (placementCourse) {
+        const coursesToComplete =
+          placementCourse === "calc-2" ? ["calc-1", "calc-2"] : [placementCourse];
+
+        coursesToComplete.forEach((courseId) => {
+          const course = window.FCContent.getCourse(courseId);
+          if (!course) return;
+          const modules = window.FCContent.getCourseModules(courseId);
+          const chapterIds = modules.flatMap((m) => m.chapters || []);
+          const sectionIds = chapterIds
+            .map((id) => window.FCContent.getChapter(id))
+            .filter(Boolean)
+            .flatMap((ch) => ch.sections || []);
+
+          sectionIds.forEach((id) => {
+            if (!p.completedSections.includes(id)) p.completedSections.push(id);
+            if (!p.completed.includes(id)) p.completed.push(id);
+            if (!p.unlockedSectionIds.includes(id)) p.unlockedSectionIds.push(id);
+          });
+          chapterIds.forEach((id) => {
+            if (!p.unlockedChapterIds.includes(id)) p.unlockedChapterIds.push(id);
+          });
+        });
+
+        const nextCourse =
+          placementCourse === "calc-1"
+            ? "calc-2"
+            : placementCourse === "calc-2"
+            ? "calc-3"
+            : null;
+        if (nextCourse) {
+          const nextModules = window.FCContent.getCourseModules(nextCourse);
+          const nextChapters = nextModules.flatMap((m) => m.chapters || []);
+          const nextSections = nextChapters
+            .map((id) => window.FCContent.getChapter(id))
+            .filter(Boolean)
+            .flatMap((ch) => ch.sections || []);
+          const firstNext = nextSections[0];
+          if (firstNext) {
+            p.currentSectionId = firstNext;
+            p.current = firstNext;
+          }
+        }
+
+        try {
+          const raw = localStorage.getItem("fc_state") || "{}";
+          const state = JSON.parse(raw);
+          state.placementTestId = "";
+          state.placementTestStatus = "passed";
+          localStorage.setItem("fc_state", JSON.stringify(state));
+        } catch {
+          // ignore
+        }
+      }
+    } else if (window.FCContent?.getTestBlueprint) {
+      const blueprint = window.FCContent.getTestBlueprint(blueprintId);
+      if (blueprint?.placementCourse) {
+        try {
+          const raw = localStorage.getItem("fc_state") || "{}";
+          const state = JSON.parse(raw);
+          state.placementTestStatus = "failed";
+          localStorage.setItem("fc_state", JSON.stringify(state));
+        } catch {
+          // ignore
+        }
+      }
+    }
     this.set(p);
     this._scheduleSync();
   },
