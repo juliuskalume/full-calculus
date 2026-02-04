@@ -798,13 +798,55 @@
 
       updateAvatarSelection(window.__fc_avatar_current);
 
+      const normalizeDisplayName = (value) => String(value || "").trim().replace(/\s+/g, " ");
+      const NAME_REGISTRY_KEY = "fc_name_registry";
+
+      const reserveDisplayName = async (user, desiredName) => {
+        const cleanName = normalizeDisplayName(desiredName);
+        if (!cleanName) {
+          return { ok: true, name: "" };
+        }
+        if (cleanName.length < 3 || cleanName.length > 20) {
+          return { ok: false, message: "Display name must be 3-20 characters." };
+        }
+        if (!window.FCAuth?.db) {
+          return { ok: true, name: cleanName, localOnly: true };
+        }
+        const nameLower = cleanName.toLowerCase();
+        const docRef = FCAuth.db.collection("name_registry").doc(nameLower);
+        try {
+          await docRef.set(
+            {
+              uid: user.uid,
+              name: cleanName,
+              nameLower,
+              updatedAt: new Date().toISOString(),
+            },
+            { merge: true }
+          );
+          const prev = localStorage.getItem(NAME_REGISTRY_KEY);
+          if (prev && prev !== nameLower) {
+            FCAuth.db.collection("name_registry").doc(prev).delete().catch(() => {});
+          }
+          localStorage.setItem(NAME_REGISTRY_KEY, nameLower);
+          return { ok: true, name: cleanName };
+        } catch (err) {
+          const code = err?.code || "";
+          return {
+            ok: false,
+            message: code === "permission-denied" ? "That name is already taken." : "Unable to save that name.",
+          };
+        }
+      };
+
       // Save profile updates
       document.getElementById("saveBtn")?.addEventListener("click", async () => {
         setMessage(accountError, "");
         setMessage(accountStatus, "Saving...");
 
         const s = loadFcState();
-        const nextName = (nameInput?.value || "").trim();
+        const prevName = s.name || "";
+        const nextName = normalizeDisplayName(nameInput?.value || "");
         if (nextName) s.name = nextName;
         if (pendingAvatarUrl) s.avatarUrl = pendingAvatarUrl;
         saveFcState(s);
@@ -815,6 +857,20 @@
         if (window.FCAuth?.enabled && FCAuth.getCurrentUser && FCAuth.getCurrentUser()) {
           try {
             const user = FCAuth.getCurrentUser();
+            const nameResult = await reserveDisplayName(user, s.name || user.displayName || "");
+            if (!nameResult.ok) {
+              s.name = prevName;
+              saveFcState(s);
+              document.getElementById("nameText").textContent = s.name || "Student";
+              if (nameInput) nameInput.value = s.name || "";
+              setMessage(accountError, nameResult.message || "Name unavailable.");
+              setMessage(accountStatus, "");
+              return;
+            }
+            if (nameResult.name) {
+              s.name = nameResult.name;
+              saveFcState(s);
+            }
             if (user?.updateProfile) {
               await user.updateProfile({
                 displayName: s.name || user.displayName || "",
