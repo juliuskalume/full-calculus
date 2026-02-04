@@ -1,5 +1,5 @@
-const STATIC_CACHE = "fc-static-v5";
-const RUNTIME_CACHE = "fc-runtime-v1";
+const STATIC_CACHE = "fc-static-v6";
+const RUNTIME_CACHE = "fc-runtime-v2";
 const IMAGE_CACHE = "fc-images-v1";
 
 const PRECACHE_URLS = [
@@ -110,9 +110,17 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  const matchRuntimeThenStatic = async () => {
+    const runtime = await caches.open(RUNTIME_CACHE);
+    const runtimeMatch = await runtime.match(request);
+    if (runtimeMatch) return runtimeMatch;
+    const staticCache = await caches.open(STATIC_CACHE);
+    return staticCache.match(request);
+  };
+
   if (destination === "script" || destination === "style" || destination === "font") {
     event.respondWith(
-      caches.match(request).then((cached) => {
+      matchRuntimeThenStatic().then((cached) => {
         const fetchPromise = fetch(request)
           .then((response) => {
             const copy = response.clone();
@@ -127,7 +135,7 @@ self.addEventListener("fetch", (event) => {
   }
 
   event.respondWith(
-    caches.match(request).then((cached) => {
+    matchRuntimeThenStatic().then((cached) => {
       const fetchPromise = fetch(request)
         .then((response) => {
           const copy = response.clone();
