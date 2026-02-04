@@ -438,6 +438,18 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="auth.js"></script>
+    <script>
+      (function () {
+        if (!window.FCAuth?.enabled || !FCAuth.onAuthStateChanged) return;
+        let redirected = false;
+        FCAuth.onAuthStateChanged((user) => {
+          if (user && !redirected) {
+            redirected = true;
+            location.replace("path.html");
+          }
+        });
+      })();
+    </script>
     <script src="countries.js"></script>
     <script src="./app.js"></script>
     <script src="state.js"></script>
