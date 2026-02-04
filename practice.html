@@ -567,6 +567,16 @@
       document.getElementById("mistakesBtn")?.addEventListener("click", () => {
         const mistakes = FCProgress.get().mistakeItemIds || [];
         if (!mistakes.length) {
+          if (window.FCUI?.showComingSoon) {
+            window.FCUI.showComingSoon({
+              title: "All caught up!",
+              message: "No mistakes pending right now. Great work!",
+              primaryLabel: "Nice!",
+              primaryIcon: "check_circle",
+              enableNotifications: false,
+            });
+            return;
+          }
           alert("No mistakes queued. Nice work!");
           return;
         }

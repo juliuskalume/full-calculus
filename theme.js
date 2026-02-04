@@ -245,9 +245,14 @@
                 class="group relative flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 px-6 bg-primary hover:bg-blue-600 transition-colors text-white text-base font-bold leading-normal tracking-wide shadow-lg shadow-primary/25 active:scale-[0.98]"
               >
                 <span class="absolute inset-0 flex items-center justify-center w-full h-full text-white duration-300 -translate-x-full group-hover:translate-x-0 ease">
-                  <span class="material-symbols-outlined">notifications_active</span>
+                  <span id="fc-coming-soon-primary-icon" class="material-symbols-outlined">notifications_active</span>
                 </span>
-                <span class="absolute flex items-center justify-center w-full h-full text-white transition-all duration-300 group-hover:translate-x-full ease">Notify Me</span>
+                <span
+                  id="fc-coming-soon-primary-label"
+                  class="absolute flex items-center justify-center w-full h-full text-white transition-all duration-300 group-hover:translate-x-full ease"
+                >
+                  Notify Me
+                </span>
                 <span class="relative invisible">Notify Me</span>
               </button>
             </div>
@@ -267,12 +272,19 @@
       const closeBtn = modal.querySelector("[data-fc-close]");
       const primaryBtn = modal.querySelector("[data-fc-primary]");
 
+      const enableNotifications = options.enableNotifications !== false;
       if (title) title.textContent = options.title || "Coming Soon!";
       if (body) body.innerHTML = options.message || "We're still perfecting this part of the path.";
       if (hero) {
         const img = options.image || "icons/apologetic-fox.png";
         hero.style.backgroundImage = `url('${img}')`;
       }
+      const primaryLabel = options.primaryLabel || (enableNotifications ? "Notify Me" : "Got it");
+      const primaryIcon = options.primaryIcon || (enableNotifications ? "notifications_active" : "check_circle");
+      const primaryLabelEl = modal.querySelector("#fc-coming-soon-primary-label");
+      const primaryIconEl = modal.querySelector("#fc-coming-soon-primary-icon");
+      if (primaryLabelEl) primaryLabelEl.textContent = primaryLabel;
+      if (primaryIconEl) primaryIconEl.textContent = primaryIcon;
 
       const onClose = () => {
         modal.classList.remove("show");
@@ -285,24 +297,26 @@
           onClose();
           return;
         }
-        try {
-          const prefs = JSON.parse(localStorage.getItem("fc_prefs") || "{}");
-          prefs.sound = prefs.sound !== false ? prefs.sound : true;
-          prefs.motivation = prefs.motivation !== false ? prefs.motivation : true;
-          prefs.darkMode = prefs.darkMode;
-          localStorage.setItem("fc_prefs", JSON.stringify(prefs));
-        } catch {
-          // ignore
-        }
-        try {
-          const state = JSON.parse(localStorage.getItem("fc_state") || "{}");
-          state.notifications = true;
-          localStorage.setItem("fc_state", JSON.stringify(state));
-        } catch {
-          // ignore
-        }
-        if (window.FCPush?.requestPermissionAndSubscribe) {
-          window.FCPush.requestPermissionAndSubscribe().catch(() => {});
+        if (enableNotifications) {
+          try {
+            const prefs = JSON.parse(localStorage.getItem("fc_prefs") || "{}");
+            prefs.sound = prefs.sound !== false ? prefs.sound : true;
+            prefs.motivation = prefs.motivation !== false ? prefs.motivation : true;
+            prefs.darkMode = prefs.darkMode;
+            localStorage.setItem("fc_prefs", JSON.stringify(prefs));
+          } catch {
+            // ignore
+          }
+          try {
+            const state = JSON.parse(localStorage.getItem("fc_state") || "{}");
+            state.notifications = true;
+            localStorage.setItem("fc_state", JSON.stringify(state));
+          } catch {
+            // ignore
+          }
+          if (window.FCPush?.requestPermissionAndSubscribe) {
+            window.FCPush.requestPermissionAndSubscribe().catch(() => {});
+          }
         }
         onClose();
       };
