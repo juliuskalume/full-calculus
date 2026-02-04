@@ -1,71 +1,120 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="light" lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="manifest" href="manifest.webmanifest" />
-    <meta name="theme-color" content="#0d59f2" />
-    <link rel="apple-touch-icon" href="icons/icon-192.png" />
-    <link rel="icon" type="image/png" href="icons/icon-192.png" />
-    <title>You're Offline - Full Calculus</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Connection Lost - Calculus Master</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#0d59f2",
+              "background-light": "#f8f9fc",
+              "background-dark": "#101622",
+            },
+            fontFamily: {
+              display: ["Lexend", "sans-serif"],
+            },
+            borderRadius: { DEFAULT: "1rem", lg: "2rem", xl: "3rem", full: "9999px" },
+          },
+        },
+      };
+    </script>
     <style>
-      :root {
-        color-scheme: light;
-      }
-
-      * {
-        box-sizing: border-box;
-      }
-
       body {
-        margin: 0;
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-family: "Manrope", "Segoe UI", sans-serif;
-        background: linear-gradient(135deg, #f5f6f8 0%, #eef2ff 100%);
-        color: #0f172a;
-        padding: 24px;
+        font-family: "Lexend", sans-serif;
+        min-height: max(884px, 100dvh);
       }
-
-      .card {
-        max-width: 520px;
-        background: #ffffff;
-        padding: 32px;
-        border-radius: 20px;
-        box-shadow: 0 20px 45px rgba(15, 23, 42, 0.12);
-        text-align: center;
-      }
-
-      h1 {
-        font-size: 28px;
-        margin: 0 0 12px;
-      }
-
-      p {
-        font-size: 16px;
-        line-height: 1.6;
-        margin: 0 0 24px;
-        color: #475569;
-      }
-
-      a {
-        display: inline-block;
-        padding: 12px 20px;
-        border-radius: 12px;
-        background: #0d59f2;
-        color: #ffffff;
-        text-decoration: none;
-        font-weight: 600;
+      .bg-soft-gradient {
+        background: radial-gradient(circle at center, rgba(13, 89, 242, 0.08) 0%, transparent 70%);
       }
     </style>
+    <script src="theme.js"></script>
   </head>
-  <body>
-    <div class="card">
-      <h1>You're offline</h1>
-      <p>Reconnect to the internet to keep learning. If you've opened this page before, some lessons may still be available offline.</p>
-      <a href="index.html">Back to home</a>
+  <body class="bg-background-light dark:bg-background-dark transition-colors duration-300">
+    <div class="relative flex h-screen w-full flex-col overflow-x-hidden">
+      <!-- Top Bar -->
+      <div class="flex items-center bg-background-light dark:bg-background-dark p-4 pb-2 justify-between">
+        <div class="text-[#0d121c] dark:text-white flex size-12 shrink-0 items-center justify-start">
+          <span class="material-symbols-outlined text-2xl cursor-pointer">close</span>
+        </div>
+        <h2
+          class="text-[#0d121c] dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center pr-12 font-display"
+        >
+          Calculus Master
+        </h2>
+      </div>
+      <div class="flex flex-col items-center justify-center flex-1 px-6 pb-12">
+        <!-- Illustration Section with Reconnecting Pulse Effect -->
+        <div class="relative w-full max-w-[320px] aspect-square flex items-center justify-center mb-8">
+          <!-- Subtle Pulse Background Elements -->
+          <div class="absolute inset-0 bg-primary/10 rounded-full scale-90"></div>
+          <div class="absolute inset-4 bg-primary/5 rounded-full"></div>
+          <!-- Mascot Image -->
+          <div class="relative z-10 w-full h-full flex items-center justify-center">
+            <div
+              class="w-64 h-64 bg-center bg-no-repeat bg-contain"
+              data-alt="A confused cartoon owl holding two ends of a disconnected power cable"
+              style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAf1CoCraLkZxadmIcZxOolWA9G1-Pyh4IlQCbaRN_d2xYCWF75xB2NHLBXlhFbQ9BsvWUXCjjvtjGhtqifz_HRMa_tvz4eAPOICvRlhFdkVcaVW-WQAm-dcCYWluTLAif_nadvQvDlllp3PPEVfordVaTWE99oLhWp1PtwC9rfKRpOKnMDufPiM6D5UKxmk_vPhKn37aqeRw2s7fCBKHkHuXC6-C_0KBZti-z-cmb1lG5WtYWgrAdNPPdrR4Pw7JkqhFZBWhhNmow");'
+            ></div>
+          </div>
+          <!-- Icon Indicator -->
+          <div class="absolute bottom-4 right-8 bg-white dark:bg-background-dark p-3 rounded-full shadow-lg border-2 border-primary/20">
+            <span class="material-symbols-outlined text-primary text-3xl">wifi_off</span>
+          </div>
+        </div>
+        <!-- Text Content -->
+        <div class="max-w-[480px] w-full">
+          <h1 class="text-[#0d121c] dark:text-white tracking-tight text-[32px] font-bold leading-tight px-4 text-center pb-3 font-display">
+            Connection Lost!
+          </h1>
+          <p class="text-[#4e658e] dark:text-slate-400 text-base font-normal leading-relaxed pb-8 pt-1 px-4 text-center font-display">
+            Calculus doesn't stop, but your internet did. Please check your connection to keep your
+            <span class="text-orange-500 font-bold">streak</span> alive!
+          </p>
+        </div>
+        <!-- Action Buttons -->
+        <div class="w-full max-w-[480px] flex flex-col gap-4 px-4">
+          <!-- Primary Action -->
+          <button
+            id="retryBtn"
+            class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-14 px-5 bg-primary text-white text-lg font-bold leading-normal tracking-[0.015em] shadow-lg shadow-primary/30 active:scale-95 transition-transform font-display"
+          >
+            <span class="truncate">Try Again</span>
+          </button>
+          <!-- Secondary Action -->
+          <button
+            id="offlineBtn"
+            class="flex items-center justify-center h-12 px-5 text-primary dark:text-primary font-bold text-base hover:bg-primary/5 rounded-full transition-colors font-display"
+          >
+            <span class="material-symbols-outlined mr-2">download_done</span>
+            <span class="truncate">Play Offline Mode</span>
+          </button>
+        </div>
+        <!-- Footer Help -->
+        <div class="mt-8">
+          <a class="text-[#4e658e] dark:text-slate-500 text-sm font-medium underline flex items-center gap-1 font-display" href="#">
+            Need help?
+          </a>
+        </div>
+      </div>
+      <!-- Bottom Safe Area Spacer -->
+      <div class="h-8 bg-background-light dark:bg-background-dark"></div>
     </div>
+
+    <script>
+      document.getElementById("retryBtn")?.addEventListener("click", () => {
+        location.reload();
+      });
+      document.getElementById("offlineBtn")?.addEventListener("click", () => {
+        location.href = "path.html";
+      });
+    </script>
   </body>
 </html>

@@ -1,17 +1,47 @@
-const CACHE_NAME = "fc-static-v4";
+const STATIC_CACHE = "fc-static-v5";
+const RUNTIME_CACHE = "fc-runtime-v1";
+const IMAGE_CACHE = "fc-images-v1";
+
 const PRECACHE_URLS = [
   "index.html",
+  "login.html",
+  "path.html",
+  "active-lesson.html",
+  "unit-test.html",
+  "unit-test-pass.html",
+  "unit-test-fail.html",
+  "lesson-complete.html",
+  "notes.html",
+  "practice.html",
+  "profile.html",
+  "settings.html",
+  "privacy.html",
   "offline.html",
   "manifest.webmanifest",
   "theme.js",
+  "sound.js",
+  "app.js",
+  "state.js",
+  "progress.js",
+  "auth.js",
+  "firebase-config.js",
+  "engine.js",
+  "content.js",
+  "content-structure.js",
+  "content-sections.js",
+  "content-examples.js",
+  "content-items.js",
+  "content-tests.js",
   "icons/icon-192.png",
-  "icons/icon-512.png"
+  "icons/icon-512.png",
+  "icons/apologetic-fox.png",
+  "icons/exit-confirmation-avatar.png"
 ];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
-      .open(CACHE_NAME)
+      .open(STATIC_CACHE)
       .then((cache) => cache.addAll(PRECACHE_URLS))
       .then(() => self.skipWaiting())
   );
@@ -22,7 +52,11 @@ self.addEventListener("activate", (event) => {
     caches
       .keys()
       .then((keys) =>
-        Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))
+        Promise.all(
+          keys
+            .filter((key) => ![STATIC_CACHE, RUNTIME_CACHE, IMAGE_CACHE].includes(key))
+            .map((key) => caches.delete(key))
+        )
       )
       .then(() => self.clients.claim())
   );
@@ -46,10 +80,44 @@ self.addEventListener("fetch", (event) => {
       fetch(request)
         .then((response) => {
           const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+          caches.open(RUNTIME_CACHE).then((cache) => cache.put(request, copy));
           return response;
         })
         .catch(() => caches.match(request).then((cached) => cached || caches.match("offline.html")))
+    );
+    return;
+  }
+
+  const destination = request.destination;
+  if (destination === "image") {
+    event.respondWith(
+      caches.open(IMAGE_CACHE).then((cache) =>
+        cache.match(request).then((cached) => {
+          const fetchPromise = fetch(request)
+            .then((response) => {
+              cache.put(request, response.clone());
+              return response;
+            })
+            .catch(() => cached);
+          return cached || fetchPromise;
+        })
+      )
+    );
+    return;
+  }
+
+  if (destination === "script" || destination === "style" || destination === "font") {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        const fetchPromise = fetch(request)
+          .then((response) => {
+            const copy = response.clone();
+            caches.open(RUNTIME_CACHE).then((cache) => cache.put(request, copy));
+            return response;
+          })
+          .catch(() => cached);
+        return cached || fetchPromise;
+      })
     );
     return;
   }
@@ -59,11 +127,10 @@ self.addEventListener("fetch", (event) => {
       const fetchPromise = fetch(request)
         .then((response) => {
           const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+          caches.open(RUNTIME_CACHE).then((cache) => cache.put(request, copy));
           return response;
         })
         .catch(() => cached);
-
       return cached || fetchPromise;
     })
   );

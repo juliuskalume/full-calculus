@@ -46,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
     settings.setMediaPlaybackRequiresUserGesture(false);
     settings.setAllowFileAccess(true);
     settings.setAllowContentAccess(true);
+    settings.setCacheMode(WebSettings.LOAD_DEFAULT);
     settings.setSupportZoom(false);
     settings.setBuiltInZoomControls(false);
     settings.setDisplayZoomControls(false);
