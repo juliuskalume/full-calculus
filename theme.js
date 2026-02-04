@@ -352,6 +352,14 @@
     const existingOverlay = document.getElementById("helpOverlay") || document.getElementById("fcHelpOverlay");
     if (existingFab || existingOverlay) return;
 
+    let prefs = {};
+    try {
+      prefs = JSON.parse(localStorage.getItem("fc_prefs") || "{}");
+    } catch {
+      prefs = {};
+    }
+    if (prefs.displayFab === false) return;
+
     const filename = (location.pathname.split("/").pop() || "").toLowerCase();
     if (["offline.html", "auth-restriction.html"].includes(filename)) return;
 
@@ -577,6 +585,14 @@
           background: #1a2332;
           color: #e2e8f0;
         }
+        #fc-help-confirm {
+          position: fixed;
+          inset: 0;
+          z-index: 90;
+        }
+        #fc-help-confirm.hidden {
+          display: none;
+        }
       `;
       document.head.appendChild(style);
     }
@@ -636,6 +652,9 @@
               <button id="fc-help-support" type="button" class="text-primary font-semibold hover:text-primary-dark">
                 Email support
               </button>
+              <button id="fc-help-hide" type="button" class="text-slate-400 hover:text-primary">
+                Hide FAB
+              </button>
               <button id="fc-help-privacy" type="button" class="text-slate-500 dark:text-slate-400 hover:text-primary">
                 Privacy Policy
               </button>
@@ -646,9 +665,41 @@
       </div>
     `;
 
+    const confirmOverlay = document.createElement("div");
+    confirmOverlay.id = "fc-help-confirm";
+    confirmOverlay.className = "hidden";
+    confirmOverlay.innerHTML = `
+      <div class="absolute inset-0 bg-[#141414]/60 backdrop-blur-sm"></div>
+      <div class="absolute inset-0 flex items-center justify-center px-4">
+        <div class="fc-help-card w-full max-w-[360px] rounded-2xl p-6 shadow-2xl">
+          <h3 class="text-lg font-extrabold mb-2">Hide help button?</h3>
+          <p class="text-sm text-slate-600 dark:text-slate-300">
+            You can turn it back on anytime in Settings.
+          </p>
+          <div class="mt-5 flex gap-3">
+            <button
+              id="fc-help-confirm-cancel"
+              type="button"
+              class="flex-1 h-11 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              id="fc-help-confirm-hide"
+              type="button"
+              class="flex-1 h-11 rounded-xl bg-primary text-black font-bold shadow-md hover:bg-primary-dark transition-colors"
+            >
+              Hide
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
     const attach = () => {
       document.body.appendChild(wrap);
       document.body.appendChild(overlay);
+      document.body.appendChild(confirmOverlay);
 
       const open = () => {
         const titleEl = document.getElementById("fc-help-title");
@@ -669,6 +720,16 @@
 
       const close = () => {
         overlay.classList.add("hidden");
+        document.body.classList.remove("overflow-hidden");
+      };
+
+      const openConfirm = () => {
+        confirmOverlay.classList.remove("hidden");
+        document.body.classList.add("overflow-hidden");
+      };
+
+      const closeConfirm = () => {
+        confirmOverlay.classList.add("hidden");
         document.body.classList.remove("overflow-hidden");
       };
 
@@ -704,6 +765,24 @@
       });
       document.getElementById("fc-help-privacy")?.addEventListener("click", () => {
         window.location.href = "privacy.html";
+      });
+      document.getElementById("fc-help-hide")?.addEventListener("click", () => {
+        openConfirm();
+      });
+      document.getElementById("fc-help-confirm-cancel")?.addEventListener("click", closeConfirm);
+      document.getElementById("fc-help-confirm-hide")?.addEventListener("click", () => {
+        try {
+          const next = JSON.parse(localStorage.getItem("fc_prefs") || "{}");
+          next.displayFab = false;
+          localStorage.setItem("fc_prefs", JSON.stringify(next));
+        } catch {
+          // ignore
+        }
+        closeConfirm();
+        close();
+        wrap.remove();
+        overlay.remove();
+        confirmOverlay.remove();
       });
     };
 

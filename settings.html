@@ -426,6 +426,17 @@
 
             <div class="flex items-center gap-4 px-4 min-h-[56px] justify-between border-t border-slate-100/60 dark:border-slate-800">
               <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-slate-500">help</span>
+                <p class="text-base font-semibold">Display Help Button</p>
+              </div>
+              <label class="ios-switch" aria-label="Display Help Button toggle">
+                <input id="helpFabSwitch" type="checkbox" />
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="flex items-center gap-4 px-4 min-h-[56px] justify-between border-t border-slate-100/60 dark:border-slate-800">
+              <div class="flex items-center gap-3">
                 <span class="material-symbols-outlined text-slate-500">notifications</span>
                 <p class="text-base font-semibold">Learning Reminders</p>
               </div>
@@ -609,6 +620,7 @@
         const motivationSwitch = document.getElementById("motivationSwitch");
         const hapticSwitch = document.getElementById("hapticSwitch");
         const hapticRow = document.getElementById("hapticRow");
+        const helpFabSwitch = document.getElementById("helpFabSwitch");
         const notifySwitch = document.getElementById("notifySwitch");
         const notifyStatus = document.getElementById("notifyStatus");
 
@@ -618,6 +630,7 @@
         soundSwitch.checked = prefs.sound ?? true;
         motivationSwitch.checked = prefs.motivation ?? true;
         hapticSwitch.checked = prefs.vibration ?? true;
+        if (helpFabSwitch) helpFabSwitch.checked = prefs.displayFab !== false;
         const notifyState = loadFcState();
         notifySwitch.checked = !!notifyState.notifications;
 
@@ -661,6 +674,19 @@
         soundSwitch.addEventListener("change", persist);
         motivationSwitch.addEventListener("change", persist);
         hapticSwitch.addEventListener("change", persist);
+        helpFabSwitch?.addEventListener("change", () => {
+          const current = loadPrefs();
+          current.displayFab = helpFabSwitch.checked;
+          savePrefs(current);
+          if (helpFabSwitch.checked) {
+            location.reload();
+            return;
+          }
+          document.getElementById("fc-help-fab-wrap")?.remove();
+          document.getElementById("fcHelpFab")?.remove();
+          document.getElementById("fcHelpOverlay")?.remove();
+          document.getElementById("fc-help-confirm")?.remove();
+        });
         notifySwitch.addEventListener("change", async () => {
           const s = loadFcState();
           s.notifications = notifySwitch.checked;
