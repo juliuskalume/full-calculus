@@ -146,6 +146,15 @@
 
           <p id="loginStatus" class="text-xs font-semibold text-center text-text-light hidden"></p>
           <p id="loginError" class="text-xs font-semibold text-center text-red-500 hidden"></p>
+          <div id="verifyRow" class="hidden text-center">
+            <button
+              id="resendVerifyBtn"
+              type="button"
+              class="mt-2 inline-flex items-center justify-center text-xs font-bold text-text-light hover:text-primary transition-colors"
+            >
+              Resend verification email
+            </button>
+          </div>
 
           <div class="relative flex py-2 items-center">
             <div class="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
@@ -189,6 +198,8 @@
         const googleBtn = document.getElementById("googleLoginBtn");
         const errorEl = document.getElementById("loginError");
         const statusEl = document.getElementById("loginStatus");
+        const verifyRow = document.getElementById("verifyRow");
+        const resendVerifyBtn = document.getElementById("resendVerifyBtn");
         const forgotBtn = document.getElementById("forgotPasswordBtn");
 
         const setMessage = (el, msg) => {
@@ -262,7 +273,15 @@
           if (code === "auth/user-disabled") {
             return "This account has been disabled.";
           }
+          if (code === "auth/email-not-verified") {
+            return "Please verify your email to continue. We sent you a verification email.";
+          }
           return fallback;
+        };
+
+        const showVerifyRow = (show) => {
+          if (!verifyRow) return;
+          verifyRow.classList.toggle("hidden", !show);
         };
 
           const isRestrictedAuthEnv = () => {
@@ -321,10 +340,17 @@
           try {
             await FCAuth.signInWithEmail({ email, password });
             setMessage(statusEl, "Signed in. Redirecting...");
+            showVerifyRow(false);
             location.href = "path.html";
           } catch (err) {
             setMessage(errorEl, friendlyAuthMessage(err, "Login failed. Please try again."));
             logDevError("login-email", err);
+            if (err?.code === "auth/email-not-verified") {
+              setMessage(statusEl, "Verification email sent. Please check your inbox.");
+              showVerifyRow(true);
+            } else {
+              showVerifyRow(false);
+            }
           } finally {
             setBusy(false);
           }
@@ -332,6 +358,7 @@
 
         googleBtn?.addEventListener("click", async () => {
           setMessage(errorEl, "");
+          showVerifyRow(false);
           if (!window.FCAuth?.enabled) {
             setMessage(errorEl, "Sign-in is unavailable right now. Please try again later.");
             logDevError("login-google-disabled", new Error("Firebase auth not configured."));
@@ -361,6 +388,7 @@
         forgotBtn?.addEventListener("click", async () => {
           setMessage(errorEl, "");
           setMessage(statusEl, "");
+          showVerifyRow(false);
           if (!window.FCAuth?.enabled) {
             setMessage(errorEl, "Password reset is unavailable right now. Please try again later.");
             logDevError("reset-disabled", new Error("Firebase auth not configured."));
@@ -391,6 +419,35 @@
           document.querySelector("#toggleLoginPw .material-symbols-outlined").textContent = isPw
             ? "visibility"
             : "visibility_off";
+        });
+
+        resendVerifyBtn?.addEventListener("click", async () => {
+          setMessage(errorEl, "");
+          setMessage(statusEl, "");
+          if (!window.FCAuth?.enabled) {
+            setMessage(errorEl, "Verification is unavailable right now. Please try again later.");
+            logDevError("verify-disabled", new Error("Firebase auth not configured."));
+            return;
+          }
+          const email = emailInput?.value.trim() || "";
+          const password = passwordInput?.value || "";
+          if (!email || !password) {
+            setMessage(errorEl, "Enter your email and password to resend verification.");
+            return;
+          }
+          setBusy(true);
+          try {
+            await FCAuth.resendVerificationEmail({ email, password });
+            setMessage(statusEl, "Verification email sent. Please check your inbox.");
+          } catch (err) {
+            setMessage(
+              errorEl,
+              friendlyAuthMessage(err, "Unable to resend verification email. Please try again.")
+            );
+            logDevError("verify-resend", err);
+          } finally {
+            setBusy(false);
+          }
         });
       })();
     </script>

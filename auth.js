@@ -395,6 +395,9 @@
       resetPassword: async () => {
         throw new Error("Firebase config missing.");
       },
+      resendVerificationEmail: async () => {
+        throw new Error("Firebase config missing.");
+      },
       syncFromRemote: async () => null,
       syncToRemote: async () => null,
     };
@@ -775,6 +778,16 @@
     return doc.data();
   };
 
+  const sendVerificationEmail = async (user) => {
+    if (!user || user.emailVerified) return false;
+    try {
+      await user.sendEmailVerification();
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   const signUpWithEmail = async ({
     email,
     password,
@@ -799,6 +812,7 @@
     if (finalUsername) {
       await result.user.updateProfile({ displayName: finalUsername });
     }
+    await sendVerificationEmail(result.user);
     const local = exportLocalState();
     local.onboarding = local.onboarding || {};
     if (finalUsername) local.onboarding.username = finalUsername;
@@ -832,6 +846,13 @@
   const signInWithEmail = async ({ email, password }) => {
     const cleanEmail = normalizeEmail(email);
     const result = await auth.signInWithEmailAndPassword(cleanEmail, password);
+    if (result.user && !result.user.emailVerified) {
+      await sendVerificationEmail(result.user);
+      await auth.signOut();
+      const err = new Error("Email not verified.");
+      err.code = "auth/email-not-verified";
+      throw err;
+    }
     const data = await syncFromRemote();
     if (!data) {
       await syncToRemote({ email: cleanEmail });
@@ -845,6 +866,22 @@
       throw new Error("Enter your email to reset your password.");
     }
     await auth.sendPasswordResetEmail(cleanEmail);
+  };
+
+  const resendVerificationEmail = async ({ email, password }) => {
+    const cleanEmail = normalizeEmail(email);
+    if (!cleanEmail || !password) {
+      throw new Error("Enter your email and password.");
+    }
+    const result = await auth.signInWithEmailAndPassword(cleanEmail, password);
+    const sent = await sendVerificationEmail(result.user);
+    await auth.signOut();
+    if (!sent) {
+      const err = new Error("Unable to send verification email.");
+      err.code = "auth/verification-email-failed";
+      throw err;
+    }
+    return true;
   };
 
   const signInWithGoogle = async () => {
@@ -904,6 +941,7 @@
     signInWithEmail,
     signInWithGoogle,
     resetPassword,
+    resendVerificationEmail,
     signOut,
     onAuthStateChanged,
     getCurrentUser,

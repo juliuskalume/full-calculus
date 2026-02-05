@@ -857,7 +857,10 @@
                 FCAuth.queueProfileSync?.(payload);
               }
             }
-            location.href = "done.html";
+            setMessage(statusEl, "Verification email sent. Please check your inbox.");
+            setTimeout(() => {
+              location.href = "done.html";
+            }, 800);
           } catch (err) {
             setMessage(errorEl, friendlyAuthMessage(err, "Sign up failed. Please try again."));
             logDevError("account-signup", err);
