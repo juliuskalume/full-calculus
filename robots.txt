@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://calculus.sentirax.com/sitemap.xml
