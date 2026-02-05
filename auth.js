@@ -35,6 +35,8 @@
   };
 
   const LOCAL_UID_KEY = "fc_uid";
+  const VERIFY_REQUIRED_KEY = "fc_verify_required";
+  const SKIP_CLEAR_ON_SIGNOUT_KEY = "fc_skip_clear_on_signout";
 
   const clearLocalData = () => {
     try {
@@ -83,6 +85,50 @@
       merged[key] = val;
     });
     return merged;
+  };
+
+  const setVerifyRequired = (email) => {
+    try {
+      localStorage.setItem(
+        VERIFY_REQUIRED_KEY,
+        JSON.stringify({
+          email: email || "",
+          ts: new Date().toISOString(),
+        })
+      );
+    } catch {
+      // ignore
+    }
+  };
+
+  const setSkipClearOnSignOut = () => {
+    try {
+      localStorage.setItem(SKIP_CLEAR_ON_SIGNOUT_KEY, "true");
+    } catch {
+      // ignore
+    }
+  };
+
+  const shouldSkipClearOnSignOut = () => {
+    try {
+      return localStorage.getItem(SKIP_CLEAR_ON_SIGNOUT_KEY) === "true";
+    } catch {
+      return false;
+    }
+  };
+
+  const clearSkipClearOnSignOut = () => {
+    try {
+      localStorage.removeItem(SKIP_CLEAR_ON_SIGNOUT_KEY);
+    } catch {
+      // ignore
+    }
+  };
+
+  const requiresEmailVerification = (user) => {
+    if (!user || user.emailVerified) return false;
+    const providers = Array.isArray(user.providerData) ? user.providerData : [];
+    return providers.some((p) => p?.providerId === "password");
   };
 
   const clampDailyGoalXp = (value) => {
@@ -848,6 +894,8 @@
     const result = await auth.signInWithEmailAndPassword(cleanEmail, password);
     if (result.user && !result.user.emailVerified) {
       await sendVerificationEmail(result.user);
+      setVerifyRequired(result.user.email || cleanEmail);
+      setSkipClearOnSignOut();
       await auth.signOut();
       const err = new Error("Email not verified.");
       err.code = "auth/email-not-verified";
@@ -1072,6 +1120,16 @@
     if (!currentUid) {
       stopPresenceTimer();
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      const skipClear = shouldSkipClearOnSignOut();
+      if (skipClear) {
+        clearSkipClearOnSignOut();
+        try {
+          localStorage.removeItem(LOCAL_UID_KEY);
+        } catch {
+          // ignore
+        }
+        return;
+      }
       if (storedUid) {
         clearLocalData();
         try {
@@ -1079,6 +1137,21 @@
         } catch {
           // ignore
         }
+      }
+      return;
+    }
+
+    if (requiresEmailVerification(user)) {
+      setVerifyRequired(user.email || "");
+      setSkipClearOnSignOut();
+      try {
+        localStorage.removeItem(LOCAL_UID_KEY);
+      } catch {
+        // ignore
+      }
+      auth.signOut().catch(() => {});
+      if (!/\/login\.html$/.test(window.location.pathname)) {
+        window.location.href = "login.html";
       }
       return;
     }

@@ -284,6 +284,42 @@
           verifyRow.classList.toggle("hidden", !show);
         };
 
+        const loadVerifyFlag = () => {
+          try {
+            const raw = localStorage.getItem("fc_verify_required");
+            if (!raw) return null;
+            return JSON.parse(raw);
+          } catch {
+            return null;
+          }
+        };
+
+        const clearVerifyFlag = () => {
+          try {
+            localStorage.removeItem("fc_verify_required");
+          } catch {
+            // ignore
+          }
+        };
+
+        const hydrateVerifyNotice = () => {
+          const payload = loadVerifyFlag();
+          if (!payload) return;
+          const email = String(payload.email || "");
+          if (emailInput && email && !emailInput.value) {
+            emailInput.value = email;
+          }
+          setMessage(
+            statusEl,
+            email
+              ? `Verify your email (${email}) to continue. We sent you a link.`
+              : "Verify your email to continue. We sent you a link."
+          );
+          showVerifyRow(true);
+        };
+
+        hydrateVerifyNotice();
+
           const isRestrictedAuthEnv = () => {
             const ua = navigator.userAgent || "";
             const isFirefox = /firefox/i.test(ua);
@@ -341,6 +377,7 @@
             await FCAuth.signInWithEmail({ email, password });
             setMessage(statusEl, "Signed in. Redirecting...");
             showVerifyRow(false);
+            clearVerifyFlag();
             location.href = "path.html";
           } catch (err) {
             setMessage(errorEl, friendlyAuthMessage(err, "Login failed. Please try again."));
@@ -359,6 +396,7 @@
         googleBtn?.addEventListener("click", async () => {
           setMessage(errorEl, "");
           showVerifyRow(false);
+          clearVerifyFlag();
           if (!window.FCAuth?.enabled) {
             setMessage(errorEl, "Sign-in is unavailable right now. Please try again later.");
             logDevError("login-google-disabled", new Error("Firebase auth not configured."));
@@ -439,6 +477,7 @@
           try {
             await FCAuth.resendVerificationEmail({ email, password });
             setMessage(statusEl, "Verification email sent. Please check your inbox.");
+            showVerifyRow(true);
           } catch (err) {
             setMessage(
               errorEl,
