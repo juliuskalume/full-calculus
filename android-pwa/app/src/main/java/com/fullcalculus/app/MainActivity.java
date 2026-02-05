@@ -5,9 +5,11 @@ import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
+import android.net.NetworkInfo;
 import android.net.NetworkRequest;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Build;
 import android.content.SharedPreferences;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
@@ -19,6 +21,7 @@ import android.webkit.WebViewClient;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
@@ -66,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
 
     webView.setWebViewClient(new WebViewClient() {
       @Override
-      public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+      public boolean shouldOverrideUrlLoading(@NonNull WebView view, @NonNull WebResourceRequest request) {
         Uri uri = request.getUrl();
         String scheme = uri.getScheme();
         if (scheme != null && (scheme.equals("http") || scheme.equals("https"))) {
@@ -82,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
       }
 
       @Override
-      public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+      public void onReceivedError(@NonNull WebView view, @NonNull WebResourceRequest request, @NonNull WebResourceError error) {
         if (request != null && request.isForMainFrame()) {
           if (!isOfflineModeEnabled()) {
             loadOfflinePage();
@@ -91,7 +94,7 @@ public class MainActivity extends AppCompatActivity {
       }
 
       @Override
-      public void onPageFinished(WebView view, String url) {
+      public void onPageFinished(@NonNull WebView view, @NonNull String url) {
         if (url != null && (url.startsWith("http://") || url.startsWith("https://"))) {
           markLoadedOnce();
         }
@@ -99,6 +102,7 @@ public class MainActivity extends AppCompatActivity {
     });
     webView.setWebChromeClient(new WebChromeClient());
 
+    @SuppressWarnings("deprecation")
     GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
         .requestIdToken(getString(R.string.default_web_client_id))
         .requestEmail()
@@ -216,11 +220,16 @@ public class MainActivity extends AppCompatActivity {
     try {
       ConnectivityManager cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
       if (cm == null) return false;
-      Network network = cm.getActiveNetwork();
-      if (network == null) return false;
-      NetworkCapabilities caps = cm.getNetworkCapabilities(network);
-      if (caps == null) return false;
-      return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        Network network = cm.getActiveNetwork();
+        if (network == null) return false;
+        NetworkCapabilities caps = cm.getNetworkCapabilities(network);
+        if (caps == null) return false;
+        return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
+      }
+      @SuppressWarnings("deprecation")
+      NetworkInfo info = cm.getActiveNetworkInfo();
+      return info != null && info.isConnected();
     } catch (Exception ignored) {
       return false;
     }
@@ -235,7 +244,7 @@ public class MainActivity extends AppCompatActivity {
           .build();
       networkCallback = new ConnectivityManager.NetworkCallback() {
         @Override
-        public void onAvailable(Network network) {
+        public void onAvailable(@NonNull Network network) {
           runOnUiThread(() -> {
             String current = webView != null ? webView.getUrl() : "";
             if (current != null && current.startsWith("file:///android_asset/offline.html")) {
@@ -264,6 +273,7 @@ public class MainActivity extends AppCompatActivity {
   }
 
   @Override
+  @SuppressWarnings("deprecation")
   public void onBackPressed() {
     if (webView != null) {
       String currentUrl = webView.getUrl();
@@ -311,7 +321,6 @@ public class MainActivity extends AppCompatActivity {
 
   private String getPathUrl() {
     String base = getString(R.string.launch_url);
-    if (base == null) return "path.html";
     if (!base.endsWith("/")) base = base + "/";
     return base + "path.html";
   }
@@ -330,16 +339,19 @@ public class MainActivity extends AppCompatActivity {
 
   private class AuthBridge {
     @JavascriptInterface
+    @SuppressWarnings("unused")
     public void signInWithGoogle() {
       runOnUiThread(() -> startGoogleSignIn());
     }
 
     @JavascriptInterface
+    @SuppressWarnings("unused")
     public void exitApp() {
       runOnUiThread(() -> finish());
     }
 
     @JavascriptInterface
+    @SuppressWarnings("unused")
     public void retryConnection() {
       runOnUiThread(() -> {
         if (isOnline()) {
@@ -351,11 +363,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @JavascriptInterface
+    @SuppressWarnings("unused")
     public void openOfflineMode() {
       runOnUiThread(() -> loadLaunchUrl());
     }
 
     @JavascriptInterface
+    @SuppressWarnings("unused")
     public void setOfflineMode(boolean enabled) {
       runOnUiThread(() -> setOfflineModeEnabled(enabled));
     }
