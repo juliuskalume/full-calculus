@@ -383,15 +383,19 @@
           if (params.get("return") !== "lesson") return;
           const data = readLessonReturn();
           if (!data || data.page !== "path.html") return;
-          const scroller = document.getElementById("pathMain");
-          if (!scroller) return;
           const target = Number(data.scrollTop) || 0;
           didRestoreScroll = true;
-          requestAnimationFrame(() => {
+          const scroller = document.getElementById("pathMain");
+          const applyScroll = () => {
+            if (data.mode === "window" || !scroller) {
+              window.scrollTo(0, target);
+              return;
+            }
             scroller.scrollTop = target;
-            requestAnimationFrame(() => {
-              scroller.scrollTop = target;
-            });
+          };
+          requestAnimationFrame(() => {
+            applyScroll();
+            requestAnimationFrame(() => applyScroll());
           });
           clearLessonReturn();
           try {
@@ -403,11 +407,11 @@
           }
         };
 
-        const setLessonReturn = (page, scrollTop) => {
+        const setLessonReturn = (page, scrollTop, mode) => {
           try {
             localStorage.setItem(
               LESSON_RETURN_KEY,
-              JSON.stringify({ page, scrollTop: Number(scrollTop) || 0, ts: Date.now() })
+              JSON.stringify({ page, scrollTop: Number(scrollTop) || 0, mode: mode || "container", ts: Date.now() })
             );
           } catch {
             // ignore
@@ -649,7 +653,11 @@
               const unlocked = FCProgress.isSectionUnlocked(sectionId);
               if (!unlocked) return;
               const scroller = document.getElementById("pathMain");
-              setLessonReturn("path.html", scroller ? scroller.scrollTop : 0);
+              const needsWindowScroll = !scroller || scroller.scrollHeight <= scroller.clientHeight + 1;
+              const scrollTop = needsWindowScroll
+                ? (document.scrollingElement?.scrollTop || window.scrollY || 0)
+                : scroller.scrollTop;
+              setLessonReturn("path.html", scrollTop, needsWindowScroll ? "window" : "container");
               const session = FCEngine.createSession({
                 mode: "lesson",
                 sectionId,
