@@ -149,12 +149,7 @@ exports.rotateLeaguesWeekly = functions.pubsub
 
       const scored = snap.docs.map((doc) => {
         const data = doc.data() || {};
-        let score = 0;
-        if (data.weekKey === prevWeekKey) {
-          score = Number(data.weeklyXp) || 0;
-        } else if (data.lastWeekKey === prevWeekKey) {
-          score = Number(data.lastWeekXp) || 0;
-        }
+        const score = Number(data.xp) || 0;
         const updatedAt = Date.parse(data.updatedAt || "") || 0;
         return { doc, data, score, updatedAt };
       });

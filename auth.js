@@ -468,10 +468,16 @@
     const local = exportLocalState();
     const onboarding = { ...(local.onboarding || {}) };
     const meta = local.meta || {};
+    const streakValue = Number(meta.streak) || 0;
     let leagueIndex = Number(extra?.leagueIndex ?? onboarding.leagueIndex);
-    if (!Number.isFinite(leagueIndex) || leagueIndex < 0) leagueIndex = 0;
-    if (leagueIndex >= LEAGUES.length) leagueIndex = LEAGUES.length - 1;
-    const league = LEAGUES[leagueIndex] || LEAGUES[0];
+    if (Number.isFinite(leagueIndex) && leagueIndex >= 0) {
+      if (leagueIndex >= LEAGUES.length) leagueIndex = LEAGUES.length - 1;
+    } else if (streakValue >= 1) {
+      leagueIndex = 0;
+    } else {
+      leagueIndex = -1;
+    }
+    const league = leagueIndex >= 0 ? LEAGUES[leagueIndex] : null;
     const displayName =
       extra?.username ||
       onboarding.username ||
@@ -490,14 +496,14 @@
       username: displayName,
       photoURL,
       xp: Number(meta.xp) || 0,
-      streak: Number(meta.streak) || 0,
+      streak: streakValue,
       weeklyXp: Number(meta.weeklyXp) || 0,
       weekKey: typeof meta.weekKey === "string" ? meta.weekKey : "",
       lastWeekXp: Number(meta.lastWeekXp) || 0,
       lastWeekKey: typeof meta.lastWeekKey === "string" ? meta.lastWeekKey : "",
       leagueIndex,
-      leagueId: league.id,
-      leagueName: league.name,
+      leagueId: league?.id || "",
+      leagueName: league?.name || "",
       updatedAt: now,
     };
   };

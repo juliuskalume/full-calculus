@@ -217,7 +217,6 @@
       const getAvatar = (data) => data?.photoURL || DEFAULT_AVATAR;
       const getXp = (data) => toNumber(data?.xp ?? data?.meta?.xp);
       const getStreak = (data) => toNumber(data?.streak ?? data?.meta?.streak);
-      const getWeeklyXp = (data) => toNumber(data?.weeklyXp ?? data?.weekly ?? 0);
 
       const renderPodium = (users) => {
         const podium = document.getElementById("podium");
@@ -232,7 +231,7 @@
           if (!user) return null;
           const card = document.createElement("div");
           const name = escapeHtml(getDisplayName(user));
-          const xp = getWeeklyXp(user);
+          const xp = getXp(user);
           const avatar = escapeHtml(getAvatar(user));
           card.className = `flex flex-col items-center ${options.wrapperClass || ""}`.trim();
           card.innerHTML = `
@@ -300,7 +299,7 @@
             : "flex items-center gap-4 p-3 bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800";
 
           const name = escapeHtml(getDisplayName(user));
-          const xp = getWeeklyXp(user);
+          const xp = getXp(user);
           const streak = getStreak(user);
           const avatar = escapeHtml(getAvatar(user));
 
@@ -357,7 +356,6 @@
           const snap = await FCAuth.db
             .collection("leaderboard")
             .where("leagueIndex", "==", Number(leagueIndex) || 0)
-            .orderBy("weeklyXp", "desc")
             .orderBy("xp", "desc")
             .limit(20)
             .get();
@@ -459,7 +457,11 @@
               userDoc = null;
             }
           }
-          const leagueIndex = Number(userDoc?.leagueIndex ?? 0) || 0;
+          const leagueIndex = Number(userDoc?.leagueIndex ?? 0);
+          if (!Number.isFinite(leagueIndex) || leagueIndex < 0) {
+            renderPrompt("Complete a 1-day streak to join the leaderboard");
+            return;
+          }
           updateLeagueHeader(leagueIndex);
           const timeLeftEl = document.getElementById("timeLeft");
           if (timeLeftEl) timeLeftEl.textContent = timeLeftInWeek();
