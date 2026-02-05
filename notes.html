@@ -232,6 +232,68 @@
         }
       }
 
+      const LESSON_RETURN_KEY = "fc_lesson_return";
+      const RESTORE_TTL_MS = 1000 * 60 * 60 * 6;
+      let didRestoreScroll = false;
+
+      const readLessonReturn = () => {
+        try {
+          const raw = localStorage.getItem(LESSON_RETURN_KEY);
+          if (!raw) return null;
+          const data = JSON.parse(raw);
+          if (!data || typeof data !== "object") return null;
+          if (data.ts && Date.now() - data.ts > RESTORE_TTL_MS) return null;
+          return data;
+        } catch {
+          return null;
+        }
+      };
+
+      const clearLessonReturn = () => {
+        try {
+          localStorage.removeItem(LESSON_RETURN_KEY);
+        } catch {
+          // ignore
+        }
+      };
+
+      const setLessonReturn = (page, scrollTop) => {
+        try {
+          localStorage.setItem(
+            LESSON_RETURN_KEY,
+            JSON.stringify({ page, scrollTop: Number(scrollTop) || 0, ts: Date.now() })
+          );
+        } catch {
+          // ignore
+        }
+      };
+
+      const maybeRestoreScroll = () => {
+        if (didRestoreScroll) return;
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("return") !== "lesson") return;
+        const data = readLessonReturn();
+        if (!data || data.page !== "notes.html") return;
+        const scroller = document.getElementById("notesMain");
+        if (!scroller) return;
+        const target = Number(data.scrollTop) || 0;
+        didRestoreScroll = true;
+        requestAnimationFrame(() => {
+          scroller.scrollTop = target;
+          requestAnimationFrame(() => {
+            scroller.scrollTop = target;
+          });
+        });
+        clearLessonReturn();
+        try {
+          const url = new URL(window.location.href);
+          url.searchParams.delete("return");
+          history.replaceState({}, "", url.pathname);
+        } catch {
+          // ignore
+        }
+      };
+
       function renderNotes(query) {
         if (!window.FCContent) return;
         const courseId = localStorage.getItem("fc_course") || "calc-1";
@@ -358,6 +420,8 @@
         btn.addEventListener("click", () => {
           const sectionId = btn.getAttribute("data-section-id");
           if (!sectionId) return;
+          const scroller = document.getElementById("notesMain");
+          setLessonReturn("notes.html", scroller ? scroller.scrollTop : 0);
           const session = FCEngine.createSession({
               mode: "practice",
               sectionId,
@@ -367,10 +431,12 @@
             });
             FCEngine.saveSession(session);
             FCProgress.setCurrentSection(sectionId);
-            window.location.href = "active-lesson.html";
+          window.location.href = "active-lesson.html";
           });
         });
       }
+
+      maybeRestoreScroll();
 
       // avatar hydrate from fc_state
       (function () {

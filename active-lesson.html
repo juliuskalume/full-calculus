@@ -745,7 +745,29 @@
         history.pushState({ lessonQuitPrompt: true }, "");
         window.addEventListener("popstate", onPopState);
 
+        const LESSON_RETURN_KEY = "fc_lesson_return";
+        const RESTORE_TTL_MS = 1000 * 60 * 60 * 6;
+
+        const readLessonReturn = () => {
+          try {
+            const raw = localStorage.getItem(LESSON_RETURN_KEY);
+            if (!raw) return null;
+            const data = JSON.parse(raw);
+            if (!data || typeof data !== "object") return null;
+            if (data.ts && Date.now() - data.ts > RESTORE_TTL_MS) return null;
+            return data;
+          } catch {
+            return null;
+          }
+        };
+
         const goBackOrPath = () => {
+          const saved = readLessonReturn();
+          if (saved?.page) {
+            const separator = saved.page.includes("?") ? "&" : "?";
+            window.location.href = `${saved.page}${separator}return=lesson`;
+            return;
+          }
           const ref = document.referrer || "";
           if (ref) {
             try {
