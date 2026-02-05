@@ -492,6 +492,15 @@
         <!-- Other / Danger -->
         <section class="mb-10 space-y-3">
           <button
+            id="termsBtn"
+            class="press w-full flex items-center justify-between px-4 py-3 bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-200 font-semibold"
+            type="button"
+          >
+            Terms of Service
+            <span class="material-symbols-outlined text-slate-400">chevron_right</span>
+          </button>
+
+          <button
             id="privacyBtn"
             class="press w-full flex items-center justify-between px-4 py-3 bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-200 font-semibold"
             type="button"
@@ -1087,6 +1096,9 @@
       // Privacy + Logout
       document.getElementById("privacyBtn")?.addEventListener("click", () => {
         window.location.href = "privacy.html";
+      });
+      document.getElementById("termsBtn")?.addEventListener("click", () => {
+        window.location.href = "terms.html";
       });
 
       document.getElementById("logoutBtn")?.addEventListener("click", async () => {

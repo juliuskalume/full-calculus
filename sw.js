@@ -1,4 +1,4 @@
-const STATIC_CACHE = "fc-static-v6";
+const STATIC_CACHE = "fc-static-v7";
 const RUNTIME_CACHE = "fc-runtime-v2";
 const IMAGE_CACHE = "fc-images-v1";
 
@@ -16,6 +16,7 @@ const PRECACHE_URLS = [
   "profile.html",
   "settings.html",
   "privacy.html",
+  "terms.html",
   "offline.html",
   "manifest.webmanifest",
   "theme.js",

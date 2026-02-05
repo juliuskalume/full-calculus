@@ -658,6 +658,9 @@
               <button id="fc-help-privacy" type="button" class="text-slate-500 dark:text-slate-400 hover:text-primary">
                 Privacy Policy
               </button>
+              <button id="fc-help-terms" type="button" class="text-slate-500 dark:text-slate-400 hover:text-primary">
+                Terms
+              </button>
             </div>
           </div>
           <div class="h-2 sm:hidden"></div>
@@ -765,6 +768,9 @@
       });
       document.getElementById("fc-help-privacy")?.addEventListener("click", () => {
         window.location.href = "privacy.html";
+      });
+      document.getElementById("fc-help-terms")?.addEventListener("click", () => {
+        window.location.href = "terms.html";
       });
       document.getElementById("fc-help-hide")?.addEventListener("click", () => {
         openConfirm();

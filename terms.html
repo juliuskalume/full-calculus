@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <meta name="theme-color" content="#1cb0f6" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <link rel="icon" type="image/png" href="icons/icon-192.png" />
+    <title>Terms of Service - Full Calculus</title>
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700&display=swap"
+      rel="stylesheet"
+    />
+
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#1cb0f6",
+              "primary-hover": "#1599d4",
+              "background-light": "#f5f6f8",
+              "background-dark": "#101622",
+              "surface-light": "#ffffff",
+              "surface-dark": "#1a2332",
+              "text-main": "#0d121c",
+            },
+            fontFamily: {
+              display: ["Lexend", "sans-serif"],
+            },
+            borderRadius: {
+              DEFAULT: "1rem",
+              lg: "1.5rem",
+              xl: "2rem",
+              full: "9999px",
+            },
+          },
+        },
+      };
+    </script>
+
+    <style>
+      body {
+        font-family: "Lexend", sans-serif;
+        min-height: max(884px, 100dvh);
+      }
+      .material-symbols-outlined {
+        font-variation-settings: "FILL" 1, "wght" 550, "GRAD" 0, "opsz" 24;
+      }
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    </style>
+    <script src="theme.js"></script>
+  </head>
+
+  <body class="bg-background-light dark:bg-background-dark text-text-main dark:text-white transition-colors duration-200 antialiased">
+    <div class="w-full max-w-md mx-auto h-[100dvh] sm:min-h-screen bg-background-light dark:bg-background-dark shadow-2xl flex flex-col overflow-hidden">
+      <header class="sticky top-0 z-30 bg-background-light/90 dark:bg-background-dark/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+        <div class="flex items-center p-4 justify-between">
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              onclick="(history.length > 1) ? history.back() : location.href='settings.html'"
+              class="flex items-center justify-center w-10 h-10 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              aria-label="Back"
+            >
+              <span class="material-symbols-outlined text-primary">arrow_back</span>
+            </button>
+            <h2 class="text-lg font-extrabold leading-tight tracking-tight">Terms of Service</h2>
+          </div>
+        </div>
+      </header>
+
+      <main class="flex-1 overflow-y-auto no-scrollbar px-5 pb-10 pt-6">
+        <section class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-5 mb-5">
+          <p class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">Last updated</p>
+          <p class="text-sm font-semibold mt-1">February 5, 2026</p>
+          <p class="text-sm text-slate-600 dark:text-slate-300 mt-3 leading-relaxed">
+            These Terms of Service ("Terms") govern your use of Full Calculus. By creating an account or using the app,
+            you agree to these Terms. If you do not agree, do not use the app.
+          </p>
+        </section>
+
+        <section class="space-y-4">
+          <div class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-5">
+            <h3 class="text-base font-extrabold mb-2">Eligibility</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+              You must provide accurate information and be legally allowed to use this service. If you are under the age
+              of consent in your country, use the app with a parent or guardian.
+            </p>
+          </div>
+
+          <div class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-5">
+            <h3 class="text-base font-extrabold mb-2">Accounts</h3>
+            <ul class="text-sm text-slate-600 dark:text-slate-300 space-y-2 leading-relaxed">
+              <li>You are responsible for keeping your account secure.</li>
+              <li>Do not share login credentials or impersonate others.</li>
+              <li>You must verify your email to continue using the app if you sign up with email and password.</li>
+            </ul>
+          </div>
+
+          <div class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-5">
+            <h3 class="text-base font-extrabold mb-2">Acceptable use</h3>
+            <ul class="text-sm text-slate-600 dark:text-slate-300 space-y-2 leading-relaxed">
+              <li>Do not abuse, hack, or disrupt the service.</li>
+              <li>Do not upload or share unlawful, harmful, or misleading content.</li>
+              <li>Do not attempt to manipulate leaderboards or scores.</li>
+            </ul>
+          </div>
+
+          <div class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-5">
+            <h3 class="text-base font-extrabold mb-2">Learning content</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+              Full Calculus provides educational content for learning support. We do not guarantee exam outcomes, grades,
+              or certifications. Content may change or be updated over time.
+            </p>
+          </div>
+
+          <div class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-5">
+            <h3 class="text-base font-extrabold mb-2">Leaderboards & public profile</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+              If you participate in leaderboards, your username, avatar, XP, and streak may be visible to other users.
+              You can update your username and avatar in Settings.
+            </p>
+          </div>
+
+          <div class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-5">
+            <h3 class="text-base font-extrabold mb-2">Service availability</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+              The app is provided on an "as is" basis. We may change, suspend, or discontinue features at any time.
+            </p>
+          </div>
+
+          <div class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-5">
+            <h3 class="text-base font-extrabold mb-2">Termination</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+              We may suspend or terminate accounts that violate these Terms. You may delete your account by contacting
+              support.
+            </p>
+          </div>
+
+          <div class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-5">
+            <h3 class="text-base font-extrabold mb-2">Changes to these Terms</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+              We may update these Terms from time to time. Continued use of the app means you accept the updated Terms.
+            </p>
+          </div>
+
+          <div class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-5">
+            <h3 class="text-base font-extrabold mb-2">Contact</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+              Questions about these Terms? Contact: <span class="font-semibold">sentira.official@gmail.com</span>
+            </p>
+          </div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
