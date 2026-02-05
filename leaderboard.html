@@ -352,22 +352,31 @@
 
       const fetchLeaderboard = async (leagueIndex) => {
         if (!window.FCAuth?.db) return [];
+        const targetIndex = Number(leagueIndex) || 0;
         try {
           const snap = await FCAuth.db
             .collection("leaderboard")
-            .where("leagueIndex", "==", Number(leagueIndex) || 0)
+            .where("leagueIndex", "==", targetIndex)
             .orderBy("xp", "desc")
             .limit(20)
             .get();
           return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-        } catch {
+        } catch (err) {
+          // Fallback when composite index isn't ready or query fails.
           const snap = await FCAuth.db
             .collection("leaderboard")
-            .where("leagueIndex", "==", Number(leagueIndex) || 0)
-            .orderBy("xp", "desc")
-            .limit(20)
+            .where("leagueIndex", "==", targetIndex)
+            .limit(200)
             .get();
-          return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+          const users = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+          users.sort((a, b) => {
+            const xpDiff = getXp(b) - getXp(a);
+            if (xpDiff !== 0) return xpDiff;
+            const aUpdated = Date.parse(a.updatedAt || "") || 0;
+            const bUpdated = Date.parse(b.updatedAt || "") || 0;
+            return bUpdated - aUpdated;
+          });
+          return users.slice(0, 20);
         }
       };
 
@@ -476,7 +485,11 @@
           renderPodium(users);
           renderList(users, currentUid);
         } catch {
-          renderPrompt("Sign in to see leaderboard");
+          if (currentUid) {
+            renderPrompt("Leaderboard is loading. Please try again in a moment.");
+          } else {
+            renderPrompt("Sign in to see leaderboard");
+          }
         }
       };
 
