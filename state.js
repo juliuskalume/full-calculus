@@ -3,6 +3,15 @@ const HEART_REFILL_MIN = 5;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 window.FC = {
+  _weekKey(date = new Date()) {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+    return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
+  },
+
   _todayKey() {
     return new Date().toISOString().slice(0, 10);
   },
@@ -15,6 +24,25 @@ window.FC = {
     return Math.floor((toMs - fromMs) / DAY_MS);
   },
 
+  _ensureWeekly(s) {
+    const currentWeek = this._weekKey();
+    if (!s.weekKey) {
+      s.weekKey = currentWeek;
+      s.weeklyXp = Number(s.weeklyXp) || 0;
+      return s;
+    }
+    if (s.weekKey !== currentWeek) {
+      s.lastWeekKey = s.weekKey || "";
+      s.lastWeekXp = Number(s.weeklyXp) || 0;
+      s.weekKey = currentWeek;
+      s.weeklyXp = 0;
+    }
+    if (typeof s.weeklyXp !== "number") s.weeklyXp = 0;
+    if (typeof s.lastWeekXp !== "number") s.lastWeekXp = 0;
+    if (typeof s.lastWeekKey !== "string") s.lastWeekKey = "";
+    return s;
+  },
+
   get() {
     const fallback = {
       xp: 450,
@@ -22,6 +50,10 @@ window.FC = {
       lives: HEART_MAX,
       lastHeartTime: Date.now(),
       lastActiveDate: "",
+      weekKey: "",
+      weeklyXp: 0,
+      lastWeekKey: "",
+      lastWeekXp: 0,
     };
 
     let s;
@@ -36,7 +68,12 @@ window.FC = {
     if (typeof s.lives !== "number") s.lives = fallback.lives;
     if (typeof s.lastHeartTime !== "number") s.lastHeartTime = Date.now();
     if (typeof s.lastActiveDate !== "string") s.lastActiveDate = "";
+    if (typeof s.weekKey !== "string") s.weekKey = "";
+    if (typeof s.weeklyXp !== "number") s.weeklyXp = 0;
+    if (typeof s.lastWeekKey !== "string") s.lastWeekKey = "";
+    if (typeof s.lastWeekXp !== "number") s.lastWeekXp = 0;
 
+    s = this._ensureWeekly(s);
     s = this._refillHearts(s);
     s = this._refreshStreak(s);
     this.set(s);
@@ -49,7 +86,9 @@ window.FC = {
 
   addXP(amount) {
     const s = this.get();
+    this._ensureWeekly(s);
     s.xp += Number(amount) || 0;
+    s.weeklyXp += Number(amount) || 0;
     this.set(s);
   },
 

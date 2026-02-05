@@ -313,7 +313,18 @@
       const remote = toObject(remoteData?.onboarding);
       const local = toObject(localState?.onboarding);
       const merged = mergeSparseObject(remote, local);
-      const preferRemoteKeys = ["username", "fullName", "nationality", "email", "dob", "age", "avatarUrl"];
+      const preferRemoteKeys = [
+        "username",
+        "fullName",
+        "nationality",
+        "email",
+        "dob",
+        "age",
+        "avatarUrl",
+        "leagueIndex",
+        "leagueId",
+        "leagueName",
+      ];
       preferRemoteKeys.forEach((key) => {
         const value = remote[key];
         if (value == null) return;
@@ -417,6 +428,9 @@
       if (extra.dob) onboarding.dob = extra.dob;
       if (extra.age) onboarding.age = extra.age;
       if (extra.email) onboarding.email = extra.email;
+      if (Number.isFinite(extra.leagueIndex)) onboarding.leagueIndex = extra.leagueIndex;
+      if (extra.leagueId) onboarding.leagueId = extra.leagueId;
+      if (extra.leagueName) onboarding.leagueName = extra.leagueName;
     }
 
     if (!onboarding.email && user.email) onboarding.email = user.email;
@@ -454,6 +468,10 @@
     const local = exportLocalState();
     const onboarding = { ...(local.onboarding || {}) };
     const meta = local.meta || {};
+    let leagueIndex = Number(extra?.leagueIndex ?? onboarding.leagueIndex);
+    if (!Number.isFinite(leagueIndex) || leagueIndex < 0) leagueIndex = 0;
+    if (leagueIndex >= LEAGUES.length) leagueIndex = LEAGUES.length - 1;
+    const league = LEAGUES[leagueIndex] || LEAGUES[0];
     const displayName =
       extra?.username ||
       onboarding.username ||
@@ -473,6 +491,13 @@
       photoURL,
       xp: Number(meta.xp) || 0,
       streak: Number(meta.streak) || 0,
+      weeklyXp: Number(meta.weeklyXp) || 0,
+      weekKey: typeof meta.weekKey === "string" ? meta.weekKey : "",
+      lastWeekXp: Number(meta.lastWeekXp) || 0,
+      lastWeekKey: typeof meta.lastWeekKey === "string" ? meta.lastWeekKey : "",
+      leagueIndex,
+      leagueId: league.id,
+      leagueName: league.name,
       updatedAt: now,
     };
   };
@@ -554,6 +579,19 @@
 
   const USERNAME_REGISTRY = "name_registry";
   const USERNAME_LOCAL_KEY = "fc_username_registry";
+
+  const LEAGUES = [
+    { id: "bronze", name: "Bronze League" },
+    { id: "silver", name: "Silver League" },
+    { id: "gold", name: "Gold League" },
+    { id: "sapphire", name: "Sapphire League" },
+    { id: "ruby", name: "Ruby League" },
+    { id: "emerald", name: "Emerald League" },
+    { id: "amethyst", name: "Amethyst League" },
+    { id: "master", name: "Master League" },
+    { id: "champion", name: "Champion League" },
+    { id: "obsidian", name: "Obsidian League" },
+  ];
 
   const normalizeUsername = (value) =>
     String(value || "")

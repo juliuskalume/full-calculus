@@ -120,11 +120,11 @@
         <!-- Title + meta -->
         <div class="flex flex-col items-center">
           <div class="flex items-center gap-2 mb-1">
-            <span class="material-symbols-outlined text-primary text-3xl">diamond</span>
-            <h1 class="text-xl font-extrabold tracking-tight">Diamond League</h1>
+            <span class="material-symbols-outlined text-primary text-3xl" id="leagueIcon">diamond</span>
+            <h1 id="leagueName" class="text-xl font-extrabold tracking-tight">League</h1>
           </div>
-          <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">
-            Top 10 promote to Obsidian
+          <p id="leagueSubtitle" class="text-slate-500 dark:text-slate-400 text-sm font-medium">
+            Top 10 promote · 11-20 demotion zone
           </p>
 
           <!-- User meta chips -->
@@ -183,6 +183,24 @@
 
       const toNumber = (value) => (typeof value === "number" ? value : Number(value) || 0);
 
+      const LEAGUES = [
+        { id: "bronze", name: "Bronze League", icon: "military_tech" },
+        { id: "silver", name: "Silver League", icon: "military_tech" },
+        { id: "gold", name: "Gold League", icon: "military_tech" },
+        { id: "sapphire", name: "Sapphire League", icon: "diamond" },
+        { id: "ruby", name: "Ruby League", icon: "diamond" },
+        { id: "emerald", name: "Emerald League", icon: "diamond" },
+        { id: "amethyst", name: "Amethyst League", icon: "diamond" },
+        { id: "master", name: "Master League", icon: "trophy" },
+        { id: "champion", name: "Champion League", icon: "trophy" },
+        { id: "obsidian", name: "Obsidian League", icon: "workspace_premium" },
+      ];
+
+      const getLeague = (index) => {
+        const i = Math.max(0, Math.min(LEAGUES.length - 1, Number(index) || 0));
+        return { ...LEAGUES[i], index: i, next: LEAGUES[i + 1] || null, prev: LEAGUES[i - 1] || null };
+      };
+
       const escapeHtml = (value) =>
         String(value ?? "")
           .replace(/&/g, "&amp;")
@@ -199,6 +217,7 @@
       const getAvatar = (data) => data?.photoURL || DEFAULT_AVATAR;
       const getXp = (data) => toNumber(data?.xp ?? data?.meta?.xp);
       const getStreak = (data) => toNumber(data?.streak ?? data?.meta?.streak);
+      const getWeeklyXp = (data) => toNumber(data?.weeklyXp ?? data?.weekly ?? 0);
 
       const renderPodium = (users) => {
         const podium = document.getElementById("podium");
@@ -213,7 +232,7 @@
           if (!user) return null;
           const card = document.createElement("div");
           const name = escapeHtml(getDisplayName(user));
-          const xp = getXp(user);
+          const xp = getWeeklyXp(user);
           const avatar = escapeHtml(getAvatar(user));
           card.className = `flex flex-col items-center ${options.wrapperClass || ""}`.trim();
           card.innerHTML = `
@@ -281,7 +300,7 @@
             : "flex items-center gap-4 p-3 bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800";
 
           const name = escapeHtml(getDisplayName(user));
-          const xp = getXp(user);
+          const xp = getWeeklyXp(user);
           const streak = getStreak(user);
           const avatar = escapeHtml(getAvatar(user));
 
@@ -311,6 +330,16 @@
           const rank = index + 1;
           if (rank <= 3) return;
           const uid = user?.uid || user?.id || "";
+          if (rank === 11) {
+            const zone = document.createElement("div");
+            zone.className = "flex items-center gap-2 px-2 py-1";
+            zone.innerHTML = `
+              <div class="h-[1px] bg-red-200 dark:bg-red-900/50 flex-1"></div>
+              <p class="text-red-500 text-xs font-bold uppercase tracking-wider">Demotion Zone</p>
+              <div class="h-[1px] bg-red-200 dark:bg-red-900/50 flex-1"></div>
+            `;
+            list.appendChild(zone);
+          }
           list.appendChild(makeRow(user, rank, uid && uid === currentUid));
         });
       };
@@ -322,19 +351,26 @@
         document.getElementById("streakVal").textContent = String(streak);
       };
 
-      const fetchLeaderboard = async () => {
+      const fetchLeaderboard = async (leagueIndex) => {
         if (!window.FCAuth?.db) return [];
-        const snap = await FCAuth.db.collection("leaderboard").orderBy("xp", "desc").limit(50).get();
-        const users = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-        return users.sort((a, b) => {
-          const xpDiff = getXp(b) - getXp(a);
-          if (xpDiff !== 0) return xpDiff;
-          const streakDiff = getStreak(b) - getStreak(a);
-          if (streakDiff !== 0) return streakDiff;
-          const aUpdated = Date.parse(a.updatedAt || "") || 0;
-          const bUpdated = Date.parse(b.updatedAt || "") || 0;
-          return bUpdated - aUpdated;
-        });
+        try {
+          const snap = await FCAuth.db
+            .collection("leaderboard")
+            .where("leagueIndex", "==", Number(leagueIndex) || 0)
+            .orderBy("weeklyXp", "desc")
+            .orderBy("xp", "desc")
+            .limit(20)
+            .get();
+          return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        } catch {
+          const snap = await FCAuth.db
+            .collection("leaderboard")
+            .where("leagueIndex", "==", Number(leagueIndex) || 0)
+            .orderBy("xp", "desc")
+            .limit(20)
+            .get();
+          return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        }
       };
 
       const renderFallback = () => {
@@ -351,6 +387,8 @@
           photoURL: localState.avatarUrl || meta.avatarUrl || DEFAULT_AVATAR,
           xp: Number(meta.xp || 0),
           streak: Number(meta.streak || 0),
+          weeklyXp: Number(meta.weeklyXp || 0),
+          leagueIndex: Number(localState.leagueIndex || 0),
         };
         renderHeader(fallbackUser);
         renderPodium([fallbackUser]);
@@ -381,14 +419,57 @@
         });
       };
 
+
+
+      const updateLeagueHeader = (leagueIndex) => {
+        const league = getLeague(leagueIndex);
+        const iconEl = document.getElementById("leagueIcon");
+        const nameEl = document.getElementById("leagueName");
+        const subtitleEl = document.getElementById("leagueSubtitle");
+        if (iconEl) iconEl.textContent = league.icon || "diamond";
+        if (nameEl) nameEl.textContent = league.name;
+        if (subtitleEl) {
+          subtitleEl.textContent = league.next
+            ? `Top 10 promote to ${league.next.name} - 11-20 demotion zone`
+            : "Top 10 stay - 11-20 demotion zone";
+        }
+      };
+
+      const timeLeftInWeek = () => {
+        const now = new Date();
+        const day = now.getDay();
+        const daysToSunday = (7 - day) % 7;
+        const end = new Date(now);
+        end.setDate(now.getDate() + daysToSunday);
+        end.setHours(23, 59, 59, 999);
+        const diffMs = end - now;
+        const totalHours = Math.max(0, Math.floor(diffMs / 3600000));
+        const days = Math.floor(totalHours / 24);
+        const hours = totalHours % 24;
+        return `${days}d ${hours}h left`;
+      };
       const loadLeaderboard = async (currentUid) => {
         try {
-          const users = await fetchLeaderboard();
+          let userDoc = null;
+          if (currentUid) {
+            try {
+              const doc = await FCAuth.db.collection("leaderboard").doc(currentUid).get();
+              if (doc.exists) userDoc = { id: doc.id, ...doc.data() };
+            } catch {
+              userDoc = null;
+            }
+          }
+          const leagueIndex = Number(userDoc?.leagueIndex ?? 0) || 0;
+          updateLeagueHeader(leagueIndex);
+          const timeLeftEl = document.getElementById("timeLeft");
+          if (timeLeftEl) timeLeftEl.textContent = timeLeftInWeek();
+
+          const users = await fetchLeaderboard(leagueIndex);
           if (!users.length) {
             renderFallback();
             return;
           }
-          const current = users.find((u) => (u.uid || u.id) === currentUid) || users[0];
+          const current = users.find((u) => (u.uid || u.id) === currentUid) || userDoc || users[0];
           renderHeader(current);
           renderPodium(users);
           renderList(users, currentUid);
