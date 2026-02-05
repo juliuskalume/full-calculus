@@ -669,9 +669,32 @@
           countryInput.value = s.nationality || "";
         }
 
-        // optional: make league/course feel dynamic later; placeholders for now
+        const resolveLeagueName = (state) => {
+          if (!state) return "";
+          if (state.leagueName) return state.leagueName;
+          if (Number.isFinite(state.leagueIndex)) {
+            const leagues = [
+              { id: "bronze", name: "Bronze League" },
+              { id: "silver", name: "Silver League" },
+              { id: "gold", name: "Gold League" },
+              { id: "sapphire", name: "Sapphire League" },
+              { id: "ruby", name: "Ruby League" },
+              { id: "emerald", name: "Emerald League" },
+              { id: "amethyst", name: "Amethyst League" },
+              { id: "master", name: "Master League" },
+              { id: "champion", name: "Champion League" },
+              { id: "obsidian", name: "Obsidian League" },
+            ];
+            const idx = Math.max(0, Math.min(leagues.length - 1, Number(state.leagueIndex)));
+            return leagues[idx]?.name || "";
+          }
+          return "";
+        };
+
         document.getElementById("courseText").textContent = s.course || "Calculus I";
-        document.getElementById("leagueText").textContent = s.league || "Diamond League";
+        const leagueFromLocal = resolveLeagueName(s);
+        const leagueFromExport = resolveLeagueName(window.FCAuth?.exportLocalState?.().onboarding);
+        document.getElementById("leagueText").textContent = leagueFromLocal || leagueFromExport || "Unranked";
 
         const emailValue = authUser?.email || s.email || "not set";
         document.getElementById("emailText").textContent = String(emailValue);
