@@ -160,8 +160,8 @@ exports.rotateLeaguesWeekly = functions.pubsub
         return b.updatedAt - a.updatedAt;
       });
 
-      const top = scored.slice(0, 10);
-      const bottom = scored.slice(10, 20);
+      const top = scored.slice(0, 5);
+      const bottom = scored.slice(15, 20);
 
       if (i < LEAGUES.length - 1) {
         const nextLeague = LEAGUES[i + 1];

@@ -124,7 +124,7 @@
             <h1 id="leagueName" class="text-xl font-extrabold tracking-tight">League</h1>
           </div>
           <p id="leagueSubtitle" class="text-slate-500 dark:text-slate-400 text-sm font-medium">
-            Top 10 promote · the rest are demoted
+            Top 5 promote · 16-20 demotion zone
           </p>
 
           <!-- User meta chips -->
@@ -329,7 +329,7 @@
           const rank = index + 1;
           if (rank <= 3) return;
           const uid = user?.uid || user?.id || "";
-          if (rank === 11) {
+          if (rank === 16) {
             const zone = document.createElement("div");
             zone.className = "flex items-center gap-2 px-2 py-1";
             zone.innerHTML = `
@@ -437,8 +437,8 @@
         if (nameEl) nameEl.textContent = league.name;
         if (subtitleEl) {
           subtitleEl.textContent = league.next
-            ? `Top 10 promote to ${league.next.name} - the rest are demoted`
-            : "Top 10 stay - the rest are demoted";
+            ? `Top 5 promote to ${league.next.name} - 16-20 demotion zone`
+            : "Top 5 stay - 16-20 demotion zone";
         }
       };
 
