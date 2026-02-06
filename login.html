@@ -88,15 +88,15 @@
         <div class="flex flex-col gap-4">
           <div class="flex flex-col">
             <label class="text-text-main dark:text-gray-300 text-sm font-bold uppercase tracking-wider mb-2 ml-2">
-              Email
+              Email or username
             </label>
             <div class="relative">
               <input
                 id="loginEmail"
                 class="form-input w-full rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:border-primary focus:ring-0 h-14 px-5 pr-12 text-lg font-medium text-text-main dark:text-white transition-all"
-                placeholder="math@example.com"
-                type="email"
-                autocomplete="email"
+                placeholder="Email or username"
+                type="text"
+                autocomplete="username"
               />
               <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
                 >mail</span
@@ -219,6 +219,92 @@
           loginBtn.disabled = !!busy;
           loginBtn.classList.toggle("opacity-60", !!busy);
           loginBtn.classList.toggle("cursor-not-allowed", !!busy);
+        };
+
+        const RATE_WINDOW_MS = 30 * 60 * 1000;
+        const RATE_MIN_MS = 60 * 1000;
+        const RATE_MAX = 5;
+
+        const loadRateLog = (key) => {
+          try {
+            const raw = localStorage.getItem(key);
+            const list = raw ? JSON.parse(raw) : [];
+            return Array.isArray(list) ? list.filter((t) => Number.isFinite(t)) : [];
+          } catch {
+            return [];
+          }
+        };
+
+        const saveRateLog = (key, list) => {
+          try {
+            localStorage.setItem(key, JSON.stringify(list));
+          } catch {
+            // ignore
+          }
+        };
+
+        const formatWait = (ms) => {
+          const secs = Math.max(1, Math.ceil(ms / 1000));
+          if (secs >= 60) return `${Math.ceil(secs / 60)} min`;
+          return `${secs} sec`;
+        };
+
+        const getRateStatus = (key) => {
+          const now = Date.now();
+          const recent = loadRateLog(key).filter((t) => now - t < RATE_WINDOW_MS);
+          const last = recent[recent.length - 1] || 0;
+          if (recent.length && now - last < RATE_MIN_MS) {
+            return { ok: false, waitMs: RATE_MIN_MS - (now - last), recent };
+          }
+          if (recent.length >= RATE_MAX) {
+            return { ok: false, waitMs: RATE_WINDOW_MS - (now - recent[0]), recent };
+          }
+          return { ok: true, recent };
+        };
+
+        const recordRateSend = (key, recent) => {
+          const now = Date.now();
+          const next = (recent || []).concat(now).filter((t) => now - t < RATE_WINDOW_MS);
+          saveRateLog(key, next);
+        };
+
+        const VERIFY_RATE_KEY = "fc_verify_email_sends";
+        const RESET_RATE_KEY = "fc_reset_email_sends";
+
+        const usernameMapKey = "fc_username_email_map";
+        const loadUsernameMap = () => {
+          try {
+            const raw = localStorage.getItem(usernameMapKey);
+            const parsed = raw ? JSON.parse(raw) : {};
+            return parsed && typeof parsed === "object" ? parsed : {};
+          } catch {
+            return {};
+          }
+        };
+        const saveUsernameMap = (map) => {
+          try {
+            localStorage.setItem(usernameMapKey, JSON.stringify(map));
+          } catch {
+            // ignore
+          }
+        };
+        const rememberUsernameEmail = (username, email) => {
+          if (!username || !email) return;
+          const map = loadUsernameMap();
+          map[String(username).toLowerCase()] = String(email).toLowerCase();
+          saveUsernameMap(map);
+        };
+
+        const resolveLoginEmail = async (value) => {
+          const raw = String(value || "").trim();
+          if (!raw) return { email: "", usedUsername: false };
+          if (raw.includes("@")) return { email: raw.toLowerCase(), usedUsername: false };
+          const username = raw.replace(/\s+/g, "").replace(/[^\w]/g, "");
+          if (!username) return { email: "", usedUsername: true };
+          const map = loadUsernameMap();
+          const mapped = map[username.toLowerCase()];
+          if (mapped) return { email: mapped, usedUsername: true };
+          return { email: "", usedUsername: true };
         };
 
         const logDevError = (context, err) => {
@@ -367,15 +453,32 @@
             logDevError("login-disabled", new Error("Firebase auth not configured."));
             return;
           }
-          const email = emailInput?.value.trim() || "";
+          const rawLogin = emailInput?.value.trim() || "";
           const password = passwordInput?.value || "";
-          if (!email || !password) {
-            setMessage(errorEl, "Enter your email and password.");
+          if (!rawLogin || !password) {
+            setMessage(errorEl, "Enter your email or username and password.");
             return;
           }
           setBusy(true);
           try {
-            await FCAuth.signInWithEmail({ email, password });
+            const resolved = await resolveLoginEmail(rawLogin);
+            if (!resolved.email) {
+              setMessage(
+                errorEl,
+                resolved.usedUsername
+                  ? "Username login isn't available on this device yet. Use your email address."
+                  : "Enter a valid email address."
+              );
+              return;
+            }
+            await FCAuth.signInWithEmail({ email: resolved.email, password });
+            try {
+              const state = window.FCAuth?.exportLocalState ? FCAuth.exportLocalState() : {};
+              const username = state?.onboarding?.username || "";
+              rememberUsernameEmail(username, resolved.email);
+            } catch {
+              // ignore
+            }
             setMessage(statusEl, "Signed in. Redirecting...");
             showVerifyRow(false);
             clearVerifyFlag();
@@ -433,14 +536,30 @@
             logDevError("reset-disabled", new Error("Firebase auth not configured."));
             return;
           }
-          const email = emailInput?.value.trim() || "";
-          if (!email) {
-            setMessage(errorEl, "Enter your email first then click Forgot password.");
+          const rawLogin = emailInput?.value.trim() || "";
+          if (!rawLogin) {
+            setMessage(errorEl, "Enter your email or username first then click Forgot password.");
+            return;
+          }
+          const rate = getRateStatus(RESET_RATE_KEY);
+          if (!rate.ok) {
+            setMessage(errorEl, `Please wait ${formatWait(rate.waitMs)} before requesting another reset email.`);
             return;
           }
           setBusy(true);
           try {
-            await FCAuth.resetPassword({ email });
+            const resolved = await resolveLoginEmail(rawLogin);
+            if (!resolved.email) {
+              setMessage(
+                errorEl,
+                resolved.usedUsername
+                  ? "Username login isn't available on this device yet. Use your email address."
+                  : "Enter a valid email address."
+              );
+              return;
+            }
+            await FCAuth.resetPassword({ email: resolved.email });
+            recordRateSend(RESET_RATE_KEY, rate.recent);
             setMessage(statusEl, "Password reset email sent. Check your inbox or spam folder.");
           } catch (err) {
             setMessage(errorEl, friendlyAuthMessage(err, "Unable to send reset email. Please try again."));
@@ -468,15 +587,31 @@
             logDevError("verify-disabled", new Error("Firebase auth not configured."));
             return;
           }
-          const email = emailInput?.value.trim() || "";
+          const rawLogin = emailInput?.value.trim() || "";
           const password = passwordInput?.value || "";
-          if (!email || !password) {
-            setMessage(errorEl, "Enter your email and password to resend verification.");
+          if (!rawLogin || !password) {
+            setMessage(errorEl, "Enter your email or username and password to resend verification.");
+            return;
+          }
+          const rate = getRateStatus(VERIFY_RATE_KEY);
+          if (!rate.ok) {
+            setMessage(errorEl, `Please wait ${formatWait(rate.waitMs)} before resending the email.`);
             return;
           }
           setBusy(true);
           try {
-            await FCAuth.resendVerificationEmail({ email, password });
+            const resolved = await resolveLoginEmail(rawLogin);
+            if (!resolved.email) {
+              setMessage(
+                errorEl,
+                resolved.usedUsername
+                  ? "Username login isn't available on this device yet. Use your email address."
+                  : "Enter a valid email address."
+              );
+              return;
+            }
+            await FCAuth.resendVerificationEmail({ email: resolved.email, password });
+            recordRateSend(VERIFY_RATE_KEY, rate.recent);
             setMessage(statusEl, "Verification email sent. Please check your inbox.");
             showVerifyRow(true);
           } catch (err) {
