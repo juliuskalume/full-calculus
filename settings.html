@@ -1055,7 +1055,8 @@
         }
         const nextEmail = (emailInput?.value || "").trim().toLowerCase();
         const currentEmail = (user.email || "").toLowerCase();
-        if (nextEmail && nextEmail !== currentEmail) {
+        const wantsChange = !!nextEmail && nextEmail !== currentEmail;
+        if (wantsChange) {
           try {
             await user.updateEmail(nextEmail);
             const s = loadFcState();
@@ -1064,6 +1065,11 @@
             if (emailInput) emailInput.value = nextEmail;
             verifyEmailBtn.classList.remove("hidden");
             setMessage(accountStatus, "Email updated. Sending verification link...");
+            try {
+              await user.reload();
+            } catch {
+              // ignore
+            }
           } catch (err) {
             if (err?.code === "auth/operation-not-allowed") {
               verifyEmailBtn.classList.remove("hidden");
@@ -1090,7 +1096,8 @@
         }
         setMessage(accountStatus, "Sending verification email...");
         try {
-          await user.sendEmailVerification();
+          const freshUser = getRawUser() || user;
+          await freshUser.sendEmailVerification();
           recordVerifySend(status.recent);
           setMessage(accountStatus, "Verification email sent. Please check your inbox.");
         } catch (err) {
