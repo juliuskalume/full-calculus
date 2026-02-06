@@ -307,6 +307,35 @@
           return { email: "", usedUsername: true };
         };
 
+        const USERNAME_SIGNIN_ENDPOINT =
+          "https://us-central1-full-calculus.cloudfunctions.net/signInWithUsername";
+
+        const signInWithUsernamePassword = async (username, password) => {
+          const response = await fetch(USERNAME_SIGNIN_ENDPOINT, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password }),
+          });
+          if (response.status === 401) {
+            const err = new Error("Invalid username or password.");
+            err.code = "auth/wrong-password";
+            throw err;
+          }
+          if (!response.ok) {
+            const err = new Error("Unable to sign in right now.");
+            err.code = "auth/invalid-username";
+            throw err;
+          }
+          const data = await response.json();
+          if (!data?.customToken) {
+            const err = new Error("Unable to sign in right now.");
+            err.code = "auth/invalid-username";
+            throw err;
+          }
+          await firebase.auth().signInWithCustomToken(data.customToken);
+          return data;
+        };
+
         const logDevError = (context, err) => {
           const entry = {
             time: new Date().toISOString(),
@@ -461,28 +490,60 @@
           }
           setBusy(true);
           try {
-            const resolved = await resolveLoginEmail(rawLogin);
-            if (!resolved.email) {
-              setMessage(
-                errorEl,
-                resolved.usedUsername
-                  ? "Username login isn't available on this device yet. Use your email address."
-                  : "Enter a valid email address."
-              );
-              return;
+            if (rawLogin.includes("@")) {
+              await FCAuth.signInWithEmail({ email: rawLogin.toLowerCase(), password });
+              try {
+                const state = window.FCAuth?.exportLocalState ? FCAuth.exportLocalState() : {};
+                const username = state?.onboarding?.username || "";
+                rememberUsernameEmail(username, rawLogin.toLowerCase());
+              } catch {
+                // ignore
+              }
+              setMessage(statusEl, "Signed in. Redirecting...");
+              showVerifyRow(false);
+              clearVerifyFlag();
+              location.href = "path.html";
+            } else {
+              const resolved = await resolveLoginEmail(rawLogin);
+              if (resolved.email) {
+                await FCAuth.signInWithEmail({ email: resolved.email, password });
+                try {
+                  const state = window.FCAuth?.exportLocalState ? FCAuth.exportLocalState() : {};
+                  const username = state?.onboarding?.username || "";
+                  rememberUsernameEmail(username, resolved.email);
+                } catch {
+                  // ignore
+                }
+                setMessage(statusEl, "Signed in. Redirecting...");
+                showVerifyRow(false);
+                clearVerifyFlag();
+                location.href = "path.html";
+              } else {
+                const data = await signInWithUsernamePassword(rawLogin, password);
+                if (data?.email) {
+                  rememberUsernameEmail(rawLogin, data.email);
+                }
+                const user = firebase.auth().currentUser;
+                if (user && !user.emailVerified) {
+                  const rate = getRateStatus(VERIFY_RATE_KEY);
+                  if (rate.ok) {
+                    try {
+                      await user.sendEmailVerification();
+                      recordRateSend(VERIFY_RATE_KEY, rate.recent);
+                    } catch {
+                      // ignore
+                    }
+                  }
+                  setMessage(statusEl, "Verification email sent. Please check your inbox.");
+                  showVerifyRow(true);
+                  return;
+                }
+                setMessage(statusEl, "Signed in. Redirecting...");
+                showVerifyRow(false);
+                clearVerifyFlag();
+                location.href = "path.html";
+              }
             }
-            await FCAuth.signInWithEmail({ email: resolved.email, password });
-            try {
-              const state = window.FCAuth?.exportLocalState ? FCAuth.exportLocalState() : {};
-              const username = state?.onboarding?.username || "";
-              rememberUsernameEmail(username, resolved.email);
-            } catch {
-              // ignore
-            }
-            setMessage(statusEl, "Signed in. Redirecting...");
-            showVerifyRow(false);
-            clearVerifyFlag();
-            location.href = "path.html";
           } catch (err) {
             setMessage(errorEl, friendlyAuthMessage(err, "Login failed. Please try again."));
             logDevError("login-email", err);
@@ -538,7 +599,7 @@
           }
           const rawLogin = emailInput?.value.trim() || "";
           if (!rawLogin) {
-            setMessage(errorEl, "Enter your email or username first then click Forgot password.");
+            setMessage(errorEl, "Enter your email first then click Forgot password.");
             return;
           }
           const rate = getRateStatus(RESET_RATE_KEY);
@@ -548,14 +609,15 @@
           }
           setBusy(true);
           try {
+            if (rawLogin.includes("@")) {
+              await FCAuth.resetPassword({ email: rawLogin.toLowerCase() });
+              recordRateSend(RESET_RATE_KEY, rate.recent);
+              setMessage(statusEl, "Password reset email sent. Check your inbox or spam folder.");
+              return;
+            }
             const resolved = await resolveLoginEmail(rawLogin);
             if (!resolved.email) {
-              setMessage(
-                errorEl,
-                resolved.usedUsername
-                  ? "Username login isn't available on this device yet. Use your email address."
-                  : "Enter a valid email address."
-              );
+              setMessage(errorEl, "Use your email address to reset your password.");
               return;
             }
             await FCAuth.resetPassword({ email: resolved.email });
@@ -600,20 +662,32 @@
           }
           setBusy(true);
           try {
-            const resolved = await resolveLoginEmail(rawLogin);
-            if (!resolved.email) {
-              setMessage(
-                errorEl,
-                resolved.usedUsername
-                  ? "Username login isn't available on this device yet. Use your email address."
-                  : "Enter a valid email address."
-              );
+            if (rawLogin.includes("@")) {
+              await FCAuth.resendVerificationEmail({ email: rawLogin.toLowerCase(), password });
+              recordRateSend(VERIFY_RATE_KEY, rate.recent);
+              setMessage(statusEl, "Verification email sent. Please check your inbox.");
+              showVerifyRow(true);
               return;
             }
-            await FCAuth.resendVerificationEmail({ email: resolved.email, password });
-            recordRateSend(VERIFY_RATE_KEY, rate.recent);
-            setMessage(statusEl, "Verification email sent. Please check your inbox.");
-            showVerifyRow(true);
+            const resolved = await resolveLoginEmail(rawLogin);
+            if (resolved.email) {
+              await FCAuth.resendVerificationEmail({ email: resolved.email, password });
+              recordRateSend(VERIFY_RATE_KEY, rate.recent);
+              setMessage(statusEl, "Verification email sent. Please check your inbox.");
+              showVerifyRow(true);
+              return;
+            }
+
+            await signInWithUsernamePassword(rawLogin, password);
+            const user = firebase.auth().currentUser;
+            if (user) {
+              await user.sendEmailVerification();
+              recordRateSend(VERIFY_RATE_KEY, rate.recent);
+              setMessage(statusEl, "Verification email sent. Please check your inbox.");
+              showVerifyRow(true);
+              return;
+            }
+            setMessage(errorEl, "Unable to send verification email.");
           } catch (err) {
             setMessage(
               errorEl,

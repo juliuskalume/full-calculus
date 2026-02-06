@@ -935,6 +935,14 @@
             .replace(/[\u{1F1E6}-\u{1F1FF}]/gu, "")
             .replace(/\s+/g, " ")
             .trim());
+      const allowedCountries = Array.isArray(window.FCCountries)
+        ? window.FCCountries.map((c) => normalizeCountry(c.name).toLowerCase())
+        : [];
+      const isAllowedCountry = (value) => {
+        if (!value) return true;
+        const norm = normalizeCountry(value).toLowerCase();
+        return allowedCountries.includes(norm);
+      };
 
       if (window.FCBuildCountryOptions) {
         window.FCBuildCountryOptions("settingsCountryList");
@@ -1091,6 +1099,11 @@
         const nextCountry = normalizeCountry(countryInput?.value || "");
         const prevEmail = s.email || "";
         const nextEmail = (emailInput?.value || "").trim().toLowerCase();
+        if (nextCountry && !isAllowedCountry(nextCountry)) {
+          setMessage(accountError, "Select a country from the list.");
+          setMessage(accountStatus, "");
+          return;
+        }
         if (nextFullName) s.fullName = nextFullName;
         if (nextDob) s.dob = nextDob;
         if (nextCountry) s.nationality = nextCountry;

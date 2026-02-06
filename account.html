@@ -490,6 +490,14 @@
               .replace(/[\u{1F1E6}-\u{1F1FF}]/gu, "")
               .replace(/\s+/g, " ")
               .trim());
+        const allowedCountries = Array.isArray(window.FCCountries)
+          ? window.FCCountries.map((c) => normalizeCountry(c.name).toLowerCase())
+          : [];
+        const isAllowedCountry = (value) => {
+          if (!value) return true;
+          const norm = normalizeCountry(value).toLowerCase();
+          return allowedCountries.includes(norm);
+        };
 
         const generateFallbackUsername = () =>
           `Cal${String(Math.floor(Math.random() * 1000)).padStart(3, "0")}`;
@@ -622,7 +630,12 @@
               const s = readState();
               s.email = user.email || s.email || "";
               s.fullName = fullName;
-              s.nationality = normalizeCountry(nationalityInput?.value || s.nationality || "");
+              const googleCountry = normalizeCountry(nationalityInput?.value || s.nationality || "");
+              if (googleCountry && !isAllowedCountry(googleCountry)) {
+                setMessage(errorEl, "Select a country from the list.");
+                return;
+              }
+              s.nationality = googleCountry;
               s.dob = dobVal;
               s.avatarUrl = user.photoURL || s.avatarUrl || "";
               let desiredUsername =
@@ -691,7 +704,10 @@
           s.dob = dobInput?.value || s.dob || "";
           s.username = normalizeUsername(nameInput?.value || s.username || "");
           s.fullName = normalizeFullName(fullNameInput?.value || s.fullName || "");
-          s.nationality = normalizeCountry(nationalityInput?.value || s.nationality || "");
+          const nextCountry = normalizeCountry(nationalityInput?.value || s.nationality || "");
+          if (!nextCountry || isAllowedCountry(nextCountry)) {
+            s.nationality = nextCountry;
+          }
           writeState(s);
         };
 
@@ -729,6 +745,10 @@
           const username = normalizeUsername(nameInput?.value || "");
           const fullName = normalizeFullName(fullNameInput?.value || "");
           const nationality = normalizeCountry(nationalityInput?.value || "");
+          if (nationality && !isAllowedCountry(nationality)) {
+            setMessage(errorEl, "Select a country from the list.");
+            return;
+          }
           const dob = dobInput?.value || "";
           const skill = seedOnboarding.skill || "";
           const goal = seedOnboarding.goal || "";
