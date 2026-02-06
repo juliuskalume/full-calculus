@@ -133,6 +133,16 @@
 
   const isRestrictedUser = (user) => requiresEmailVerification(user);
 
+  const resolveCountryFlag = (name, fallback) => {
+    if (fallback) return fallback;
+    if (!name) return "";
+    const list = Array.isArray(window.FCCountries) ? window.FCCountries : null;
+    if (!list) return "";
+    const lowered = String(name || "").trim().toLowerCase();
+    const match = list.find((c) => String(c?.name || "").toLowerCase() === lowered);
+    return match?.flag || "";
+  };
+
   const clampDailyGoalXp = (value) => {
     const num = Number(value);
     if (!Number.isFinite(num)) return null;
@@ -364,8 +374,10 @@
       const preferRemoteKeys = [
         "username",
         "usernameUpdatedAt",
+        "usernameReserved",
         "fullName",
         "nationality",
+        "nationalityFlag",
         "email",
         "dob",
         "age",
@@ -472,8 +484,10 @@
     if (extra && typeof extra === "object") {
       if (extra.username) onboarding.username = extra.username;
       if (extra.usernameUpdatedAt) onboarding.usernameUpdatedAt = extra.usernameUpdatedAt;
+      if (typeof extra.usernameReserved === "boolean") onboarding.usernameReserved = extra.usernameReserved;
       if (extra.fullName) onboarding.fullName = extra.fullName;
       if (extra.nationality) onboarding.nationality = extra.nationality;
+      if (extra.nationalityFlag) onboarding.nationalityFlag = extra.nationalityFlag;
       if (extra.avatarUrl) onboarding.avatarUrl = extra.avatarUrl;
       if (extra.skill) onboarding.skill = extra.skill;
       if (extra.goal) onboarding.goal = extra.goal;
@@ -500,6 +514,7 @@
       usernameUpdatedAt: onboarding.usernameUpdatedAt || "",
       fullName: onboarding.fullName || "",
       nationality: onboarding.nationality || "",
+      nationalityFlag: onboarding.nationalityFlag || "",
       dob: onboarding.dob || "",
       photoURL: user.photoURL || onboarding.avatarUrl || "",
       onboarding,
@@ -544,6 +559,11 @@
       extra?.avatarUrl ||
       onboarding.avatarUrl ||
       "";
+    const nationality = extra?.nationality || onboarding.nationality || "";
+    const nationalityFlag = resolveCountryFlag(
+      nationality,
+      extra?.nationalityFlag || onboarding.nationalityFlag || ""
+    );
     return {
       uid: user.uid,
       displayName,
@@ -559,6 +579,8 @@
       leagueIndex,
       leagueId: league?.id || "",
       leagueName: league?.name || "",
+      nationality,
+      nationalityFlag,
       updatedAt: now,
     };
   };
@@ -587,6 +609,13 @@
       extra?.avatarUrl ||
       onboarding.avatarUrl ||
       "";
+    const fullName = extra?.fullName || onboarding.fullName || "";
+    const nationality = extra?.nationality || onboarding.nationality || "";
+    const nationalityFlag = resolveCountryFlag(
+      nationality,
+      extra?.nationalityFlag || onboarding.nationalityFlag || ""
+    );
+    const dob = extra?.dob || onboarding.dob || "";
 
     const payload = {
       uid: user.uid,
@@ -595,6 +624,10 @@
       username: displayName,
       usernameLower: String(displayName || "").toLowerCase(),
       photoURL,
+      fullName,
+      nationality,
+      nationalityFlag,
+      dob,
       xp: Number(meta.xp) || 0,
       streak: Number(meta.streak) || 0,
       lessonsCompleted: Array.isArray(progress.completedSections)
@@ -671,11 +704,17 @@
     const user = auth.currentUser;
     if (!user) return { ok: false, message: "Not signed in." };
     const attempts = Number(options.attempts) || 25;
+    const allowFallback = !!options.allowFallback;
     let candidate = normalizeUsername(desired);
     if (candidate && (candidate.length < 3 || candidate.length > 20)) {
       return { ok: false, message: "Username must be 3-20 characters." };
     }
     let generated = !candidate;
+
+    if (isRestrictedUser(user)) {
+      const fallback = candidate || generateUsername();
+      return { ok: true, username: fallback, reserved: false };
+    }
 
     for (let i = 0; i < attempts; i += 1) {
       const name = candidate || generateUsername();
@@ -706,11 +745,11 @@
           // ignore
         }
 
-        return { ok: true, username: name };
+        return { ok: true, username: name, reserved: true };
       } catch (err) {
         const code = err?.code || "";
         if (code === "permission-denied" || code === "already-exists") {
-          if (!generated && candidate) {
+          if (!generated && candidate && !allowFallback) {
             return { ok: false, message: "That username is already taken." };
           }
           candidate = "";
@@ -730,21 +769,30 @@
     const local = exportLocalState();
     const onboarding = toObject(local.onboarding);
     const existing = String(onboarding.username || user.displayName || "").trim();
-    if (existing) return;
-    const reserve = await reserveUsername("", { attempts: 30 });
+    const reserved = onboarding.usernameReserved;
+    if (existing && reserved !== false) return;
+    const reserve = await reserveUsername(existing, { attempts: 30, allowFallback: true });
     if (!reserve?.ok || !reserve.username) return;
     const finalUsername = reserve.username;
-    try {
-      await user.updateProfile({ displayName: finalUsername });
-    } catch {
-      // ignore
+    const changed = finalUsername && finalUsername !== existing;
+    if (changed) {
+      try {
+        await user.updateProfile({ displayName: finalUsername });
+      } catch {
+        // ignore
+      }
     }
     onboarding.username = finalUsername;
-    if (!onboarding.usernameUpdatedAt) {
+    onboarding.usernameReserved = reserve.reserved !== false;
+    if (!onboarding.usernameUpdatedAt || changed) {
       onboarding.usernameUpdatedAt = new Date().toISOString();
     }
     safeSet(DEFAULT_STATE_KEY, onboarding);
-    const payload = { username: finalUsername, usernameUpdatedAt: onboarding.usernameUpdatedAt };
+    const payload = {
+      username: finalUsername,
+      usernameUpdatedAt: onboarding.usernameUpdatedAt,
+      usernameReserved: onboarding.usernameReserved,
+    };
     try {
       await syncToRemote(payload);
     } catch {
@@ -861,6 +909,7 @@
     username,
     fullName,
     nationality,
+    nationalityFlag,
     dob,
     age,
     avatarUrl,
@@ -876,6 +925,7 @@
       throw new Error(usernameResult.message || "Username unavailable.");
     }
     const finalUsername = usernameResult.username || "";
+    const usernameReserved = usernameResult.reserved !== false;
     if (finalUsername) {
       await result.user.updateProfile({ displayName: finalUsername });
     }
@@ -884,11 +934,13 @@
     const local = exportLocalState();
     local.onboarding = local.onboarding || {};
     if (finalUsername) local.onboarding.username = finalUsername;
+    if (finalUsername) local.onboarding.usernameReserved = usernameReserved;
     if (finalUsername && !local.onboarding.usernameUpdatedAt) {
       local.onboarding.usernameUpdatedAt = new Date().toISOString();
     }
     if (fullName) local.onboarding.fullName = fullName;
     if (nationality) local.onboarding.nationality = nationality;
+    if (nationalityFlag) local.onboarding.nationalityFlag = nationalityFlag;
     if (skill) local.onboarding.skill = skill;
     if (goal) local.onboarding.goal = goal;
     if (Number.isFinite(minutesPerDay)) local.onboarding.minutesPerDay = minutesPerDay;
@@ -901,8 +953,10 @@
     queueProfileSync({
       username: finalUsername,
       usernameUpdatedAt: local.onboarding.usernameUpdatedAt,
+      usernameReserved,
       fullName,
       nationality,
+      nationalityFlag,
       skill,
       goal,
       minutesPerDay,

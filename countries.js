@@ -210,3 +210,16 @@ window.FCNormalizeCountry = (value) =>
     .replace(/[\u{1F1E6}-\u{1F1FF}]/gu, "")
     .replace(/\s+/g, " ")
     .trim();
+
+window.FCGetCountryMeta = (value) => {
+  if (!Array.isArray(window.FCCountries)) return null;
+  const normalized = window.FCNormalizeCountry ? window.FCNormalizeCountry(value) : String(value || "").trim();
+  if (!normalized) return null;
+  const lowered = normalized.toLowerCase();
+  return window.FCCountries.find((c) => String(c.name || "").toLowerCase() === lowered) || null;
+};
+
+window.FCGetCountryFlag = (value) => {
+  const meta = window.FCGetCountryMeta ? window.FCGetCountryMeta(value) : null;
+  return meta?.flag || "";
+};

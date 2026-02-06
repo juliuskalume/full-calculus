@@ -935,6 +935,16 @@
             .replace(/[\u{1F1E6}-\u{1F1FF}]/gu, "")
             .replace(/\s+/g, " ")
             .trim());
+      const getCountryFlag =
+        window.FCGetCountryFlag ||
+        ((value) => {
+          if (!Array.isArray(window.FCCountries)) return "";
+          const norm = normalizeCountry(value).toLowerCase();
+          const match = window.FCCountries.find(
+            (c) => normalizeCountry(c.name).toLowerCase() === norm
+          );
+          return match ? match.flag : "";
+        });
       const allowedCountries = Array.isArray(window.FCCountries)
         ? window.FCCountries.map((c) => normalizeCountry(c.name).toLowerCase())
         : [];
@@ -1106,7 +1116,10 @@
         }
         if (nextFullName) s.fullName = nextFullName;
         if (nextDob) s.dob = nextDob;
-        if (nextCountry) s.nationality = nextCountry;
+        if (nextCountry) {
+          s.nationality = nextCountry;
+          s.nationalityFlag = getCountryFlag(nextCountry);
+        }
         if (nextEmail) s.email = nextEmail;
         if (pendingAvatarUrl) s.avatarUrl = pendingAvatarUrl;
         saveFcState(s);
@@ -1184,6 +1197,7 @@
               saveFcState(s);
               if (nameInput) nameInput.value = s.username || "";
             }
+            s.usernameReserved = true;
             if (user?.updateProfile) {
               await user.updateProfile({
                 displayName: s.username || user.displayName || "",
@@ -1193,8 +1207,10 @@
             await FCAuth.syncToRemote({
               username: s.username,
               usernameUpdatedAt: s.usernameUpdatedAt || nowIso,
+              usernameReserved: true,
               fullName: s.fullName || "",
               nationality: s.nationality || "",
+              nationalityFlag: s.nationalityFlag || "",
               dob: s.dob || "",
               avatarUrl: s.avatarUrl,
               email: s.email,
@@ -1209,8 +1225,10 @@
             FCAuth.queueProfileSync({
               username: s.username,
               usernameUpdatedAt: s.usernameUpdatedAt || nowIso,
+              usernameReserved: s.usernameReserved === true,
               fullName: s.fullName || "",
               nationality: s.nationality || "",
+              nationalityFlag: s.nationalityFlag || "",
               dob: s.dob || "",
               avatarUrl: s.avatarUrl,
               email: s.email,

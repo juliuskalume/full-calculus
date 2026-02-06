@@ -264,7 +264,7 @@
 
         <div id="friendsAuthHint"
           class="hidden mb-4 px-3 py-3 rounded-2xl bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 text-sm text-slate-600 dark:text-slate-300">
-          Sign in to add friends and view requests.
+          <span id="friendsAuthHintText">Sign in to add friends and view requests.</span>
           <button id="friendsLoginBtn" class="text-primary font-extrabold ml-2">Log in</button>
         </div>
 
@@ -337,6 +337,21 @@
             <div>
               <p id="friendDetailStatus" class="text-sm font-semibold text-slate-500 dark:text-slate-400">Last seen</p>
               <p id="friendDetailJoined" class="text-xs text-slate-400">Joined â€”</p>
+            </div>
+          </div>
+
+          <div class="mt-4 rounded-2xl bg-slate-100 dark:bg-slate-900/60 p-3 text-sm">
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] uppercase font-extrabold text-slate-400 w-20">Full name</span>
+              <span id="friendDetailFullName" class="font-semibold text-slate-700 dark:text-slate-200">—</span>
+            </div>
+            <div class="flex items-center gap-2 mt-2">
+              <span class="text-[11px] uppercase font-extrabold text-slate-400 w-20">Birthday</span>
+              <span id="friendDetailBirthday" class="font-semibold text-slate-700 dark:text-slate-200">—</span>
+            </div>
+            <div class="flex items-center gap-2 mt-2">
+              <span class="text-[11px] uppercase font-extrabold text-slate-400 w-20">Country</span>
+              <span id="friendDetailCountry" class="font-semibold text-slate-700 dark:text-slate-200">—</span>
             </div>
           </div>
 
@@ -644,6 +659,7 @@
     (function initFriends() {
       const addBtn = document.getElementById("addFriendBtn");
       const authHint = document.getElementById("friendsAuthHint");
+      const authHintText = document.getElementById("friendsAuthHintText");
       const loginBtn = document.getElementById("friendsLoginBtn");
       const requestsWrap = document.getElementById("friendRequestsWrap");
       const requestsList = document.getElementById("friendRequestsList");
@@ -665,6 +681,9 @@
       const detailAvatar = document.getElementById("friendDetailAvatar");
       const detailStatus = document.getElementById("friendDetailStatus");
       const detailJoined = document.getElementById("friendDetailJoined");
+      const detailFullName = document.getElementById("friendDetailFullName");
+      const detailBirthday = document.getElementById("friendDetailBirthday");
+      const detailCountry = document.getElementById("friendDetailCountry");
       const detailStreak = document.getElementById("friendDetailStreak");
       const detailXp = document.getElementById("friendDetailXp");
       const detailLessons = document.getElementById("friendDetailLessons");
@@ -682,6 +701,7 @@
         "https://github.com/juliuskalume/full-calculus/blob/main/icons/icon-192.png?raw=true";
 
       let currentUser = null;
+      let canWrite = false;
       let db = null;
       let subscriptions = [];
       let friendStateByUid = {};
@@ -739,6 +759,22 @@
         return `Joined ${new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(
           new Date(time)
         )}`;
+      };
+
+      const formatBirthday = (value) => {
+        if (!value) return "—";
+        const parts = String(value).split("-");
+        if (parts.length < 3) return "—";
+        const month = Number(parts[1]);
+        const day = Number(parts[2]);
+        if (!month || !day) return "—";
+        const date = new Date(2000, month - 1, day);
+        return new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric" }).format(date);
+      };
+
+      const formatCountry = (name, flag) => {
+        if (!name) return "—";
+        return flag ? `${flag} ${name}` : name;
       };
 
       const computeAchievementsFromProfile = (profile) => {
@@ -808,6 +844,11 @@
             : "text-sm font-semibold text-slate-500 dark:text-slate-400";
         }
         if (detailJoined) detailJoined.textContent = formatJoined(profile.joinedAt || profile.createdAt);
+        if (detailFullName) detailFullName.textContent = profile.fullName || "—";
+        if (detailBirthday) detailBirthday.textContent = formatBirthday(profile.dob);
+        if (detailCountry) {
+          detailCountry.textContent = formatCountry(profile.nationality, profile.nationalityFlag);
+        }
         if (detailStreak) detailStreak.textContent = String(profile.streak ?? 0);
         if (detailXp) detailXp.textContent = String(profile.xp ?? 0);
         if (detailLessons) detailLessons.textContent = String(profile.lessonsCompleted ?? 0);
@@ -848,6 +889,8 @@
       };
 
       const showAuth = () => {
+        if (authHintText) authHintText.textContent = "Sign in to add friends and view requests.";
+        if (loginBtn) loginBtn.classList.remove("hidden");
         authHint.classList.remove("hidden");
         addBtn.setAttribute("disabled", "disabled");
         addBtn.classList.add("opacity-60", "cursor-not-allowed");
@@ -857,8 +900,17 @@
         friendsEmpty.classList.remove("hidden");
       };
 
+      const showReadOnly = () => {
+        if (authHintText) authHintText.textContent = "Verify your email to add friends.";
+        if (loginBtn) loginBtn.classList.add("hidden");
+        authHint.classList.remove("hidden");
+        addBtn.setAttribute("disabled", "disabled");
+        addBtn.classList.add("opacity-60", "cursor-not-allowed");
+      };
+
       const showAuthed = () => {
         authHint.classList.add("hidden");
+        if (loginBtn) loginBtn.classList.remove("hidden");
         addBtn.removeAttribute("disabled");
         addBtn.classList.remove("opacity-60", "cursor-not-allowed");
       };
@@ -877,7 +929,11 @@
         if (searchResults) searchResults.innerHTML = "";
         if (searchEmpty) searchEmpty.classList.add("hidden");
         if (searchHint) searchHint.classList.remove("hidden");
-        setStatus("");
+        if (canWrite) {
+          setStatus("");
+        } else {
+          setStatus("Verify your email to add friends.", "error");
+        }
       };
 
       const closeModal = () => {
@@ -894,6 +950,11 @@
       removeCancel?.addEventListener("click", closeRemoveConfirm);
       removeConfirm?.addEventListener("click", () => {
         if (!pendingRemoveId) return;
+        if (!canWrite) {
+          setStatus("Verify your email to manage friends.", "error");
+          closeRemoveConfirm();
+          return;
+        }
         handleRequestAction("remove", pendingRemoveId);
         closeRemoveConfirm();
       });
@@ -926,13 +987,16 @@
           .map((record) => {
             const info = getFriendMeta(record, currentUser.uid);
             const isIncoming = info.incoming;
+            const actionDisabled = !canWrite;
+            const actionClass = actionDisabled ? "opacity-60 cursor-not-allowed" : "";
+            const actionAttr = actionDisabled ? "disabled" : "";
             const actionButtons = isIncoming
               ? `
-                <button data-action="accept" data-id="${record.id}" class="px-3 py-1.5 rounded-full bg-primary text-black text-xs font-bold">Accept</button>
-                <button data-action="decline" data-id="${record.id}" class="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs font-bold">Decline</button>
+                <button data-action="accept" data-id="${record.id}" class="px-3 py-1.5 rounded-full bg-primary text-black text-xs font-bold ${actionClass}" ${actionAttr}>Accept</button>
+                <button data-action="decline" data-id="${record.id}" class="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs font-bold ${actionClass}" ${actionAttr}>Decline</button>
               `
               : `
-                <button data-action="cancel" data-id="${record.id}" class="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs font-bold">Cancel</button>
+                <button data-action="cancel" data-id="${record.id}" class="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs font-bold ${actionClass}" ${actionAttr}>Cancel</button>
               `;
             return `
               <div class="flex items-center gap-3 p-3 bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-white/5 shadow-soft">
@@ -972,7 +1036,8 @@
                   <p class="text-xs ${statusClass} truncate mt-0.5">${presence.label}</p>
                 </div>
                 <button data-action="remove" data-id="${record.id}"
-                  class="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs font-bold">
+                  class="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs font-bold ${!canWrite ? "opacity-60 cursor-not-allowed" : ""}"
+                  ${!canWrite ? "disabled" : ""}>
                   Remove
                 </button>
               </div>
@@ -1086,6 +1151,10 @@
 
       const handleRequestAction = async (action, docId) => {
         if (!db || !docId) return;
+        if (!canWrite) {
+          setStatus("Verify your email to manage friends.", "error");
+          return;
+        }
         try {
           if (action === "accept") {
             await db.collection("friendships").doc(docId).update({
@@ -1153,15 +1222,20 @@
             label = "Accept";
             action = "accept";
           }
+          if (!canWrite && !disabled) {
+            label = "Verify";
+            disabled = true;
+          }
 
           const card = document.createElement("div");
           card.className =
             "flex items-center gap-3 p-3 rounded-2xl bg-slate-100 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800";
+          const flag = user.countryFlag ? `<span class="mr-1">${user.countryFlag}</span>` : "";
           card.innerHTML = `
             <div class="w-11 h-11 rounded-full bg-cover bg-center border border-slate-200 dark:border-slate-700"
               style="background-image:url('${user.photoURL || DEFAULT_AVATAR}')"></div>
             <div class="flex-1 min-w-0">
-              <p class="font-extrabold text-sm truncate">${user.displayName || "Learner"}</p>
+              <p class="font-extrabold text-sm truncate">${flag}${user.displayName || "Learner"}</p>
               <p class="text-xs text-slate-500 dark:text-slate-400">XP ${Number(user.xp || 0)}</p>
             </div>
             <button
@@ -1211,6 +1285,7 @@
                 displayName: data.displayName || "Learner",
                 photoURL: data.photoURL || DEFAULT_AVATAR,
                 xp: data.xp || 0,
+                countryFlag: data.nationalityFlag || data.countryFlag || "",
               });
             });
           });
@@ -1232,6 +1307,10 @@
       searchResults?.addEventListener("click", async (event) => {
         const btn = event.target.closest("button[data-action]");
         if (!btn || !currentUser || !db) return;
+        if (!canWrite) {
+          setStatus("Verify your email to add friends.", "error");
+          return;
+        }
         const action = btn.getAttribute("data-action");
         const uid = btn.getAttribute("data-uid");
         if (!uid) return;
@@ -1286,6 +1365,8 @@
         db = window.FCAuth.db;
         window.FCAuth.onAuthStateChanged((user) => {
           currentUser = user;
+          const verifiedUser = window.FCAuth?.getCurrentUser ? FCAuth.getCurrentUser() : user;
+          canWrite = !!verifiedUser;
           if (!user) {
             clearSubscriptions();
             if (profileRefreshTimer) {
@@ -1301,7 +1382,11 @@
             showAuth();
             return;
           }
-          showAuthed();
+          if (canWrite) {
+            showAuthed();
+          } else {
+            showReadOnly();
+          }
           subscribeFriends();
           refreshProfiles(true);
           if (!profileRefreshTimer) {

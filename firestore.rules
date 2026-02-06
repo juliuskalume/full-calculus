@@ -2,23 +2,32 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
     match /users/{uid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow write: if isVerified() && request.auth.uid == uid;
     }
 
     match /leaderboard/{uid} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == uid;
+      allow read: if isSignedIn();
+      allow write: if isVerified() && request.auth.uid == uid;
     }
 
     match /public_profiles/{uid} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == uid;
+      allow read: if isSignedIn();
+      allow write: if isVerified() && request.auth.uid == uid;
     }
 
     match /name_registry/{nameId} {
-      allow read: if request.auth != null && request.auth.uid == resource.data.uid;
-      allow create: if request.auth != null &&
+      allow read: if isSignedIn() && request.auth.uid == resource.data.uid;
+      allow create: if isVerified() &&
         request.resource.data.uid == request.auth.uid &&
         (
           (request.resource.data.usernameLower is string &&
@@ -34,7 +43,7 @@ service cloud.firestore {
             request.resource.data.name.size() <= 20)
         ) &&
         !exists(/databases/$(database)/documents/name_registry/$(nameId));
-      allow update: if request.auth != null &&
+      allow update: if isVerified() &&
         request.auth.uid == resource.data.uid &&
         request.resource.data.uid == resource.data.uid &&
         (
@@ -44,18 +53,19 @@ service cloud.firestore {
           (request.resource.data.nameLower is string &&
             request.resource.data.nameLower == nameId)
         );
-      allow delete: if request.auth != null && request.auth.uid == resource.data.uid;
+      allow delete: if isVerified() && request.auth.uid == resource.data.uid;
     }
 
     match /push_subscriptions/{uid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow write: if isVerified() && request.auth.uid == uid;
     }
 
     match /friendships/{friendId} {
-      allow read: if request.auth != null &&
+      allow read: if isSignedIn() &&
         (request.auth.uid == resource.data.from || request.auth.uid == resource.data.to);
 
-      allow create: if request.auth != null &&
+      allow create: if isVerified() &&
         request.auth.uid == request.resource.data.from &&
         request.resource.data.status == "pending" &&
         request.resource.data.from is string &&
@@ -63,13 +73,13 @@ service cloud.firestore {
         request.resource.data.from != request.resource.data.to &&
         !exists(/databases/$(database)/documents/friendships/$(friendId));
 
-      allow update: if request.auth != null &&
+      allow update: if isVerified() &&
         request.auth.uid == resource.data.to &&
         request.resource.data.status == "accepted" &&
         request.resource.data.from == resource.data.from &&
         request.resource.data.to == resource.data.to;
 
-      allow delete: if request.auth != null &&
+      allow delete: if isVerified() &&
         (request.auth.uid == resource.data.from || request.auth.uid == resource.data.to);
     }
 

@@ -490,6 +490,16 @@
               .replace(/[\u{1F1E6}-\u{1F1FF}]/gu, "")
               .replace(/\s+/g, " ")
               .trim());
+        const getCountryFlag =
+          window.FCGetCountryFlag ||
+          ((value) => {
+            if (!Array.isArray(window.FCCountries)) return "";
+            const norm = normalizeCountry(value).toLowerCase();
+            const match = window.FCCountries.find(
+              (c) => normalizeCountry(c.name).toLowerCase() === norm
+            );
+            return match ? match.flag : "";
+          });
         const allowedCountries = Array.isArray(window.FCCountries)
           ? window.FCCountries.map((c) => normalizeCountry(c.name).toLowerCase())
           : [];
@@ -636,6 +646,7 @@
                 return;
               }
               s.nationality = googleCountry;
+              s.nationalityFlag = getCountryFlag(googleCountry);
               s.dob = dobVal;
               s.avatarUrl = user.photoURL || s.avatarUrl || "";
               let desiredUsername =
@@ -653,6 +664,7 @@
                 }
               }
               s.username = desiredUsername;
+              s.usernameReserved = true;
               const mergedState = {
                 ...seedOnboarding,
                 ...s,
@@ -673,8 +685,10 @@
               if (window.FCAuth?.syncToRemote) {
                 await FCAuth.syncToRemote({
                   username: mergedState.username,
+                  usernameReserved: true,
                   fullName: mergedState.fullName,
                   nationality: mergedState.nationality,
+                  nationalityFlag: mergedState.nationalityFlag || "",
                   dob: mergedState.dob,
                   avatarUrl: mergedState.avatarUrl,
                   email: mergedState.email,
@@ -707,6 +721,7 @@
           const nextCountry = normalizeCountry(nationalityInput?.value || s.nationality || "");
           if (!nextCountry || isAllowedCountry(nextCountry)) {
             s.nationality = nextCountry;
+            s.nationalityFlag = getCountryFlag(nextCountry);
           }
           writeState(s);
         };
@@ -745,6 +760,7 @@
           const username = normalizeUsername(nameInput?.value || "");
           const fullName = normalizeFullName(fullNameInput?.value || "");
           const nationality = normalizeCountry(nationalityInput?.value || "");
+          const nationalityFlag = getCountryFlag(nationality);
           if (nationality && !isAllowedCountry(nationality)) {
             setMessage(errorEl, "Select a country from the list.");
             return;
@@ -781,11 +797,14 @@
               }
               const s = readState();
               s.username = finalUsername;
+              s.usernameReserved = true;
               writeState(s);
               await FCAuth.syncToRemote({
                 username: finalUsername,
+                usernameReserved: true,
                 fullName,
                 nationality,
+                nationalityFlag,
                 dob,
                 email,
                 skill,
@@ -829,6 +848,7 @@
               username,
               fullName,
               nationality,
+              nationalityFlag,
               dob,
               avatarUrl,
               skill,
@@ -840,6 +860,7 @@
             s.username = user?.displayName || s.username || username || "";
             s.fullName = fullName;
             s.nationality = nationality;
+            s.nationalityFlag = nationalityFlag;
             s.dob = dob;
             const mergedState = {
               ...seedOnboarding,
@@ -864,6 +885,7 @@
                 username: mergedState.username,
                 fullName,
                 nationality,
+                nationalityFlag,
                 dob,
                 avatarUrl,
                 email,
@@ -931,8 +953,10 @@
               }
             }
             s.username = finalUsername;
+            s.usernameReserved = true;
             s.fullName = fullName;
             s.nationality = normalizeCountry(nationalityInput?.value || s.nationality || "");
+            s.nationalityFlag = getCountryFlag(s.nationality);
             s.dob = dobVal;
             s.avatarUrl = user?.photoURL || s.avatarUrl || "";
             const mergedState = {
@@ -954,8 +978,10 @@
             writeState(mergedState);
             await FCAuth.ensureUserDoc({
               username: mergedState.username,
+              usernameReserved: true,
               fullName: mergedState.fullName,
               nationality: mergedState.nationality,
+              nationalityFlag: mergedState.nationalityFlag || "",
               dob: mergedState.dob,
               avatarUrl: mergedState.avatarUrl,
               email: mergedState.email,
