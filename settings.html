@@ -1021,6 +1021,17 @@
         document.getElementById("nameText").textContent = s.username || "—";
         applyAvatar(s.avatarUrl);
 
+        if (rawUser && !rawUser.emailVerified) {
+          try {
+            await rawUser.sendEmailVerification();
+            verifyEmailBtn?.classList.remove("hidden");
+            setMessage(accountStatus, "Verification email sent. Please check your inbox.");
+          } catch (err) {
+            setMessage(accountError, friendlyAuthMessage(err, "Unable to send verification email."));
+            logDevError("settings-verify-email", err);
+          }
+        }
+
         if (rawUser && nextEmail && nextEmail !== (rawUser.email || "")) {
           try {
             await rawUser.updateEmail(nextEmail);
