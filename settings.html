@@ -1045,6 +1045,37 @@
         refreshVerifyButton();
       });
 
+      const syncEmailVerificationState = async () => {
+        const user = getRawUser();
+        if (!user) return;
+        try {
+          await user.reload();
+        } catch {
+          // ignore
+        }
+        refreshVerifyButton(user);
+        if (user.emailVerified) {
+          const s = loadFcState();
+          const pending = (s.pendingEmail || "").toLowerCase();
+          const current = (user.email || "").toLowerCase();
+          if (pending && pending === current) {
+            s.email = current;
+            delete s.pendingEmail;
+            saveFcState(s);
+            if (emailInput) emailInput.value = current;
+          }
+        }
+      };
+
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          syncEmailVerificationState();
+        }
+      });
+      window.addEventListener("focus", () => {
+        syncEmailVerificationState();
+      });
+
       verifyEmailBtn?.addEventListener("click", async () => {
         setMessage(accountError, "");
         setMessage(accountStatus, "");
