@@ -1110,6 +1110,48 @@
     return output;
   };
 
+  const DEVICE_ID_KEY = "fc_device_id";
+  const getDeviceId = () => {
+    try {
+      let id = localStorage.getItem(DEVICE_ID_KEY);
+      if (!id) {
+        id = `dev_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`;
+        localStorage.setItem(DEVICE_ID_KEY, id);
+      }
+      return id;
+    } catch {
+      return "";
+    }
+  };
+
+  const hashEndpoint = async (endpoint) => {
+    const text = String(endpoint || "");
+    if (!text) return "";
+    try {
+      if (window.crypto?.subtle && window.TextEncoder) {
+        const data = new TextEncoder().encode(text);
+        const digest = await window.crypto.subtle.digest("SHA-256", data);
+        return Array.from(new Uint8Array(digest))
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("")
+          .slice(0, 32);
+      }
+    } catch {
+      // fall back to non-crypto hash
+    }
+    let hash = 0;
+    for (let i = 0; i < text.length; i += 1) {
+      hash = (hash << 5) - hash + text.charCodeAt(i);
+      hash |= 0;
+    }
+    return Math.abs(hash).toString(16);
+  };
+
+  const buildPushDocId = async (uid, endpoint) => {
+    const hash = await hashEndpoint(endpoint);
+    return `${uid}_${hash || "sub"}`;
+  };
+
   const getNotificationPref = () => {
     const s = safeParse(DEFAULT_STATE_KEY, {});
     return !!s.notifications;
@@ -1117,12 +1159,18 @@
 
   const saveSubscription = async (user, sub) => {
     if (!user || !sub) return;
+    const endpoint = sub?.endpoint || "";
+    if (!endpoint) return;
+    const docId = await buildPushDocId(user.uid, endpoint);
     const payload = {
       uid: user.uid,
+      endpoint,
+      deviceId: getDeviceId(),
+      userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
       subscription: sub.toJSON ? sub.toJSON() : sub,
       updatedAt: new Date().toISOString(),
     };
-    await db.collection(PUSH_COLLECTION).doc(user.uid).set(payload, { merge: true });
+    await db.collection(PUSH_COLLECTION).doc(docId).set(payload, { merge: true });
   };
 
   const ensurePushSubscription = async (user) => {
@@ -1151,17 +1199,22 @@
 
   const disablePush = async () => {
     if (!hasPushSupport()) return;
+    let endpoint = "";
     try {
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.getSubscription();
-      if (sub) await sub.unsubscribe();
+      if (sub) {
+        endpoint = sub.endpoint || "";
+        await sub.unsubscribe();
+      }
     } catch {
       // ignore
     }
     const user = auth.currentUser;
-    if (user) {
+    if (user && endpoint) {
       try {
-        await db.collection(PUSH_COLLECTION).doc(user.uid).delete();
+        const docId = await buildPushDocId(user.uid, endpoint);
+        await db.collection(PUSH_COLLECTION).doc(docId).delete();
       } catch {
         // ignore
       }

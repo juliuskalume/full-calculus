@@ -56,9 +56,13 @@ service cloud.firestore {
       allow delete: if isVerified() && request.auth.uid == resource.data.uid;
     }
 
-    match /push_subscriptions/{uid} {
-      allow read: if isSignedIn() && request.auth.uid == uid;
-      allow write: if isVerified() && request.auth.uid == uid;
+    match /push_subscriptions/{docId} {
+      allow read: if isSignedIn();
+      allow create, update: if isVerified() &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.endpoint is string;
+      allow delete: if isVerified() &&
+        request.auth.uid == resource.data.uid;
     }
 
     match /friendships/{friendId} {

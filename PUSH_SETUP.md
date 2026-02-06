@@ -51,7 +51,7 @@ firebase deploy --only firestore:rules,functions
 ## 6) Verify
 
 - Open the app, sign in, and enable notifications on the Notify screen.
-- A subscription record should appear in Firestore under `push_subscriptions/{uid}`.
+- A subscription record should appear in Firestore under `push_subscriptions/{uid_hash}` (one per device).
 - Reminders are scheduled for Tue/Fri at 18:00 in the configured timezone.
 
 ## 7) Test Immediately (optional)

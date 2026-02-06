@@ -97,15 +97,9 @@ exports.sendTestPush = functions.https.onRequest(async (req, res) => {
       return;
     }
 
-    const doc = await admin.firestore().collection(COLLECTION).doc(uid).get();
-    if (!doc.exists) {
+    const snap = await admin.firestore().collection(COLLECTION).where("uid", "==", uid).get();
+    if (snap.empty) {
       res.status(404).send("Subscription not found");
-      return;
-    }
-
-    const sub = doc.data()?.subscription;
-    if (!sub || !sub.endpoint) {
-      res.status(400).send("Invalid subscription");
       return;
     }
 
@@ -115,7 +109,22 @@ exports.sendTestPush = functions.https.onRequest(async (req, res) => {
       url: "path.html",
     });
 
-    await webpush.sendNotification(sub, payload);
+    const tasks = [];
+    snap.forEach((doc) => {
+      const sub = doc.data()?.subscription;
+      if (!sub || !sub.endpoint) return;
+      tasks.push(
+        webpush.sendNotification(sub, payload).catch(async (err) => {
+          if (err?.statusCode === 404 || err?.statusCode === 410) {
+            await doc.ref.delete();
+          } else {
+            console.error("Push error", err);
+          }
+        })
+      );
+    });
+
+    await Promise.all(tasks);
     res.status(200).send("Sent");
   } catch (err) {
     console.error("Test push error", err);
