@@ -1053,7 +1053,29 @@
           setMessage(accountError, "Please sign in to verify your email.");
           return;
         }
-        if (user.emailVerified) {
+        const nextEmail = (emailInput?.value || "").trim().toLowerCase();
+        const currentEmail = (user.email || "").toLowerCase();
+        if (nextEmail && nextEmail !== currentEmail) {
+          try {
+            await user.updateEmail(nextEmail);
+            const s = loadFcState();
+            s.email = nextEmail;
+            saveFcState(s);
+            if (emailInput) emailInput.value = nextEmail;
+            verifyEmailBtn.classList.remove("hidden");
+            setMessage(accountStatus, "Email updated. Sending verification link...");
+          } catch (err) {
+            if (err?.code === "auth/operation-not-allowed") {
+              verifyEmailBtn.classList.remove("hidden");
+              setMessage(accountStatus, "Please verify your current email before changing it.");
+              logDevError("settings-email-verify-required", err);
+              return;
+            }
+            setMessage(accountError, friendlyAuthMessage(err, "Unable to update email right now."));
+            logDevError("settings-email-update", err);
+            return;
+          }
+        } else if (user.emailVerified) {
           verifyEmailBtn.classList.add("hidden");
           setMessage(accountStatus, "Your email is already verified.");
           return;
