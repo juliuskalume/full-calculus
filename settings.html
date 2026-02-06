@@ -950,6 +950,19 @@
       const getRawUser = () =>
         window.FCAuth?.getRawUser ? FCAuth.getRawUser() : window.FCAuth?.auth?.currentUser || null;
 
+      const refreshVerifyButton = (user) => {
+        if (!verifyEmailBtn) return;
+        const raw = user || getRawUser();
+        verifyEmailBtn.classList.toggle("hidden", !raw || raw.emailVerified);
+      };
+
+      refreshVerifyButton();
+      if (window.FCAuth?.onAuthStateChanged) {
+        FCAuth.onAuthStateChanged((user) => {
+          refreshVerifyButton(user);
+        });
+      }
+
       verifyEmailBtn?.addEventListener("click", async () => {
         setMessage(accountError, "");
         setMessage(accountStatus, "");
