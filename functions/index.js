@@ -154,7 +154,7 @@ exports.sendTestPush = functions.https.onRequest(async (req, res) => {
 
     const payload = {
       title: "Test reminder",
-      body: "Push is working. Ready for a quick session?",
+      body: "Calculus is fun. Ready for a quick session?",
       url: "path.html",
     };
     const webPayload = JSON.stringify(payload);
