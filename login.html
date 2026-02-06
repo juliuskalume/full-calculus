@@ -316,6 +316,12 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ username, password }),
           });
+          let data = {};
+          try {
+            data = await response.json();
+          } catch {
+            // ignore
+          }
           if (response.status === 401) {
             const err = new Error("Invalid username or password.");
             err.code = "auth/wrong-password";
@@ -323,10 +329,21 @@
           }
           if (!response.ok) {
             const err = new Error("Unable to sign in right now.");
-            err.code = "auth/invalid-username";
+            const code = data?.error || "";
+            if (code === "missing-api-key") {
+              err.message = "Username sign-in is not configured yet.";
+              err.code = "auth/operation-not-allowed";
+            } else if (code === "invalid-username" || code === "invalid-credentials") {
+              err.message = "Invalid username or password.";
+              err.code = "auth/wrong-password";
+            } else if (code === "missing-email") {
+              err.message = "Please sign in with your email instead.";
+              err.code = "auth/user-not-found";
+            } else {
+              err.code = "auth/invalid-username";
+            }
             throw err;
           }
-          const data = await response.json();
           if (!data?.customToken) {
             const err = new Error("Unable to sign in right now.");
             err.code = "auth/invalid-username";

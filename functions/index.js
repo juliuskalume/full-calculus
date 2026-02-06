@@ -261,11 +261,29 @@ exports.signInWithUsername = functions.https.onRequest(async (req, res) => {
   try {
     const lower = username.toLowerCase();
     const nameDoc = await admin.firestore().collection("name_registry").doc(lower).get();
-    if (!nameDoc.exists) {
-      res.status(401).json({ error: "invalid-credentials" });
-      return;
+    let uid = nameDoc.data()?.uid || "";
+    if (!uid) {
+      const userSnap = await admin
+        .firestore()
+        .collection("users")
+        .where("usernameLower", "==", lower)
+        .limit(1)
+        .get();
+      if (!userSnap.empty) {
+        uid = userSnap.docs[0].id;
+      }
     }
-    const uid = nameDoc.data()?.uid;
+    if (!uid) {
+      const profileSnap = await admin
+        .firestore()
+        .collection("public_profiles")
+        .where("usernameLower", "==", lower)
+        .limit(1)
+        .get();
+      if (!profileSnap.empty) {
+        uid = profileSnap.docs[0].id || profileSnap.docs[0].data()?.uid || "";
+      }
+    }
     if (!uid) {
       res.status(401).json({ error: "invalid-credentials" });
       return;
