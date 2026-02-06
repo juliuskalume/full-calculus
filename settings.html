@@ -1057,24 +1057,38 @@
         const currentEmail = (user.email || "").toLowerCase();
         const wantsChange = !!nextEmail && nextEmail !== currentEmail;
         if (wantsChange) {
+          const status = getVerifySendStatus();
+          if (!status.ok) {
+            setMessage(
+              accountError,
+              `Please wait ${formatWait(status.waitMs)} before requesting another verification email.`
+            );
+            return;
+          }
           try {
-            await user.updateEmail(nextEmail);
-            const s = loadFcState();
-            s.email = nextEmail;
-            saveFcState(s);
-            if (emailInput) emailInput.value = nextEmail;
-            verifyEmailBtn.classList.remove("hidden");
-            setMessage(accountStatus, "Email updated. Sending verification link...");
-            try {
-              await user.reload();
-            } catch {
-              // ignore
+            if (typeof user.verifyBeforeUpdateEmail === "function") {
+              await user.verifyBeforeUpdateEmail(nextEmail);
+            } else {
+              await user.updateEmail(nextEmail);
+              await user.sendEmailVerification();
             }
+            const s = loadFcState();
+            s.pendingEmail = nextEmail;
+            saveFcState(s);
+            verifyEmailBtn.classList.remove("hidden");
+            recordVerifySend(status.recent);
+            setMessage(accountStatus, "Verification link sent to your new email.");
+            return;
           } catch (err) {
             if (err?.code === "auth/operation-not-allowed") {
               verifyEmailBtn.classList.remove("hidden");
               setMessage(accountStatus, "Please verify your current email before changing it.");
               logDevError("settings-email-verify-required", err);
+              return;
+            }
+            if (err?.code === "auth/requires-recent-login") {
+              setMessage(accountError, "Please sign in again to change your email.");
+              logDevError("settings-email-requires-login", err);
               return;
             }
             setMessage(accountError, friendlyAuthMessage(err, "Unable to update email right now."));
@@ -1142,8 +1156,9 @@
         const nextFullName = (fullNameInput?.value || "").trim();
         const nextDob = dobInput?.value || "";
         const nextCountry = normalizeCountry(countryInput?.value || "");
-        const prevEmail = s.email || "";
         const nextEmail = (emailInput?.value || "").trim().toLowerCase();
+        const currentEmail = (rawUser?.email || "").toLowerCase();
+        const wantsEmailChange = !!rawUser && !!nextEmail && nextEmail !== currentEmail;
         if (nextCountry && !isAllowedCountry(nextCountry)) {
           setMessage(accountError, "Select a country from the list.");
           setMessage(accountStatus, "");
@@ -1155,7 +1170,16 @@
           s.nationality = nextCountry;
           s.nationalityFlag = getCountryFlag(nextCountry);
         }
-        if (nextEmail) s.email = nextEmail;
+        if (nextEmail && !wantsEmailChange) {
+          s.email = nextEmail;
+        }
+        if (wantsEmailChange) {
+          s.pendingEmail = nextEmail;
+          verifyEmailBtn?.classList.remove("hidden");
+          setMessage(accountStatus, "Tap Verify email to confirm your new address.");
+        } else {
+          delete s.pendingEmail;
+        }
         if (pendingAvatarUrl) s.avatarUrl = pendingAvatarUrl;
         saveFcState(s);
 
@@ -1182,46 +1206,7 @@
           }
         }
 
-        if (rawUser && nextEmail && nextEmail !== (rawUser.email || "")) {
-          try {
-            await rawUser.updateEmail(nextEmail);
-            if (emailInput) emailInput.value = nextEmail;
-            setMessage(accountStatus, "Email updated. Please verify your new address.");
-            verifyEmailBtn?.classList.remove("hidden");
-            const status = getVerifySendStatus();
-            if (!status.ok) {
-              setMessage(
-                accountStatus,
-                `Email updated. Verification email available in ${formatWait(status.waitMs)}.`
-              );
-            } else {
-              try {
-                await rawUser.sendEmailVerification();
-                recordVerifySend(status.recent);
-              } catch {
-                // ignore
-              }
-            }
-          } catch (err) {
-            s.email = prevEmail;
-            saveFcState(s);
-            if (emailInput) emailInput.value = prevEmail;
-            if (err?.code === "auth/operation-not-allowed") {
-              verifyEmailBtn?.classList.remove("hidden");
-              setMessage(accountError, "");
-              setMessage(
-                accountStatus,
-                "Please verify your current email before changing it."
-              );
-              logDevError("settings-email-verify-required", err);
-              return;
-            }
-            setMessage(accountError, friendlyAuthMessage(err, "Unable to update email right now."));
-            logDevError("settings-email", err);
-            setMessage(accountStatus, "");
-            return;
-          }
-        }
+        // Email changes are handled via the Verify email button.
 
         if (window.FCAuth?.enabled && verifiedUser) {
           try {
