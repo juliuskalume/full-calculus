@@ -950,6 +950,64 @@
       const getRawUser = () =>
         window.FCAuth?.getRawUser ? FCAuth.getRawUser() : window.FCAuth?.auth?.currentUser || null;
 
+      const VERIFY_RATE_KEY = "fc_verify_email_sends";
+      const VERIFY_RATE_WINDOW_MS = 30 * 60 * 1000;
+      const VERIFY_RATE_MIN_MS = 60 * 1000;
+      const VERIFY_RATE_MAX = 5;
+
+      const loadVerifyLog = () => {
+        try {
+          const raw = localStorage.getItem(VERIFY_RATE_KEY);
+          const list = raw ? JSON.parse(raw) : [];
+          return Array.isArray(list) ? list.filter((t) => Number.isFinite(t)) : [];
+        } catch {
+          return [];
+        }
+      };
+
+      const saveVerifyLog = (list) => {
+        try {
+          localStorage.setItem(VERIFY_RATE_KEY, JSON.stringify(list));
+        } catch {
+          // ignore
+        }
+      };
+
+      const formatWait = (ms) => {
+        const secs = Math.max(1, Math.ceil(ms / 1000));
+        if (secs >= 60) return `${Math.ceil(secs / 60)} min`;
+        return `${secs} sec`;
+      };
+
+      const getVerifySendStatus = () => {
+        const now = Date.now();
+        const recent = loadVerifyLog().filter((t) => now - t < VERIFY_RATE_WINDOW_MS);
+        const last = recent[recent.length - 1] || 0;
+        if (recent.length && now - last < VERIFY_RATE_MIN_MS) {
+          return {
+            ok: false,
+            waitMs: VERIFY_RATE_MIN_MS - (now - last),
+            reason: "minute",
+            recent,
+          };
+        }
+        if (recent.length >= VERIFY_RATE_MAX) {
+          return {
+            ok: false,
+            waitMs: VERIFY_RATE_WINDOW_MS - (now - recent[0]),
+            reason: "window",
+            recent,
+          };
+        }
+        return { ok: true, recent };
+      };
+
+      const recordVerifySend = (recent) => {
+        const now = Date.now();
+        const next = (recent || []).concat(now).filter((t) => now - t < VERIFY_RATE_WINDOW_MS);
+        saveVerifyLog(next);
+      };
+
       const refreshVerifyButton = (user) => {
         if (!verifyEmailBtn) return;
         const raw = user || getRawUser();
@@ -976,9 +1034,18 @@
           setMessage(accountStatus, "Your email is already verified.");
           return;
         }
+        const status = getVerifySendStatus();
+        if (!status.ok) {
+          setMessage(
+            accountError,
+            `Please wait ${formatWait(status.waitMs)} before requesting another verification email.`
+          );
+          return;
+        }
         setMessage(accountStatus, "Sending verification email...");
         try {
           await user.sendEmailVerification();
+          recordVerifySend(status.recent);
           setMessage(accountStatus, "Verification email sent. Please check your inbox.");
         } catch (err) {
           setMessage(accountError, friendlyAuthMessage(err, "Unable to send verification email."));
@@ -1034,14 +1101,23 @@
         document.getElementById("nameText").textContent = s.username || "—";
         applyAvatar(s.avatarUrl);
 
-        if (rawUser && !rawUser.emailVerified) {
+        if (rawUser && !rawUser.emailVerified && (!nextEmail || nextEmail === (rawUser.email || ""))) {
+          const status = getVerifySendStatus();
+          if (!status.ok) {
+            setMessage(
+              accountStatus,
+              `Verification email recently sent. Try again in ${formatWait(status.waitMs)}.`
+            );
+          } else {
           try {
             await rawUser.sendEmailVerification();
             verifyEmailBtn?.classList.remove("hidden");
+            recordVerifySend(status.recent);
             setMessage(accountStatus, "Verification email sent. Please check your inbox.");
           } catch (err) {
             setMessage(accountError, friendlyAuthMessage(err, "Unable to send verification email."));
             logDevError("settings-verify-email", err);
+          }
           }
         }
 
@@ -1051,10 +1127,19 @@
             if (emailInput) emailInput.value = nextEmail;
             setMessage(accountStatus, "Email updated. Please verify your new address.");
             verifyEmailBtn?.classList.remove("hidden");
-            try {
-              await rawUser.sendEmailVerification();
-            } catch {
-              // ignore
+            const status = getVerifySendStatus();
+            if (!status.ok) {
+              setMessage(
+                accountStatus,
+                `Email updated. Verification email available in ${formatWait(status.waitMs)}.`
+              );
+            } else {
+              try {
+                await rawUser.sendEmailVerification();
+                recordVerifySend(status.recent);
+              } catch {
+                // ignore
+              }
             }
           } catch (err) {
             s.email = prevEmail;
