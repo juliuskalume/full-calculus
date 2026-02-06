@@ -1227,6 +1227,132 @@
     disable: disablePush,
   };
 
+  const FCM_COLLECTION = "fcm_tokens";
+  const PENDING_FCM_TOKEN_KEY = "fc_pending_fcm_token";
+  const PENDING_FCM_DEVICE_KEY = "fc_pending_fcm_device";
+
+  const hasNativeFcm = () =>
+    typeof window !== "undefined" &&
+    window.AndroidFcm &&
+    typeof window.AndroidFcm.getToken === "function";
+
+  const getNativeFcmToken = () => {
+    try {
+      return window.AndroidFcm?.getToken?.() || "";
+    } catch {
+      return "";
+    }
+  };
+
+  const getNativeFcmDeviceId = () => {
+    try {
+      return window.AndroidFcm?.getDeviceId?.() || "";
+    } catch {
+      return "";
+    }
+  };
+
+  const requestNativeFcmPermission = () => {
+    try {
+      window.AndroidFcm?.requestPermission?.();
+    } catch {
+      // ignore
+    }
+  };
+
+  const buildFcmDocId = async (uid, token) => {
+    const hash = await hashEndpoint(token);
+    return `${uid}_${hash || "token"}`;
+  };
+
+  const stashPendingFcmToken = (token, deviceId) => {
+    try {
+      if (token) localStorage.setItem(PENDING_FCM_TOKEN_KEY, token);
+      if (deviceId) localStorage.setItem(PENDING_FCM_DEVICE_KEY, deviceId);
+    } catch {
+      // ignore
+    }
+  };
+
+  const readPendingFcmToken = () => {
+    try {
+      return {
+        token: localStorage.getItem(PENDING_FCM_TOKEN_KEY) || "",
+        deviceId: localStorage.getItem(PENDING_FCM_DEVICE_KEY) || "",
+      };
+    } catch {
+      return { token: "", deviceId: "" };
+    }
+  };
+
+  const clearPendingFcmToken = () => {
+    try {
+      localStorage.removeItem(PENDING_FCM_TOKEN_KEY);
+      localStorage.removeItem(PENDING_FCM_DEVICE_KEY);
+    } catch {
+      // ignore
+    }
+  };
+
+  const saveFcmToken = async (user, token, deviceId) => {
+    if (!user || !token) return;
+    if (isRestrictedUser(user)) return;
+    const docId = await buildFcmDocId(user.uid, token);
+    const payload = {
+      uid: user.uid,
+      token,
+      deviceId: deviceId || getDeviceId(),
+      platform: "android-webview",
+      userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
+      updatedAt: new Date().toISOString(),
+    };
+    await db.collection(FCM_COLLECTION).doc(docId).set(payload, { merge: true });
+  };
+
+  const ensureFcmToken = async (user) => {
+    if (!user || !hasNativeFcm()) return null;
+    if (!getNotificationPref()) return null;
+    const token = getNativeFcmToken();
+    const deviceId = getNativeFcmDeviceId();
+    if (token) {
+      await saveFcmToken(user, token, deviceId);
+      clearPendingFcmToken();
+      return token;
+    }
+    return null;
+  };
+
+  const disableFcm = async () => {
+    if (!hasNativeFcm()) return;
+    const user = auth.currentUser;
+    if (!user || isRestrictedUser(user)) return;
+    const token = getNativeFcmToken();
+    if (!token) return;
+    try {
+      const docId = await buildFcmDocId(user.uid, token);
+      await db.collection(FCM_COLLECTION).doc(docId).delete();
+    } catch {
+      // ignore
+    }
+  };
+
+  window.FCFcm = {
+    ensure: ensureFcmToken,
+    requestPermission: requestNativeFcmPermission,
+    disable: disableFcm,
+  };
+
+  window.fcNativeFcmToken = (token, deviceId) => {
+    const cleanToken = String(token || "");
+    const cleanDevice = String(deviceId || "");
+    if (!cleanToken) return;
+    stashPendingFcmToken(cleanToken, cleanDevice);
+    const user = auth.currentUser;
+    if (!user || isRestrictedUser(user) || !getNotificationPref()) return;
+    saveFcmToken(user, cleanToken, cleanDevice).catch(() => {});
+    clearPendingFcmToken();
+  };
+
   let presenceTimer = null;
   const startPresenceTimer = () => {
     if (presenceTimer) return;
@@ -1306,6 +1432,14 @@
 
     if (user && getNotificationPref()) {
       ensurePushSubscription(user).catch(() => {});
+    }
+
+    const pending = readPendingFcmToken();
+    if (pending.token && getNotificationPref()) {
+      saveFcmToken(user, pending.token, pending.deviceId).catch(() => {});
+      clearPendingFcmToken();
+    } else {
+      ensureFcmToken(user).catch(() => {});
     }
   });
 

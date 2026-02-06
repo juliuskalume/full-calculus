@@ -39,6 +39,47 @@ if (publicKey && privateKey) {
 }
 
 const COLLECTION = "push_subscriptions";
+const FCM_COLLECTION = "fcm_tokens";
+
+const chunk = (arr, size) => {
+  const out = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+};
+
+const sendFcmBatch = async (items, payload) => {
+  if (!items.length) return;
+  const message = {
+    tokens: items.map((item) => item.token),
+    notification: {
+      title: payload.title,
+      body: payload.body,
+    },
+    data: {
+      url: payload.url || "path.html",
+    },
+    android: {
+      priority: "high",
+    },
+  };
+
+  const response = await admin.messaging().sendEachForMulticast(message);
+  const deletions = [];
+  response.responses.forEach((res, idx) => {
+    if (!res.success) {
+      const code = res.error?.code || "";
+      if (code === "messaging/registration-token-not-registered" || code === "messaging/invalid-registration-token") {
+        deletions.push(items[idx].ref);
+      }
+    }
+  });
+
+  if (deletions.length) {
+    const batch = admin.firestore().batch();
+    deletions.forEach((ref) => batch.delete(ref));
+    await batch.commit();
+  }
+};
 
 exports.sendLearningReminder = functions.pubsub
   .schedule("0 18 * * 2,5")
@@ -52,11 +93,13 @@ exports.sendLearningReminder = functions.pubsub
     const snapshot = await admin.firestore().collection(COLLECTION).get();
     if (snapshot.empty) return null;
 
-    const payload = JSON.stringify({
+    const payload = {
       title: "Time to learn",
       body: "A short session keeps your streak strong. Ready for a quick lesson?",
       url: "path.html",
-    });
+    };
+
+    const webPayload = JSON.stringify(payload);
 
     const tasks = [];
     snapshot.forEach((doc) => {
@@ -64,7 +107,7 @@ exports.sendLearningReminder = functions.pubsub
       const sub = data.subscription;
       if (!sub || !sub.endpoint) return;
       tasks.push(
-        webpush.sendNotification(sub, payload).catch(async (err) => {
+        webpush.sendNotification(sub, webPayload).catch(async (err) => {
           if (err?.statusCode === 404 || err?.statusCode === 410) {
             await doc.ref.delete();
           } else {
@@ -75,6 +118,16 @@ exports.sendLearningReminder = functions.pubsub
     });
 
     await Promise.all(tasks);
+
+    const fcmSnap = await admin.firestore().collection(FCM_COLLECTION).get();
+    if (!fcmSnap.empty) {
+      const items = fcmSnap.docs
+        .map((doc) => ({ ref: doc.ref, token: doc.data()?.token || "" }))
+        .filter((item) => item.token);
+      for (const group of chunk(items, 500)) {
+        await sendFcmBatch(group, payload);
+      }
+    }
     return null;
   });
 
@@ -98,33 +151,47 @@ exports.sendTestPush = functions.https.onRequest(async (req, res) => {
     }
 
     const snap = await admin.firestore().collection(COLLECTION).where("uid", "==", uid).get();
-    if (snap.empty) {
-      res.status(404).send("Subscription not found");
-      return;
-    }
 
-    const payload = JSON.stringify({
+    const payload = {
       title: "Test reminder",
       body: "Push is working. Ready for a quick session?",
       url: "path.html",
-    });
+    };
+    const webPayload = JSON.stringify(payload);
 
     const tasks = [];
-    snap.forEach((doc) => {
-      const sub = doc.data()?.subscription;
-      if (!sub || !sub.endpoint) return;
-      tasks.push(
-        webpush.sendNotification(sub, payload).catch(async (err) => {
-          if (err?.statusCode === 404 || err?.statusCode === 410) {
-            await doc.ref.delete();
-          } else {
-            console.error("Push error", err);
-          }
-        })
-      );
-    });
+    if (!snap.empty) {
+      snap.forEach((doc) => {
+        const sub = doc.data()?.subscription;
+        if (!sub || !sub.endpoint) return;
+        tasks.push(
+          webpush.sendNotification(sub, webPayload).catch(async (err) => {
+            if (err?.statusCode === 404 || err?.statusCode === 410) {
+              await doc.ref.delete();
+            } else {
+              console.error("Push error", err);
+            }
+          })
+        );
+      });
+    }
 
     await Promise.all(tasks);
+
+    const fcmSnap = await admin.firestore().collection(FCM_COLLECTION).where("uid", "==", uid).get();
+    if (!fcmSnap.empty) {
+      const items = fcmSnap.docs
+        .map((doc) => ({ ref: doc.ref, token: doc.data()?.token || "" }))
+        .filter((item) => item.token);
+      for (const group of chunk(items, 500)) {
+        await sendFcmBatch(group, payload);
+      }
+    }
+
+    if (snap.empty && fcmSnap.empty) {
+      res.status(404).send("Subscription not found");
+      return;
+    }
     res.status(200).send("Sent");
   } catch (err) {
     console.error("Test push error", err);

@@ -240,8 +240,18 @@ function initNotifyPage() {
       next.notifications = true;
       saveState(next);
       updateUI(true);
+      if (window.FCFcm?.requestPermission) {
+        try {
+          window.FCFcm.requestPermission();
+        } catch {
+          // ignore
+        }
+      }
       if (window.FCPush?.requestPermissionAndSubscribe) {
         window.FCPush.requestPermissionAndSubscribe().catch(() => {});
+      }
+      if (window.FCFcm?.ensure) {
+        window.FCFcm.ensure(FCAuth?.getRawUser?.()).catch(() => {});
       }
     });
   }
@@ -254,6 +264,9 @@ function initNotifyPage() {
       updateUI(false);
       if (window.FCPush?.disable) {
         window.FCPush.disable().catch(() => {});
+      }
+      if (window.FCFcm?.disable) {
+        window.FCFcm.disable().catch(() => {});
       }
     });
   }

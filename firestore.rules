@@ -65,6 +65,15 @@ service cloud.firestore {
         request.auth.uid == resource.data.uid;
     }
 
+    match /fcm_tokens/{docId} {
+      allow read: if isSignedIn();
+      allow create, update: if isVerified() &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.token is string;
+      allow delete: if isVerified() &&
+        request.auth.uid == resource.data.uid;
+    }
+
     match /friendships/{friendId} {
       allow read: if isSignedIn() &&
         (request.auth.uid == resource.data.from || request.auth.uid == resource.data.to);

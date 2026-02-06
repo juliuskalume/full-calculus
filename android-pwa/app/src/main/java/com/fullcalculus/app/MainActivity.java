@@ -2,6 +2,7 @@ package com.fullcalculus.app;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.Manifest;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
@@ -23,6 +24,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -30,18 +32,23 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.messaging.FirebaseMessaging;
 
 import org.json.JSONObject;
+import android.content.pm.PackageManager;
 
 public class MainActivity extends AppCompatActivity {
   private WebView webView;
   private GoogleSignInClient signInClient;
   private ActivityResultLauncher<Intent> signInLauncher;
+  private ActivityResultLauncher<String> notificationPermissionLauncher;
   private ConnectivityManager.NetworkCallback networkCallback;
   private SharedPreferences prefs;
   private static final String PREFS_NAME = "fc_prefs";
   private static final String KEY_HAS_LOADED = "hasLoadedOnce";
   private static final String KEY_OFFLINE_MODE = "offlineModeEnabled";
+  private static final String KEY_FCM_TOKEN = "fcm_token";
+  private static final String KEY_FCM_DEVICE = "fcm_device_id";
 
   @SuppressLint("SetJavaScriptEnabled")
   @Override
@@ -53,6 +60,7 @@ public class MainActivity extends AppCompatActivity {
 
     webView = findViewById(R.id.webview);
     webView.addJavascriptInterface(new AuthBridge(), "AndroidAuth");
+    webView.addJavascriptInterface(new FcmBridge(), "AndroidFcm");
     WebSettings settings = webView.getSettings();
     settings.setJavaScriptEnabled(true);
     settings.setDomStorageEnabled(true);
@@ -97,6 +105,7 @@ public class MainActivity extends AppCompatActivity {
       public void onPageFinished(@NonNull WebView view, @NonNull String url) {
         if (url != null && (url.startsWith("http://") || url.startsWith("https://"))) {
           markLoadedOnce();
+          syncFcmToWeb();
         }
       }
     });
@@ -124,6 +133,17 @@ public class MainActivity extends AppCompatActivity {
       }
     });
 
+    notificationPermissionLauncher = registerForActivityResult(
+        new ActivityResultContracts.RequestPermission(),
+        isGranted -> {
+          if (isGranted) {
+            fetchFcmToken();
+          }
+        }
+    );
+
+    initFcm();
+
     if (isOnline()) {
       loadLaunchUrl();
     } else if (!isOfflineModeEnabled() && !hasLoadedOnce()) {
@@ -133,6 +153,67 @@ public class MainActivity extends AppCompatActivity {
     }
 
     registerNetworkCallback();
+  }
+
+  private void initFcm() {
+    fetchFcmToken();
+  }
+
+  private String ensureDeviceId() {
+    try {
+      if (prefs == null) return "";
+      String deviceId = prefs.getString(KEY_FCM_DEVICE, "");
+      if (deviceId == null || deviceId.isEmpty()) {
+        deviceId = "dev_" + System.currentTimeMillis();
+        prefs.edit().putString(KEY_FCM_DEVICE, deviceId).apply();
+      }
+      return deviceId;
+    } catch (Exception ignored) {
+      return "";
+    }
+  }
+
+  private void fetchFcmToken() {
+    try {
+      FirebaseMessaging.getInstance().getToken().addOnCompleteListener(task -> {
+        if (!task.isSuccessful()) return;
+        String token = task.getResult();
+        if (token == null || token.isEmpty()) return;
+        if (prefs != null) {
+          prefs.edit().putString(KEY_FCM_TOKEN, token).apply();
+          ensureDeviceId();
+        }
+        syncFcmToWeb();
+      });
+    } catch (Exception ignored) {
+      // ignore
+    }
+  }
+
+  private void requestNotificationPermission() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return;
+    if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+        == PackageManager.PERMISSION_GRANTED) {
+      return;
+    }
+    if (notificationPermissionLauncher != null) {
+      notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+    }
+  }
+
+  private void syncFcmToWeb() {
+    try {
+      if (webView == null || prefs == null) return;
+      String token = prefs.getString(KEY_FCM_TOKEN, "");
+      if (token == null || token.isEmpty()) return;
+      String deviceId = ensureDeviceId();
+      String safeToken = JSONObject.quote(token);
+      String safeDevice = JSONObject.quote(deviceId == null ? "" : deviceId);
+      String js = "window.fcNativeFcmToken && window.fcNativeFcmToken(" + safeToken + "," + safeDevice + ");";
+      runOnUiThread(() -> webView.evaluateJavascript(js, null));
+    } catch (Exception ignored) {
+      // ignore
+    }
   }
 
   private void startGoogleSignIn() {
@@ -304,6 +385,12 @@ public class MainActivity extends AppCompatActivity {
     super.onBackPressed();
   }
 
+  @Override
+  protected void onResume() {
+    super.onResume();
+    syncFcmToWeb();
+  }
+
   private boolean shouldBackToPath(String url) {
     if (url == null) return false;
     try {
@@ -372,6 +459,32 @@ public class MainActivity extends AppCompatActivity {
     @SuppressWarnings("unused")
     public void setOfflineMode(boolean enabled) {
       runOnUiThread(() -> setOfflineModeEnabled(enabled));
+    }
+  }
+
+  private class FcmBridge {
+    @JavascriptInterface
+    @SuppressWarnings("unused")
+    public String getToken() {
+      try {
+        if (prefs == null) return "";
+        String token = prefs.getString(KEY_FCM_TOKEN, "");
+        return token == null ? "" : token;
+      } catch (Exception ignored) {
+        return "";
+      }
+    }
+
+    @JavascriptInterface
+    @SuppressWarnings("unused")
+    public String getDeviceId() {
+      return ensureDeviceId();
+    }
+
+    @JavascriptInterface
+    @SuppressWarnings("unused")
+    public void requestPermission() {
+      runOnUiThread(() -> requestNotificationPermission());
     }
   }
 }

@@ -314,12 +314,22 @@
           } catch {
             // ignore
           }
-          if (window.FCPush?.requestPermissionAndSubscribe) {
-            window.FCPush.requestPermissionAndSubscribe().catch(() => {});
+            if (window.FCPush?.requestPermissionAndSubscribe) {
+              window.FCPush.requestPermissionAndSubscribe().catch(() => {});
+            }
+            if (window.FCFcm?.requestPermission) {
+              try {
+                window.FCFcm.requestPermission();
+              } catch {
+                // ignore
+              }
+            }
+            if (window.FCFcm?.ensure) {
+              window.FCFcm.ensure(FCAuth?.getRawUser?.()).catch(() => {});
+            }
           }
-        }
-        onClose();
-      };
+          onClose();
+        };
 
       const onSecondary = () => {
         if (typeof options.onSecondary === "function") {
