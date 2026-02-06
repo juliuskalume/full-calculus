@@ -131,6 +131,8 @@
     return providers.some((p) => p?.providerId === "password");
   };
 
+  const isRestrictedUser = (user) => requiresEmailVerification(user);
+
   const clampDailyGoalXp = (value) => {
     const num = Number(value);
     if (!Number.isFinite(num)) return null;
@@ -361,6 +363,7 @@
       const merged = mergeSparseObject(remote, local);
       const preferRemoteKeys = [
         "username",
+        "usernameUpdatedAt",
         "fullName",
         "nationality",
         "email",
@@ -438,6 +441,7 @@
       },
       onAuthStateChanged: () => {},
       getCurrentUser: () => null,
+      getRawUser: () => null,
       resetPassword: async () => {
         throw new Error("Firebase config missing.");
       },
@@ -467,6 +471,7 @@
 
     if (extra && typeof extra === "object") {
       if (extra.username) onboarding.username = extra.username;
+      if (extra.usernameUpdatedAt) onboarding.usernameUpdatedAt = extra.usernameUpdatedAt;
       if (extra.fullName) onboarding.fullName = extra.fullName;
       if (extra.nationality) onboarding.nationality = extra.nationality;
       if (extra.avatarUrl) onboarding.avatarUrl = extra.avatarUrl;
@@ -492,6 +497,7 @@
       displayName: username,
       username,
       usernameLower: String(username || "").toLowerCase(),
+      usernameUpdatedAt: onboarding.usernameUpdatedAt || "",
       fullName: onboarding.fullName || "",
       nationality: onboarding.nationality || "",
       dob: onboarding.dob || "",
@@ -619,6 +625,7 @@
   const syncLeaderboard = async (extra) => {
     const user = auth.currentUser;
     if (!user) return null;
+    if (isRestrictedUser(user)) return null;
     const payload = buildLeaderboardEntry(user, extra);
     await db.collection("leaderboard").doc(user.uid).set(payload, { merge: true });
     return payload;
@@ -627,6 +634,7 @@
   const syncPublicProfile = async (extra, options = {}) => {
     const user = auth.currentUser;
     if (!user) return null;
+    if (isRestrictedUser(user)) return null;
     const payload = buildPublicProfile(user, extra, options);
     await db.collection("public_profiles").doc(user.uid).set(payload, { merge: true });
     return payload;
@@ -718,6 +726,7 @@
   const ensureUsername = async () => {
     const user = auth.currentUser;
     if (!user) return;
+    if (isRestrictedUser(user)) return;
     const local = exportLocalState();
     const onboarding = toObject(local.onboarding);
     const existing = String(onboarding.username || user.displayName || "").trim();
@@ -731,8 +740,11 @@
       // ignore
     }
     onboarding.username = finalUsername;
+    if (!onboarding.usernameUpdatedAt) {
+      onboarding.usernameUpdatedAt = new Date().toISOString();
+    }
     safeSet(DEFAULT_STATE_KEY, onboarding);
-    const payload = { username: finalUsername };
+    const payload = { username: finalUsername, usernameUpdatedAt: onboarding.usernameUpdatedAt };
     try {
       await syncToRemote(payload);
     } catch {
@@ -743,6 +755,12 @@
   const syncToRemote = async (extra) => {
     const user = auth.currentUser;
     if (!user) return null;
+    if (isRestrictedUser(user)) {
+      if (extra && typeof extra === "object") {
+        queueProfileSync(extra);
+      }
+      return null;
+    }
     const payload = buildUserDoc(user, extra);
     await db.collection("users").doc(user.uid).set(payload, { merge: true });
     await syncLeaderboard(extra);
@@ -761,6 +779,7 @@
     const pending = safeParse(PENDING_PROFILE_SYNC_KEY, null);
     if (!pending || typeof pending !== "object") return false;
     if (!auth.currentUser) return false;
+    if (isRestrictedUser(auth.currentUser)) return false;
     try {
       await syncToRemote(pending);
       try {
@@ -777,6 +796,7 @@
   const syncFromRemote = async () => {
     const user = auth.currentUser;
     if (!user) return null;
+    if (isRestrictedUser(user)) return null;
     const doc = await db.collection("users").doc(user.uid).get();
     if (!doc.exists) return null;
     const data = doc.data() || {};
@@ -817,6 +837,7 @@
   const ensureUserDoc = async (extra) => {
     const user = auth.currentUser;
     if (!user) return null;
+    if (isRestrictedUser(user)) return null;
     const doc = await db.collection("users").doc(user.uid).get();
     if (!doc.exists) {
       return syncToRemote(extra);
@@ -859,9 +880,13 @@
       await result.user.updateProfile({ displayName: finalUsername });
     }
     await sendVerificationEmail(result.user);
+    setVerifyRequired(result.user.email || cleanEmail);
     const local = exportLocalState();
     local.onboarding = local.onboarding || {};
     if (finalUsername) local.onboarding.username = finalUsername;
+    if (finalUsername && !local.onboarding.usernameUpdatedAt) {
+      local.onboarding.usernameUpdatedAt = new Date().toISOString();
+    }
     if (fullName) local.onboarding.fullName = fullName;
     if (nationality) local.onboarding.nationality = nationality;
     if (skill) local.onboarding.skill = skill;
@@ -873,8 +898,9 @@
     if (avatarUrl) local.onboarding.avatarUrl = avatarUrl;
     if (cleanEmail) local.onboarding.email = cleanEmail;
     safeSet(DEFAULT_STATE_KEY, local.onboarding);
-    await syncToRemote({
+    queueProfileSync({
       username: finalUsername,
+      usernameUpdatedAt: local.onboarding.usernameUpdatedAt,
       fullName,
       nationality,
       skill,
@@ -895,8 +921,6 @@
     if (result.user && !result.user.emailVerified) {
       await sendVerificationEmail(result.user);
       setVerifyRequired(result.user.email || cleanEmail);
-      setSkipClearOnSignOut();
-      await auth.signOut();
       const err = new Error("Email not verified.");
       err.code = "auth/email-not-verified";
       throw err;
@@ -955,6 +979,7 @@
       await syncToRemote({
         email: result.user.email || "",
         username: finalUsername,
+        usernameUpdatedAt: finalUsername ? new Date().toISOString() : "",
         avatarUrl: result.user.photoURL || "",
       });
     }
@@ -978,7 +1003,13 @@
 
   const onAuthStateChanged = (cb) => auth.onAuthStateChanged(cb);
 
-  const getCurrentUser = () => auth.currentUser;
+  const getCurrentUser = () => {
+    const user = auth.currentUser;
+    if (isRestrictedUser(user)) return null;
+    return user;
+  };
+
+  const getRawUser = () => auth.currentUser;
 
   window.FCAuth = {
     enabled: true,
@@ -993,6 +1024,7 @@
     signOut,
     onAuthStateChanged,
     getCurrentUser,
+    getRawUser,
     syncFromRemote,
     syncToRemote,
     queueProfileSync,
@@ -1143,16 +1175,8 @@
 
     if (requiresEmailVerification(user)) {
       setVerifyRequired(user.email || "");
-      setSkipClearOnSignOut();
-      try {
-        localStorage.removeItem(LOCAL_UID_KEY);
-      } catch {
-        // ignore
-      }
-      auth.signOut().catch(() => {});
-      if (!/\/login\.html$/.test(window.location.pathname)) {
-        window.location.href = "login.html";
-      }
+      stopPresenceTimer();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       return;
     }
 

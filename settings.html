@@ -295,12 +295,24 @@
               </div>
             </div>
 
-            <div class="flex items-center gap-4 px-4 min-h-[72px] py-2 justify-between border-b border-slate-100/60 dark:border-slate-800">
-              <div class="flex flex-col justify-center min-w-0">
+            <div class="flex items-center gap-4 px-4 min-h-[96px] py-2 justify-between border-b border-slate-100/60 dark:border-slate-800">
+              <div class="flex flex-col justify-center min-w-0 flex-1">
                 <p class="text-base font-semibold leading-normal">Email</p>
-                <p id="emailText" class="text-slate-500 dark:text-slate-400 text-sm font-medium leading-normal truncate">
-                  not set
-                </p>
+                <input
+                  id="emailInput"
+                  type="email"
+                  class="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-surface-dark px-3 py-2 text-sm font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  placeholder="you@example.com"
+                  autocomplete="email"
+                />
+                <button
+                  id="verifyEmailBtn"
+                  type="button"
+                  class="mt-2 inline-flex items-center gap-1 text-xs font-bold text-primary hover:text-primary-hover transition-colors hidden"
+                >
+                  <span class="material-symbols-outlined text-[16px]">mark_email_unread</span>
+                  Verify email
+                </button>
               </div>
             </div>
 
@@ -627,6 +639,9 @@
         if (code === "auth/network-request-failed") {
           return "Network error. Check your connection and try again.";
         }
+        if (code === "auth/email-already-in-use") {
+          return "That email is already in use.";
+        }
         if (code === "auth/requires-recent-login") {
           return "Please sign in again, then retry this action.";
         }
@@ -644,6 +659,9 @@
         const s = loadFcState();
         const meta = window.FC?.get ? FC.get() : { xp: 0, streak: 0, lives: 0 };
         const authUser = window.FCAuth?.getCurrentUser ? FCAuth.getCurrentUser() : null;
+        const rawUser = window.FCAuth?.getRawUser
+          ? FCAuth.getRawUser()
+          : window.FCAuth?.auth?.currentUser || null;
 
         if (!s.username && s.name) {
           s.username = s.name;
@@ -663,16 +681,14 @@
 
         if (fullNameInput) {
           fullNameInput.value = s.fullName || "";
-          const lockFullName = !!s.fullName;
-          fullNameInput.disabled = lockFullName;
-          fullNameInput.classList.toggle("opacity-70", lockFullName);
+          fullNameInput.disabled = false;
+          fullNameInput.classList.remove("opacity-70");
         }
 
         if (dobInput) {
           dobInput.value = s.dob || "";
-          const lockDob = !!s.dob;
-          dobInput.disabled = lockDob;
-          dobInput.classList.toggle("opacity-70", lockDob);
+          dobInput.disabled = false;
+          dobInput.classList.remove("opacity-70");
         }
 
         if (countryInput) {
@@ -706,8 +722,13 @@
         const leagueFromExport = resolveLeagueName(window.FCAuth?.exportLocalState?.().onboarding);
         document.getElementById("leagueText").textContent = leagueFromLocal || leagueFromExport || "Unranked";
 
-        const emailValue = authUser?.email || s.email || "not set";
-        document.getElementById("emailText").textContent = String(emailValue);
+        const emailValue = rawUser?.email || s.email || "";
+        const emailInput = document.getElementById("emailInput");
+        if (emailInput) emailInput.value = String(emailValue || "");
+        const verifyBtn = document.getElementById("verifyEmailBtn");
+        if (verifyBtn) {
+          verifyBtn.classList.toggle("hidden", !rawUser || rawUser.emailVerified);
+        }
       })();
 
       // Dark mode preference (keeps it consistent across screens)
@@ -862,6 +883,8 @@
       const fullNameInput = document.getElementById("fullNameInput");
       const dobInput = document.getElementById("dobInput");
       const countryInput = document.getElementById("countryInput");
+      const emailInput = document.getElementById("emailInput");
+      const verifyEmailBtn = document.getElementById("verifyEmailBtn");
       const avatarEl = document.getElementById("avatar");
       const changeAvatarBtn = document.getElementById("changeAvatarBtn");
       const avatarPickerWrap = document.getElementById("avatarPickerWrap");
@@ -924,45 +947,109 @@
         }
       }
 
+      const getRawUser = () =>
+        window.FCAuth?.getRawUser ? FCAuth.getRawUser() : window.FCAuth?.auth?.currentUser || null;
+
+      verifyEmailBtn?.addEventListener("click", async () => {
+        setMessage(accountError, "");
+        setMessage(accountStatus, "");
+        const user = getRawUser();
+        if (!user) {
+          setMessage(accountError, "Please sign in to verify your email.");
+          return;
+        }
+        if (user.emailVerified) {
+          verifyEmailBtn.classList.add("hidden");
+          setMessage(accountStatus, "Your email is already verified.");
+          return;
+        }
+        setMessage(accountStatus, "Sending verification email...");
+        try {
+          await user.sendEmailVerification();
+          setMessage(accountStatus, "Verification email sent. Please check your inbox.");
+        } catch (err) {
+          setMessage(accountError, friendlyAuthMessage(err, "Unable to send verification email."));
+          logDevError("settings-verify-email", err);
+        }
+      });
+
       // Save profile updates
       document.getElementById("saveBtn")?.addEventListener("click", async () => {
         setMessage(accountError, "");
         setMessage(accountStatus, "Saving...");
 
         const s = loadFcState();
+        const rawUser = getRawUser();
+        const verifiedUser = window.FCAuth?.getCurrentUser ? FCAuth.getCurrentUser() : null;
         const prevUsername = s.username || s.name || "";
+        const prevUsernameUpdatedAt = s.usernameUpdatedAt || "";
         let nextUsername = normalizeUsername(nameInput?.value || "");
         if (!nextUsername) {
           nextUsername = `Cal${String(Math.floor(Math.random() * 1000)).padStart(3, "0")}`;
+        }
+        const nowIso = new Date().toISOString();
+        if (nextUsername !== prevUsername) {
+          const lastUpdate = Date.parse(prevUsernameUpdatedAt || "");
+          if (!Number.isNaN(lastUpdate)) {
+            const days = (Date.now() - lastUpdate) / (1000 * 60 * 60 * 24);
+            if (days < 14) {
+              const remaining = Math.ceil(14 - days);
+              if (nameInput) nameInput.value = prevUsername;
+              setMessage(
+                accountError,
+                `You can change your username in ${remaining} day${remaining === 1 ? "" : "s"}.`
+              );
+              setMessage(accountStatus, "");
+              return;
+            }
+          }
+          s.usernameUpdatedAt = nowIso;
         }
         s.username = nextUsername;
         const nextFullName = (fullNameInput?.value || "").trim();
         const nextDob = dobInput?.value || "";
         const nextCountry = normalizeCountry(countryInput?.value || "");
+        const prevEmail = s.email || "";
+        const nextEmail = (emailInput?.value || "").trim().toLowerCase();
         if (nextFullName) s.fullName = nextFullName;
         if (nextDob) s.dob = nextDob;
         if (nextCountry) s.nationality = nextCountry;
+        if (nextEmail) s.email = nextEmail;
         if (pendingAvatarUrl) s.avatarUrl = pendingAvatarUrl;
         saveFcState(s);
-
-        if (fullNameInput && s.fullName) {
-          fullNameInput.disabled = true;
-          fullNameInput.classList.add("opacity-70");
-        }
-        if (dobInput && s.dob) {
-          dobInput.disabled = true;
-          dobInput.classList.add("opacity-70");
-        }
 
         document.getElementById("nameText").textContent = s.username || "—";
         applyAvatar(s.avatarUrl);
 
-        if (window.FCAuth?.enabled && FCAuth.getCurrentUser && FCAuth.getCurrentUser()) {
+        if (rawUser && nextEmail && nextEmail !== (rawUser.email || "")) {
           try {
-            const user = FCAuth.getCurrentUser();
+            await rawUser.updateEmail(nextEmail);
+            if (emailInput) emailInput.value = nextEmail;
+            setMessage(accountStatus, "Email updated. Please verify your new address.");
+            verifyEmailBtn?.classList.remove("hidden");
+            try {
+              await rawUser.sendEmailVerification();
+            } catch {
+              // ignore
+            }
+          } catch (err) {
+            s.email = prevEmail;
+            saveFcState(s);
+            if (emailInput) emailInput.value = prevEmail;
+            setMessage(accountError, friendlyAuthMessage(err, "Unable to update email right now."));
+            logDevError("settings-email", err);
+            setMessage(accountStatus, "");
+            return;
+          }
+        }
+
+        if (window.FCAuth?.enabled && verifiedUser) {
+          try {
+            const user = verifiedUser;
             const nameResult = await FCAuth.reserveUsername(s.username || user.displayName || "");
             if (!nameResult?.ok) {
               s.username = prevUsername;
+              s.usernameUpdatedAt = prevUsernameUpdatedAt || s.usernameUpdatedAt;
               saveFcState(s);
               document.getElementById("nameText").textContent = s.username || "—";
               if (nameInput) nameInput.value = s.username || "";
@@ -973,6 +1060,7 @@
             if (nameResult.username) {
               s.username = nameResult.username;
               saveFcState(s);
+              if (nameInput) nameInput.value = s.username || "";
             }
             if (user?.updateProfile) {
               await user.updateProfile({
@@ -982,6 +1070,7 @@
             }
             await FCAuth.syncToRemote({
               username: s.username,
+              usernameUpdatedAt: s.usernameUpdatedAt || nowIso,
               fullName: s.fullName || "",
               nationality: s.nationality || "",
               dob: s.dob || "",
@@ -994,7 +1083,18 @@
             logDevError("settings-save", err);
           }
         } else {
-          setMessage(accountStatus, "Saved locally. Sign in to sync.");
+          if (window.FCAuth?.queueProfileSync) {
+            FCAuth.queueProfileSync({
+              username: s.username,
+              usernameUpdatedAt: s.usernameUpdatedAt || nowIso,
+              fullName: s.fullName || "",
+              nationality: s.nationality || "",
+              dob: s.dob || "",
+              avatarUrl: s.avatarUrl,
+              email: s.email,
+            });
+          }
+          setMessage(accountStatus, "Saved locally. Verify your email to sync.");
         }
       });
 
