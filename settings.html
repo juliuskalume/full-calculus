@@ -744,6 +744,64 @@
         const notifySwitch = document.getElementById("notifySwitch");
         const notifyStatus = document.getElementById("notifyStatus");
 
+        const refreshNotifyStatus = async () => {
+          if (!notifyStatus || !notifySwitch) return;
+          if (!notifySwitch.checked) {
+            notifyStatus.textContent = "";
+            notifyStatus.classList.add("hidden");
+            return;
+          }
+
+          notifyStatus.classList.remove("hidden");
+
+          const hasAndroidFcm =
+            typeof window !== "undefined" &&
+            window.AndroidFcm &&
+            typeof window.AndroidFcm.getToken === "function";
+
+          if (hasAndroidFcm) {
+            let token = "";
+            try {
+              token = window.AndroidFcm.getToken() || "";
+            } catch {
+              token = "";
+            }
+            if (token) {
+              notifyStatus.textContent = "Notifications enabled on this device.";
+              return;
+            }
+            notifyStatus.textContent = "Waiting for notification permission.";
+            return;
+          }
+
+          if (!("Notification" in window)) {
+            notifyStatus.textContent = "Notifications are not supported on this device.";
+            return;
+          }
+
+          if (Notification.permission === "denied") {
+            notifyStatus.textContent = "Notifications are blocked in your browser settings.";
+            return;
+          }
+
+          if (Notification.permission !== "granted") {
+            notifyStatus.textContent = "Tap Allow to enable notifications.";
+            return;
+          }
+
+          try {
+            const reg = await navigator.serviceWorker.ready;
+            const sub = await reg.pushManager.getSubscription();
+            if (sub) {
+              notifyStatus.textContent = "Notifications enabled on this device.";
+            } else {
+              notifyStatus.textContent = "Notifications enabled, but subscription missing. Toggle off/on.";
+            }
+          } catch {
+            notifyStatus.textContent = "Notifications enabled on this device.";
+          }
+        };
+
         // hydrate switches
         const isDark = document.documentElement.classList.contains("dark");
         darkSwitch.checked = prefs.darkMode ?? isDark;
@@ -753,6 +811,7 @@
         if (helpFabSwitch) helpFabSwitch.checked = prefs.displayFab !== false;
         const notifyState = loadFcState();
         notifySwitch.checked = !!notifyState.notifications;
+        refreshNotifyStatus();
 
         const supportsVibration = typeof navigator !== "undefined" && typeof navigator.vibrate === "function";
         if (!supportsVibration && hapticRow) {
@@ -807,11 +866,11 @@
           document.getElementById("fcHelpOverlay")?.remove();
           document.getElementById("fc-help-confirm")?.remove();
         });
-          notifySwitch.addEventListener("change", async () => {
-            const s = loadFcState();
-            s.notifications = notifySwitch.checked;
-            saveFcState(s);
-            if (notifySwitch.checked) {
+        notifySwitch.addEventListener("change", async () => {
+          const s = loadFcState();
+          s.notifications = notifySwitch.checked;
+          saveFcState(s);
+          if (notifySwitch.checked) {
               if (window.FCFcm?.requestPermission) {
                 try {
                   window.FCFcm.requestPermission();
@@ -849,7 +908,14 @@
                 }
               }
             }
+            refreshNotifyStatus();
           });
+
+        document.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "visible") {
+            refreshNotifyStatus();
+          }
+        });
       })();
 
       // Daily goal selector UI
