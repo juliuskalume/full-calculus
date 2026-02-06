@@ -313,14 +313,6 @@
                   <span class="material-symbols-outlined text-[16px]">mark_email_unread</span>
                   Verify email
                 </button>
-                <button
-                  id="changeEmailBtn"
-                  type="button"
-                  class="mt-2 inline-flex items-center gap-1 text-xs font-bold text-primary hover:text-primary-hover transition-colors"
-                >
-                  <span class="material-symbols-outlined text-[16px]">edit</span>
-                  Change
-                </button>
               </div>
             </div>
 
@@ -893,7 +885,6 @@
       const countryInput = document.getElementById("countryInput");
       const emailInput = document.getElementById("emailInput");
       const verifyEmailBtn = document.getElementById("verifyEmailBtn");
-      const changeEmailBtn = document.getElementById("changeEmailBtn");
       const avatarEl = document.getElementById("avatar");
       const changeAvatarBtn = document.getElementById("changeAvatarBtn");
       const avatarPickerWrap = document.getElementById("avatarPickerWrap");
@@ -1080,55 +1071,6 @@
         }
       });
 
-      changeEmailBtn?.addEventListener("click", async () => {
-        setMessage(accountError, "");
-        setMessage(accountStatus, "");
-        const rawUser = getRawUser();
-        if (!rawUser) {
-          setMessage(accountError, "Please sign in to change your email.");
-          return;
-        }
-        const s = loadFcState();
-        const prevEmail = s.email || "";
-        const nextEmail = (emailInput?.value || "").trim().toLowerCase();
-        if (!nextEmail) {
-          setMessage(accountError, "Enter a valid email address.");
-          return;
-        }
-        if (nextEmail === (rawUser.email || "")) {
-          setMessage(accountStatus, "This is already your current email.");
-          return;
-        }
-        try {
-          await rawUser.updateEmail(nextEmail);
-          s.email = nextEmail;
-          saveFcState(s);
-          if (emailInput) emailInput.value = nextEmail;
-          setMessage(accountStatus, "Email updated. Please verify your new address.");
-          verifyEmailBtn?.classList.remove("hidden");
-          const status = getVerifySendStatus();
-          if (!status.ok) {
-            setMessage(
-              accountStatus,
-              `Email updated. Verification email available in ${formatWait(status.waitMs)}.`
-            );
-          } else {
-            try {
-              await rawUser.sendEmailVerification();
-              recordVerifySend(status.recent);
-            } catch {
-              // ignore
-            }
-          }
-        } catch (err) {
-          s.email = prevEmail;
-          saveFcState(s);
-          if (emailInput) emailInput.value = prevEmail;
-          setMessage(accountError, friendlyAuthMessage(err, "Unable to update email right now."));
-          logDevError("settings-email-change", err);
-        }
-      });
-
       // Save profile updates
       document.getElementById("saveBtn")?.addEventListener("click", async () => {
         setMessage(accountError, "");
@@ -1229,6 +1171,16 @@
             s.email = prevEmail;
             saveFcState(s);
             if (emailInput) emailInput.value = prevEmail;
+            if (err?.code === "auth/operation-not-allowed") {
+              verifyEmailBtn?.classList.remove("hidden");
+              setMessage(accountError, "");
+              setMessage(
+                accountStatus,
+                "Please verify your current email before changing it."
+              );
+              logDevError("settings-email-verify-required", err);
+              return;
+            }
             setMessage(accountError, friendlyAuthMessage(err, "Unable to update email right now."));
             logDevError("settings-email", err);
             setMessage(accountStatus, "");
