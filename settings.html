@@ -1029,7 +1029,9 @@
       const refreshVerifyButton = (user) => {
         if (!verifyEmailBtn) return;
         const raw = user || getRawUser();
-        verifyEmailBtn.classList.toggle("hidden", !raw || raw.emailVerified);
+        const nextEmail = (emailInput?.value || "").trim().toLowerCase();
+        const differs = raw && nextEmail && nextEmail !== (raw.email || "").toLowerCase();
+        verifyEmailBtn.classList.toggle("hidden", !raw || (raw.emailVerified && !differs));
       };
 
       refreshVerifyButton();
@@ -1038,6 +1040,10 @@
           refreshVerifyButton(user);
         });
       }
+
+      emailInput?.addEventListener("input", () => {
+        refreshVerifyButton();
+      });
 
       verifyEmailBtn?.addEventListener("click", async () => {
         setMessage(accountError, "");
