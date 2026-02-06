@@ -5,19 +5,12 @@ const webpush = require("web-push");
 admin.initializeApp();
 
 const config = functions.config().webpush || {};
-const authConfig = functions.config().auth || {};
-const authApiKey = authConfig.api_key || "";
 const publicKey = config.public_key || "";
 const privateKey = config.private_key || "";
 const subject = config.subject || "mailto:juliuskalume906@gmail.com";
 const timeZone = config.timezone || "Etc/UTC";
 const testKey = config.test_key || "";
 const leagueTimeZone = config.timezone || "Etc/UTC";
-
-const ALLOWED_ORIGINS = new Set([
-  "https://calculus.sentirax.com",
-  "https://full-calculus.vercel.app",
-]);
 
 const LEAGUES = [
   { id: "bronze", name: "Bronze League" },
@@ -221,98 +214,4 @@ exports.rotateLeaguesWeekly = functions.pubsub
     return null;
   });
 
-exports.signInWithUsername = functions.https.onRequest(async (req, res) => {
-  const origin = req.headers.origin || "";
-  if (ALLOWED_ORIGINS.has(origin)) {
-    res.set("Access-Control-Allow-Origin", origin);
-  } else {
-    res.set("Access-Control-Allow-Origin", "https://calculus.sentirax.com");
-  }
-  res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.set("Access-Control-Allow-Headers", "Content-Type");
-
-  if (req.method === "OPTIONS") {
-    res.status(204).send("");
-    return;
-  }
-  if (req.method !== "POST") {
-    res.status(405).json({ error: "method-not-allowed" });
-    return;
-  }
-
-  if (!authApiKey) {
-    res.status(500).json({ error: "missing-api-key" });
-    return;
-  }
-
-  const rawUsername = String(req.body?.username || req.query?.username || "").trim();
-  const password = String(req.body?.password || req.query?.password || "");
-  if (!rawUsername || !password) {
-    res.status(400).json({ error: "missing-credentials" });
-    return;
-  }
-
-  const username = rawUsername.replace(/\s+/g, "").replace(/[^\w]/g, "");
-  if (username.length < 3 || username.length > 20) {
-    res.status(400).json({ error: "invalid-username" });
-    return;
-  }
-
-  try {
-    const lower = username.toLowerCase();
-    const nameDoc = await admin.firestore().collection("name_registry").doc(lower).get();
-    let uid = nameDoc.data()?.uid || "";
-    if (!uid) {
-      const userSnap = await admin
-        .firestore()
-        .collection("users")
-        .where("usernameLower", "==", lower)
-        .limit(1)
-        .get();
-      if (!userSnap.empty) {
-        uid = userSnap.docs[0].id;
-      }
-    }
-    if (!uid) {
-      const profileSnap = await admin
-        .firestore()
-        .collection("public_profiles")
-        .where("usernameLower", "==", lower)
-        .limit(1)
-        .get();
-      if (!profileSnap.empty) {
-        uid = profileSnap.docs[0].id || profileSnap.docs[0].data()?.uid || "";
-      }
-    }
-    if (!uid) {
-      res.status(401).json({ error: "invalid-credentials" });
-      return;
-    }
-    const userRecord = await admin.auth().getUser(uid);
-    const email = userRecord.email || "";
-    if (!email) {
-      res.status(400).json({ error: "missing-email" });
-      return;
-    }
-
-    const verifyRes = await fetch(
-      `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${authApiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, returnSecureToken: true }),
-      }
-    );
-
-    if (!verifyRes.ok) {
-      res.status(401).json({ error: "invalid-credentials" });
-      return;
-    }
-
-    const customToken = await admin.auth().createCustomToken(uid);
-    res.status(200).json({ customToken, email });
-  } catch (err) {
-    console.error("signInWithUsername error", err);
-    res.status(500).json({ error: "internal" });
-  }
-});
+// Username-based sign-in removed. Use email + password only.

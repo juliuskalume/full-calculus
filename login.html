@@ -88,15 +88,15 @@
         <div class="flex flex-col gap-4">
           <div class="flex flex-col">
             <label class="text-text-main dark:text-gray-300 text-sm font-bold uppercase tracking-wider mb-2 ml-2">
-              Email or username
+              Email
             </label>
             <div class="relative">
               <input
                 id="loginEmail"
                 class="form-input w-full rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:border-primary focus:ring-0 h-14 px-5 pr-12 text-lg font-medium text-text-main dark:text-white transition-all"
-                placeholder="Email or username"
-                type="text"
-                autocomplete="username"
+                placeholder="Email address"
+                type="email"
+                autocomplete="email"
               />
               <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
                 >mail</span
@@ -271,87 +271,7 @@
         const VERIFY_RATE_KEY = "fc_verify_email_sends";
         const RESET_RATE_KEY = "fc_reset_email_sends";
 
-        const usernameMapKey = "fc_username_email_map";
-        const loadUsernameMap = () => {
-          try {
-            const raw = localStorage.getItem(usernameMapKey);
-            const parsed = raw ? JSON.parse(raw) : {};
-            return parsed && typeof parsed === "object" ? parsed : {};
-          } catch {
-            return {};
-          }
-        };
-        const saveUsernameMap = (map) => {
-          try {
-            localStorage.setItem(usernameMapKey, JSON.stringify(map));
-          } catch {
-            // ignore
-          }
-        };
-        const rememberUsernameEmail = (username, email) => {
-          if (!username || !email) return;
-          const map = loadUsernameMap();
-          map[String(username).toLowerCase()] = String(email).toLowerCase();
-          saveUsernameMap(map);
-        };
-
-        const resolveLoginEmail = async (value) => {
-          const raw = String(value || "").trim();
-          if (!raw) return { email: "", usedUsername: false };
-          if (raw.includes("@")) return { email: raw.toLowerCase(), usedUsername: false };
-          const username = raw.replace(/\s+/g, "").replace(/[^\w]/g, "");
-          if (!username) return { email: "", usedUsername: true };
-          const map = loadUsernameMap();
-          const mapped = map[username.toLowerCase()];
-          if (mapped) return { email: mapped, usedUsername: true };
-          return { email: "", usedUsername: true };
-        };
-
-        const USERNAME_SIGNIN_ENDPOINT =
-          "https://us-central1-full-calculus.cloudfunctions.net/signInWithUsername";
-
-        const signInWithUsernamePassword = async (username, password) => {
-          const response = await fetch(USERNAME_SIGNIN_ENDPOINT, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, password }),
-          });
-          let data = {};
-          try {
-            data = await response.json();
-          } catch {
-            // ignore
-          }
-          if (response.status === 401) {
-            const err = new Error("Invalid username or password.");
-            err.code = "auth/wrong-password";
-            throw err;
-          }
-          if (!response.ok) {
-            const err = new Error("Unable to sign in right now.");
-            const code = data?.error || "";
-            if (code === "missing-api-key") {
-              err.message = "Username sign-in is not configured yet.";
-              err.code = "auth/operation-not-allowed";
-            } else if (code === "invalid-username" || code === "invalid-credentials") {
-              err.message = "Invalid username or password.";
-              err.code = "auth/wrong-password";
-            } else if (code === "missing-email") {
-              err.message = "Please sign in with your email instead.";
-              err.code = "auth/user-not-found";
-            } else {
-              err.code = "auth/invalid-username";
-            }
-            throw err;
-          }
-          if (!data?.customToken) {
-            const err = new Error("Unable to sign in right now.");
-            err.code = "auth/invalid-username";
-            throw err;
-          }
-          await firebase.auth().signInWithCustomToken(data.customToken);
-          return data;
-        };
+        // Username-based sign-in removed.
 
         const logDevError = (context, err) => {
           const entry = {
@@ -502,65 +422,20 @@
           const rawLogin = emailInput?.value.trim() || "";
           const password = passwordInput?.value || "";
           if (!rawLogin || !password) {
-            setMessage(errorEl, "Enter your email or username and password.");
+            setMessage(errorEl, "Enter your email and password.");
+            return;
+          }
+          if (!rawLogin.includes("@")) {
+            setMessage(errorEl, "Enter a valid email address.");
             return;
           }
           setBusy(true);
           try {
-            if (rawLogin.includes("@")) {
-              await FCAuth.signInWithEmail({ email: rawLogin.toLowerCase(), password });
-              try {
-                const state = window.FCAuth?.exportLocalState ? FCAuth.exportLocalState() : {};
-                const username = state?.onboarding?.username || "";
-                rememberUsernameEmail(username, rawLogin.toLowerCase());
-              } catch {
-                // ignore
-              }
-              setMessage(statusEl, "Signed in. Redirecting...");
-              showVerifyRow(false);
-              clearVerifyFlag();
-              location.href = "path.html";
-            } else {
-              const resolved = await resolveLoginEmail(rawLogin);
-              if (resolved.email) {
-                await FCAuth.signInWithEmail({ email: resolved.email, password });
-                try {
-                  const state = window.FCAuth?.exportLocalState ? FCAuth.exportLocalState() : {};
-                  const username = state?.onboarding?.username || "";
-                  rememberUsernameEmail(username, resolved.email);
-                } catch {
-                  // ignore
-                }
-                setMessage(statusEl, "Signed in. Redirecting...");
-                showVerifyRow(false);
-                clearVerifyFlag();
-                location.href = "path.html";
-              } else {
-                const data = await signInWithUsernamePassword(rawLogin, password);
-                if (data?.email) {
-                  rememberUsernameEmail(rawLogin, data.email);
-                }
-                const user = firebase.auth().currentUser;
-                if (user && !user.emailVerified) {
-                  const rate = getRateStatus(VERIFY_RATE_KEY);
-                  if (rate.ok) {
-                    try {
-                      await user.sendEmailVerification();
-                      recordRateSend(VERIFY_RATE_KEY, rate.recent);
-                    } catch {
-                      // ignore
-                    }
-                  }
-                  setMessage(statusEl, "Verification email sent. Please check your inbox.");
-                  showVerifyRow(true);
-                  return;
-                }
-                setMessage(statusEl, "Signed in. Redirecting...");
-                showVerifyRow(false);
-                clearVerifyFlag();
-                location.href = "path.html";
-              }
-            }
+            await FCAuth.signInWithEmail({ email: rawLogin.toLowerCase(), password });
+            setMessage(statusEl, "Signed in. Redirecting...");
+            showVerifyRow(false);
+            clearVerifyFlag();
+            location.href = "path.html";
           } catch (err) {
             setMessage(errorEl, friendlyAuthMessage(err, "Login failed. Please try again."));
             logDevError("login-email", err);
@@ -626,18 +501,11 @@
           }
           setBusy(true);
           try {
-            if (rawLogin.includes("@")) {
-              await FCAuth.resetPassword({ email: rawLogin.toLowerCase() });
-              recordRateSend(RESET_RATE_KEY, rate.recent);
-              setMessage(statusEl, "Password reset email sent. Check your inbox or spam folder.");
-              return;
-            }
-            const resolved = await resolveLoginEmail(rawLogin);
-            if (!resolved.email) {
+            if (!rawLogin.includes("@")) {
               setMessage(errorEl, "Use your email address to reset your password.");
               return;
             }
-            await FCAuth.resetPassword({ email: resolved.email });
+            await FCAuth.resetPassword({ email: rawLogin.toLowerCase() });
             recordRateSend(RESET_RATE_KEY, rate.recent);
             setMessage(statusEl, "Password reset email sent. Check your inbox or spam folder.");
           } catch (err) {
@@ -669,7 +537,11 @@
           const rawLogin = emailInput?.value.trim() || "";
           const password = passwordInput?.value || "";
           if (!rawLogin || !password) {
-            setMessage(errorEl, "Enter your email or username and password to resend verification.");
+            setMessage(errorEl, "Enter your email and password to resend verification.");
+            return;
+          }
+          if (!rawLogin.includes("@")) {
+            setMessage(errorEl, "Use your email address to resend verification.");
             return;
           }
           const rate = getRateStatus(VERIFY_RATE_KEY);
@@ -679,32 +551,11 @@
           }
           setBusy(true);
           try {
-            if (rawLogin.includes("@")) {
-              await FCAuth.resendVerificationEmail({ email: rawLogin.toLowerCase(), password });
-              recordRateSend(VERIFY_RATE_KEY, rate.recent);
-              setMessage(statusEl, "Verification email sent. Please check your inbox.");
-              showVerifyRow(true);
-              return;
-            }
-            const resolved = await resolveLoginEmail(rawLogin);
-            if (resolved.email) {
-              await FCAuth.resendVerificationEmail({ email: resolved.email, password });
-              recordRateSend(VERIFY_RATE_KEY, rate.recent);
-              setMessage(statusEl, "Verification email sent. Please check your inbox.");
-              showVerifyRow(true);
-              return;
-            }
-
-            await signInWithUsernamePassword(rawLogin, password);
-            const user = firebase.auth().currentUser;
-            if (user) {
-              await user.sendEmailVerification();
-              recordRateSend(VERIFY_RATE_KEY, rate.recent);
-              setMessage(statusEl, "Verification email sent. Please check your inbox.");
-              showVerifyRow(true);
-              return;
-            }
-            setMessage(errorEl, "Unable to send verification email.");
+            await FCAuth.resendVerificationEmail({ email: rawLogin.toLowerCase(), password });
+            recordRateSend(VERIFY_RATE_KEY, rate.recent);
+            setMessage(statusEl, "Verification email sent. Please check your inbox.");
+            showVerifyRow(true);
+            return;
           } catch (err) {
             setMessage(
               errorEl,
