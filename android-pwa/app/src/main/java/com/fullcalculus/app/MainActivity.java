@@ -49,6 +49,7 @@ public class MainActivity extends AppCompatActivity {
   private static final String KEY_OFFLINE_MODE = "offlineModeEnabled";
   private static final String KEY_FCM_TOKEN = "fcm_token";
   private static final String KEY_FCM_DEVICE = "fcm_device_id";
+  private static final String KEY_NOTIF_PROMPTED = "notifPrompted";
 
   @SuppressLint("SetJavaScriptEnabled")
   @Override
@@ -143,6 +144,7 @@ public class MainActivity extends AppCompatActivity {
     );
 
     initFcm();
+    maybePromptNotifications();
 
     if (isOnline()) {
       loadLaunchUrl();
@@ -185,6 +187,19 @@ public class MainActivity extends AppCompatActivity {
         }
         syncFcmToWeb();
       });
+    } catch (Exception ignored) {
+      // ignore
+    }
+  }
+
+  private void maybePromptNotifications() {
+    try {
+      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return;
+      if (prefs == null) return;
+      boolean prompted = prefs.getBoolean(KEY_NOTIF_PROMPTED, false);
+      if (prompted) return;
+      prefs.edit().putBoolean(KEY_NOTIF_PROMPTED, true).apply();
+      requestNotificationPermission();
     } catch (Exception ignored) {
       // ignore
     }
