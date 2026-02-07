@@ -127,6 +127,12 @@
             >
               Refresh
             </button>
+            <button
+              id="exportBtn"
+              class="rounded-2xl border border-slate-200 dark:border-slate-700 px-4 py-2 text-sm font-semibold hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+              Export CSV
+            </button>
           </div>
 
           <div id="requestsList" class="space-y-4"></div>
@@ -182,6 +188,7 @@
         const processEndpoint = `https://us-central1-${projectId}.cloudfunctions.net/processAccountDeletion`;
 
         let pendingAction = null;
+        let currentItems = [];
 
         const setAuthStatus = (text, tone = "muted") => {
           if (!authStatus) return;
@@ -220,6 +227,7 @@
         });
 
         const renderList = (items) => {
+          currentItems = items;
           requestsList.innerHTML = "";
           if (!items.length) {
             setListStatus("No requests found.", "muted");
@@ -298,6 +306,51 @@
           }
         };
 
+        const toCsv = (items) => {
+          const headers = [
+            "id",
+            "email",
+            "uid",
+            "status",
+            "reason",
+            "details",
+            "source",
+            "createdAt",
+            "handledAt",
+            "handledBy",
+            "ip",
+            "userAgent",
+          ];
+          const escape = (value) => {
+            const text = String(value ?? "");
+            return `"${text.replace(/\"/g, '""')}"`;
+          };
+          const rows = items.map((item) =>
+            headers
+              .map((key) => escape(item[key] ?? ""))
+              .join(",")
+          );
+          return [headers.join(","), ...rows].join("\n");
+        };
+
+        const exportCsv = () => {
+          if (!currentItems.length) {
+            setListStatus("No items to export.", "error");
+            return;
+          }
+          const csv = toCsv(currentItems);
+          const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+          link.download = `deletion-requests-${stamp}.csv`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        };
+
         const processRequest = async (requestId, action) => {
           const user = auth.currentUser;
           if (!user) return;
@@ -339,6 +392,7 @@
 
         statusFilter.addEventListener("change", loadRequests);
         refreshBtn.addEventListener("click", loadRequests);
+        document.getElementById("exportBtn").addEventListener("click", exportCsv);
 
         auth.onAuthStateChanged((user) => {
           if (user) {
