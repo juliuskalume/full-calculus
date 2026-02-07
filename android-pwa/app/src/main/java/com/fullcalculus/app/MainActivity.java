@@ -27,6 +27,8 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -180,17 +182,17 @@ public class MainActivity extends AppCompatActivity {
     try {
       Window window = getWindow();
       int barColor = ContextCompat.getColor(this, R.color.systemBarBlue);
+      WindowCompat.setDecorFitsSystemWindows(window, true);
       window.setStatusBarColor(barColor);
       window.setNavigationBarColor(barColor);
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-        window.setDecorFitsSystemWindows(true);
-      } else {
-        View decor = window.getDecorView();
-        int flags = decor.getSystemUiVisibility();
-        flags &= ~View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
-        flags &= ~View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION;
-        decor.setSystemUiVisibility(flags);
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        window.setStatusBarContrastEnforced(false);
+        window.setNavigationBarContrastEnforced(false);
       }
+      WindowInsetsControllerCompat controller =
+          new WindowInsetsControllerCompat(window, window.getDecorView());
+      controller.setAppearanceLightStatusBars(false);
+      controller.setAppearanceLightNavigationBars(false);
     } catch (Exception ignored) {
       // ignore
     }
