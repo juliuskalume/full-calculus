@@ -250,55 +250,7 @@
     </div>
 
 
-      <!-- Hearts Depleted Overlay -->
-      <div id="heartsOverlay" class="fixed inset-0 z-[72] hidden">
-        <div class="absolute inset-0 bg-[#141414]/60 backdrop-blur-sm"></div>
-        <div class="absolute inset-0 flex flex-col justify-end sm:justify-center items-center px-0 sm:px-4">
-          <div class="w-full max-w-[460px] bg-white dark:bg-surface-dark rounded-t-3xl sm:rounded-3xl flex flex-col items-center shadow-2xl">
-            <div class="flex h-6 w-full items-center justify-center sm:hidden">
-              <div class="h-1.5 w-12 rounded-full bg-gray-300 dark:bg-gray-700"></div>
-            </div>
-            <div class="w-full px-8 pt-8 pb-4 flex justify-center">
-              <div class="relative w-36 h-36">
-                <div
-                  class="w-full h-full bg-center bg-no-repeat bg-contain rounded-full flex items-center justify-center"
-                  style="background-image: url('icons/apologetic-fox.png');"
-                  aria-label="Sad fox mascot"
-                ></div>
-                <div class="absolute top-2 right-2 bg-white dark:bg-background-dark p-2 rounded-full shadow-lg border border-gray-100 dark:border-gray-800">
-                  <span class="material-symbols-outlined text-red-500">favorite</span>
-                </div>
-              </div>
-            </div>
-            <div class="w-full px-6">
-              <h1 class="text-slate-900 dark:text-white tracking-tight text-2xl font-extrabold leading-tight text-center pb-2">
-                Out of hearts
-              </h1>
-              <p class="text-slate-600 dark:text-slate-300 text-base font-normal leading-relaxed text-center pb-4 pt-1">
-                Watch a short ad to refill your hearts and continue learning.
-              </p>
-              <p id="heartsStatus" class="text-xs text-slate-500 dark:text-slate-400 text-center"></p>
-            </div>
-            <div class="flex flex-col w-full gap-3 px-6 pb-10 sm:pb-8">
-              <button
-                id="watchAdBtn"
-                class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-14 px-5 bg-primary hover:bg-primary-dark text-black text-lg font-bold leading-normal tracking-wide transition-colors shadow-md"
-              >
-                <span class="truncate uppercase">Watch Ad</span>
-              </button>
-              <button
-                id="closeHeartsBtn"
-                class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-14 px-5 bg-[#f3f4f6] dark:bg-gray-800 text-[#6b7280] dark:text-gray-400 text-lg font-bold leading-normal tracking-wide transition-colors border border-transparent hover:border-gray-300"
-              >
-                <span class="truncate">Not now</span>
-              </button>
-            </div>
-            <div class="h-2 sm:hidden"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Exit App Confirmation Overlay -->
+    <!-- Exit App Confirmation Overlay -->
     <div id="exitOverlay" class="fixed inset-0 z-[70] hidden">
       <div class="absolute inset-0 bg-[#141414]/60 backdrop-blur-sm"></div>
       <div class="absolute inset-0 flex flex-col justify-end sm:justify-center items-center px-0 sm:px-4">
@@ -358,138 +310,13 @@
     <script src="engine.js"></script>
 
     <script>
-        // Use shared state (auto-refill happens inside FC.get())
-        (function () {
-          const meta = FC.get();
-          document.getElementById("streakVal").textContent = String(meta.streak);
-          document.getElementById("xpVal").textContent = String(meta.xp);
-          document.getElementById("livesVal").textContent = String(meta.lives);
-        })();
-
-        const PENDING_START_KEY = "fc_pending_start";
-        const updateLivesUI = () => {
-          const meta = FC.get();
-          const livesEl = document.getElementById("livesVal");
-          if (livesEl) livesEl.textContent = String(meta.lives ?? 0);
-        };
-
-        const savePendingStart = (data) => {
-          try {
-            localStorage.setItem(PENDING_START_KEY, JSON.stringify(data));
-          } catch {
-            // ignore
-          }
-        };
-
-        const consumePendingStart = () => {
-          try {
-            const raw = localStorage.getItem(PENDING_START_KEY);
-            if (!raw) return null;
-            localStorage.removeItem(PENDING_START_KEY);
-            return JSON.parse(raw);
-          } catch {
-            return null;
-          }
-        };
-
-        const heartsOverlay = document.getElementById("heartsOverlay");
-        const heartsStatus = document.getElementById("heartsStatus");
-        const watchAdBtn = document.getElementById("watchAdBtn");
-        const closeHeartsBtn = document.getElementById("closeHeartsBtn");
-        let pendingStart = null;
-
-        const showHeartsOverlay = (startData) => {
-          pendingStart = startData || null;
-          if (!heartsOverlay) return;
-          heartsOverlay.classList.remove("hidden");
-          document.body.classList.add("overflow-hidden");
-          if (heartsStatus) {
-            heartsStatus.textContent = window.AndroidAds?.showAd
-              ? ""
-              : "Ads are only available in the Android app. Please wait for hearts to refill.";
-          }
-        };
-
-        const hideHeartsOverlay = () => {
-          heartsOverlay?.classList.add("hidden");
-          document.body.classList.remove("overflow-hidden");
-        };
-
-        watchAdBtn?.addEventListener("click", () => {
-          if (!pendingStart) {
-            hideHeartsOverlay();
-            return;
-          }
-          savePendingStart(pendingStart);
-          if (window.AndroidAds?.showAd) {
-            window.AndroidAds.showAd("rewarded", "path.html");
-          }
-          hideHeartsOverlay();
-        });
-
-        closeHeartsBtn?.addEventListener("click", () => hideHeartsOverlay());
-
-        const startLessonFromPending = (pending) => {
-          if (!pending || pending.type !== "lesson") return false;
-          if (pending.return) {
-            const ret = pending.return;
-            const page = ret.page || "path.html";
-            const scrollTop = Number(ret.scrollTop) || 0;
-            const mode = ret.mode || "container";
-            try {
-              localStorage.setItem(
-                "fc_lesson_return",
-                JSON.stringify({ page, scrollTop, mode, ts: Date.now() })
-              );
-            } catch {
-              // ignore
-            }
-          }
-          const session = FCEngine.createSession({
-            mode: pending.mode || "lesson",
-            sectionId: pending.sectionId,
-            count: 3,
-            types: ["mcq", "numeric", "expression"],
-            xpPerCorrect: 10,
-          });
-          FCEngine.saveSession(session);
-          FCProgress.setCurrentSection(pending.sectionId);
-          window.location.href = "active-lesson.html";
-          return true;
-        };
-
-        const startTestFromPending = (pending) => {
-          if (!pending || pending.type !== "test") return false;
-          const test = FCEngine.createTestSession(pending.testId);
-          if (!test) return false;
-          FCEngine.saveTestSession(test);
-          window.location.href = "unit-test.html";
-          return true;
-        };
-
-        const handleRewardResume = () => {
-          if (FC.consumeRewardRefill()) {
-            updateLivesUI();
-          }
-          const pending = consumePendingStart();
-          if (!pending) return;
-          if ((FC.get().lives ?? 0) <= 0) return;
-          if (pending.type === "lesson") startLessonFromPending(pending);
-          if (pending.type === "test") startTestFromPending(pending);
-        };
-
-        handleRewardResume();
-
-        (function maybeShowHeartsModal() {
-          try {
-            const flag = localStorage.getItem("fc_show_hearts_modal");
-            if (flag !== "1") return;
-            localStorage.removeItem("fc_show_hearts_modal");
-            showHeartsOverlay(null);
-          } catch {
-            // ignore
-          }
-        })();
+      // Use shared state (auto-refill happens inside FC.get())
+      (function () {
+        const meta = FC.get();
+        document.getElementById("streakVal").textContent = String(meta.streak);
+        document.getElementById("xpVal").textContent = String(meta.xp);
+        document.getElementById("livesVal").textContent = String(meta.lives);
+      })();
 
       // ✅ Read onboarding profile info saved by account.html (fc_state)
       (function () {
@@ -821,68 +648,47 @@
         };
 
         const attachHandlers = () => {
-            container.querySelectorAll("button[data-section-id]").forEach((btn) => {
-              btn.addEventListener("click", () => {
-                const sectionId = btn.getAttribute("data-section-id");
-                const unlocked = FCProgress.isSectionUnlocked(sectionId);
-                if (!unlocked) return;
-                const scroller = document.getElementById("pathMain");
-                const needsWindowScroll = !scroller || scroller.scrollHeight <= scroller.clientHeight + 1;
-                const scrollTop = needsWindowScroll
-                  ? (document.scrollingElement?.scrollTop || window.scrollY || 0)
-                  : scroller.scrollTop;
-                const returnData = { page: "path.html", scrollTop, mode: needsWindowScroll ? "window" : "container" };
-
-                if ((FC.get().lives ?? 0) <= 0) {
-                  showHeartsOverlay({
-                    type: "lesson",
-                    sectionId,
-                    mode: "lesson",
-                    return: returnData,
-                  });
-                  return;
-                }
-
-                setLessonReturn(returnData.page, returnData.scrollTop, returnData.mode);
-                const session = FCEngine.createSession({
-                  mode: "lesson",
-                  sectionId,
-                  count: 3,
-                  types: ["mcq", "numeric", "expression"],
-                  xpPerCorrect: 10,
-                });
-                FCEngine.saveSession(session);
-                FCProgress.setCurrentSection(sectionId);
-                window.location.href = "active-lesson.html";
+          container.querySelectorAll("button[data-section-id]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              const sectionId = btn.getAttribute("data-section-id");
+              const unlocked = FCProgress.isSectionUnlocked(sectionId);
+              if (!unlocked) return;
+              const scroller = document.getElementById("pathMain");
+              const needsWindowScroll = !scroller || scroller.scrollHeight <= scroller.clientHeight + 1;
+              const scrollTop = needsWindowScroll
+                ? (document.scrollingElement?.scrollTop || window.scrollY || 0)
+                : scroller.scrollTop;
+              setLessonReturn("path.html", scrollTop, needsWindowScroll ? "window" : "container");
+              const session = FCEngine.createSession({
+                mode: "lesson",
+                sectionId,
+                count: 3,
+                types: ["mcq", "numeric", "expression"],
+                xpPerCorrect: 10,
               });
+              FCEngine.saveSession(session);
+              FCProgress.setCurrentSection(sectionId);
+              window.location.href = "active-lesson.html";
             });
+          });
 
-            container.querySelectorAll("button[data-test-id]").forEach((btn) => {
-              btn.addEventListener("click", () => {
-                const chapterId = btn.getAttribute("data-chapter-id");
-                const testId = btn.getAttribute("data-test-id");
-                if (!chapterId || !testId) return;
-                const targetChapter = FCContent.getChapter(chapterId);
-                if (!targetChapter) return;
-                const chapterSections = FCContent.getChapterSections(chapterId);
-                const allDone =
-                  chapterSections.length > 0 && chapterSections.every((s) => FCProgress.isSectionCompleted(s.id));
-                if (!allDone) return;
-
-                if ((FC.get().lives ?? 0) <= 0) {
-                  showHeartsOverlay({
-                    type: "test",
-                    testId,
-                  });
-                  return;
-                }
-
-                const test = FCEngine.createTestSession(testId);
-                if (!test) return;
-                FCEngine.saveTestSession(test);
-                window.location.href = "unit-test.html";
-              });
+          container.querySelectorAll("button[data-test-id]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              const chapterId = btn.getAttribute("data-chapter-id");
+              const testId = btn.getAttribute("data-test-id");
+              if (!chapterId || !testId) return;
+              const targetChapter = FCContent.getChapter(chapterId);
+              if (!targetChapter) return;
+              const chapterSections = FCContent.getChapterSections(chapterId);
+              const allDone =
+                chapterSections.length > 0 && chapterSections.every((s) => FCProgress.isSectionCompleted(s.id));
+              if (!allDone) return;
+              const test = FCEngine.createTestSession(testId);
+              if (!test) return;
+              FCEngine.saveTestSession(test);
+              window.location.href = "unit-test.html";
             });
+          });
 
           container.querySelectorAll("button[data-unit-toggle]").forEach((btn) => {
             btn.addEventListener("click", () => {

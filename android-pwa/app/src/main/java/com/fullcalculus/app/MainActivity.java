@@ -294,16 +294,9 @@ public class MainActivity extends AppCompatActivity {
         navigateAfterAd(nextUrl);
       }
     });
-    rewardedAd.show(this, rewardItem -> markRewardEarned());
-  }
-
-  private void markRewardEarned() {
-    try {
-      String js = "try{localStorage.setItem('fc_reward_refill','1');}catch(e){}";
-      runOnUiThread(() -> webView.evaluateJavascript(js, null));
-    } catch (Exception ignored) {
-      // ignore
-    }
+    rewardedAd.show(this, rewardItem -> {
+      // no reward logic required
+    });
   }
 
   private String ensureDeviceId() {

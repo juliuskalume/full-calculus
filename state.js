@@ -101,26 +101,6 @@ window.FC = {
     }
   },
 
-  refillLives() {
-    const s = this.get();
-    s.lives = HEART_MAX;
-    s.lastHeartTime = Date.now();
-    this.set(s);
-    return s;
-  },
-
-  consumeRewardRefill() {
-    try {
-      const flag = localStorage.getItem("fc_reward_refill");
-      if (flag !== "1") return false;
-      localStorage.removeItem("fc_reward_refill");
-      this.refillLives();
-      return true;
-    } catch {
-      return false;
-    }
-  },
-
   _refillHearts(s) {
     if (s.lives >= HEART_MAX) return s;
     const now = Date.now();
