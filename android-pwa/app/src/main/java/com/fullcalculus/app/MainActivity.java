@@ -19,6 +19,8 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.view.View;
+import android.view.Window;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -68,6 +70,7 @@ public class MainActivity extends AppCompatActivity {
     setContentView(R.layout.activity_main);
 
     prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+    applySystemBars();
 
     webView = findViewById(R.id.webview);
     webView.addJavascriptInterface(new AuthBridge(), "AndroidAuth");
@@ -171,6 +174,26 @@ public class MainActivity extends AppCompatActivity {
 
   private void initFcm() {
     fetchFcmToken();
+  }
+
+  private void applySystemBars() {
+    try {
+      Window window = getWindow();
+      int barColor = ContextCompat.getColor(this, R.color.systemBarBlue);
+      window.setStatusBarColor(barColor);
+      window.setNavigationBarColor(barColor);
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        window.setDecorFitsSystemWindows(true);
+      } else {
+        View decor = window.getDecorView();
+        int flags = decor.getSystemUiVisibility();
+        flags &= ~View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
+        flags &= ~View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION;
+        decor.setSystemUiVisibility(flags);
+      }
+    } catch (Exception ignored) {
+      // ignore
+    }
   }
 
   private void initAds() {
