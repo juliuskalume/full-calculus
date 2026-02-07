@@ -291,3 +291,52 @@ exports.rotateLeaguesWeekly = functions.pubsub
   });
 
 // Username-based sign-in removed. Use email + password only.
+
+exports.requestAccountDeletion = functions.https.onRequest(async (req, res) => {
+  res.set("Access-Control-Allow-Origin", "*");
+  res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.set("Access-Control-Allow-Headers", "Content-Type");
+  if (req.method === "OPTIONS") {
+    res.status(204).send("");
+    return;
+  }
+  if (req.method !== "POST") {
+    res.status(405).send("Method not allowed");
+    return;
+  }
+
+  try {
+    const body = req.body || {};
+    const email = String(body.email || "").trim().toLowerCase();
+    const uid = String(body.uid || "").trim();
+    const reason = String(body.reason || "").trim().slice(0, 120);
+    const details = String(body.details || "").trim().slice(0, 1000);
+    const source = String(body.source || "web").trim().slice(0, 30);
+
+    if (!email || !email.includes("@")) {
+      res.status(400).send("Valid email required");
+      return;
+    }
+
+    const ip =
+      (req.headers["x-forwarded-for"] || "").toString().split(",")[0].trim() || req.ip || "";
+    const userAgent = String(req.headers["user-agent"] || "").slice(0, 300);
+
+    await admin.firestore().collection("account_deletion_requests").add({
+      email,
+      uid: uid || null,
+      reason: reason || null,
+      details: details || null,
+      source,
+      status: "pending",
+      ip,
+      userAgent,
+      createdAt: new Date().toISOString(),
+    });
+
+    res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error("Account deletion request error", err);
+    res.status(500).send("Server error");
+  }
+});

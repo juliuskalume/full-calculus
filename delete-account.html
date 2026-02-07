@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <meta name="theme-color" content="#1cb0f6" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <link rel="icon" type="image/png" href="icons/icon-192.png" />
+    <title>Delete Account Request - Full Calculus</title>
+    <meta
+      name="description"
+      content="Request deletion of your Full Calculus account and associated data."
+    />
+    <meta name="robots" content="noindex,nofollow" />
+    <link rel="canonical" href="https://calculus.sentirax.com/delete-account.html" />
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700&display=swap"
+      rel="stylesheet"
+    />
+
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#1cb0f6",
+              "primary-hover": "#1599d4",
+              "background-light": "#f5f6f8",
+              "background-dark": "#101622",
+              "surface-light": "#ffffff",
+              "surface-dark": "#1a2332",
+              "text-main": "#0d121c",
+            },
+            fontFamily: {
+              display: ["Lexend", "sans-serif"],
+            },
+            borderRadius: {
+              DEFAULT: "1rem",
+              lg: "1.5rem",
+              xl: "2rem",
+              full: "9999px",
+            },
+          },
+        },
+      };
+    </script>
+
+    <style>
+      body {
+        font-family: "Lexend", sans-serif;
+        min-height: max(884px, 100dvh);
+      }
+      .material-symbols-outlined {
+        font-variation-settings: "FILL" 1, "wght" 550, "GRAD" 0, "opsz" 24;
+      }
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    </style>
+    <script src="theme.js"></script>
+  </head>
+
+  <body class="bg-background-light dark:bg-background-dark text-text-main dark:text-white transition-colors duration-200 antialiased">
+    <div class="w-full max-w-none h-[100dvh] sm:min-h-screen bg-background-light dark:bg-background-dark shadow-2xl flex flex-col overflow-hidden">
+      <header class="sticky top-0 z-30 bg-background-light/90 dark:bg-background-dark/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+        <div class="flex items-center p-4 justify-between">
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              onclick="(history.length > 1) ? history.back() : location.href='settings.html'"
+              class="flex items-center justify-center w-10 h-10 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              aria-label="Back"
+            >
+              <span class="material-symbols-outlined text-primary">arrow_back</span>
+            </button>
+            <h2 class="text-lg font-extrabold leading-tight tracking-tight">Delete Account</h2>
+          </div>
+        </div>
+      </header>
+
+      <main class="flex-1 overflow-y-auto no-scrollbar px-5 pb-10 pt-6">
+        <section class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-5 mb-5">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-red-100 text-red-500 flex items-center justify-center">
+              <span class="material-symbols-outlined">warning</span>
+            </div>
+            <div>
+              <p class="text-sm font-semibold">Request account deletion</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400">We’ll email you once your request is received.</p>
+            </div>
+          </div>
+          <p class="text-sm text-slate-600 dark:text-slate-300 mt-3 leading-relaxed">
+            This form submits a deletion request. Your account and associated data will be removed after we confirm the
+            request. If you are signed in, we’ll attach your account details automatically.
+          </p>
+        </section>
+
+        <section class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-5">
+          <form id="deleteForm" class="space-y-4">
+            <div>
+              <label class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 font-semibold">Email</label>
+              <input
+                id="emailInput"
+                type="email"
+                required
+                placeholder="you@example.com"
+                class="mt-2 w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-900 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+              />
+              <p id="accountHint" class="text-xs text-slate-500 dark:text-slate-400 mt-2 hidden"></p>
+            </div>
+
+            <div>
+              <label class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 font-semibold">Reason (optional)</label>
+              <select
+                id="reasonSelect"
+                class="mt-2 w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-900 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+              >
+                <option value="">Select a reason</option>
+                <option value="privacy">Privacy concerns</option>
+                <option value="not-using">Not using the app</option>
+                <option value="bugs">Bugs or performance issues</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 font-semibold">Details (optional)</label>
+              <textarea
+                id="detailsInput"
+                rows="4"
+                placeholder="Tell us anything else we should know."
+                class="mt-2 w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-900 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+              ></textarea>
+            </div>
+
+            <label class="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-300">
+              <input id="confirmCheck" type="checkbox" class="mt-1" required />
+              <span>I understand this is permanent and all data will be deleted.</span>
+            </label>
+
+            <div id="formStatus" class="text-sm text-slate-500 dark:text-slate-400"></div>
+
+            <button
+              type="submit"
+              class="w-full rounded-2xl bg-red-500 hover:bg-red-600 text-white font-bold py-3 transition-colors"
+            >
+              Submit deletion request
+            </button>
+          </form>
+        </section>
+      </main>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="auth.js"></script>
+    <script>
+      (function initDeletionRequest() {
+        const emailInput = document.getElementById("emailInput");
+        const reasonSelect = document.getElementById("reasonSelect");
+        const detailsInput = document.getElementById("detailsInput");
+        const confirmCheck = document.getElementById("confirmCheck");
+        const formStatus = document.getElementById("formStatus");
+        const accountHint = document.getElementById("accountHint");
+        const form = document.getElementById("deleteForm");
+
+        const config = window.FC_FIREBASE_CONFIG || {};
+        const projectId = config.projectId || "full-calculus";
+        const endpoint = `https://us-central1-${projectId}.cloudfunctions.net/requestAccountDeletion`;
+
+        const setStatus = (text, tone = "muted") => {
+          if (!formStatus) return;
+          formStatus.textContent = text;
+          formStatus.classList.remove("text-red-500", "text-emerald-500");
+          if (tone === "error") formStatus.classList.add("text-red-500");
+          if (tone === "success") formStatus.classList.add("text-emerald-500");
+        };
+
+        const user = window.FCAuth?.getRawUser?.();
+        if (user?.email && emailInput) {
+          emailInput.value = user.email;
+          if (accountHint) {
+            accountHint.textContent = `Signed in as ${user.email}`;
+            accountHint.classList.remove("hidden");
+          }
+        }
+
+        form.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          if (!emailInput.value) {
+            setStatus("Please provide your email address.", "error");
+            return;
+          }
+          if (!confirmCheck.checked) {
+            setStatus("Please confirm to proceed.", "error");
+            return;
+          }
+
+          setStatus("Submitting request...");
+          const payload = {
+            email: emailInput.value.trim(),
+            uid: user?.uid || "",
+            reason: reasonSelect.value || "",
+            details: detailsInput.value.trim().slice(0, 1000),
+            source: "web",
+          };
+
+          try {
+            const res = await fetch(endpoint, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            });
+            if (!res.ok) {
+              throw new Error("Request failed");
+            }
+            setStatus("Request received. We'll email you once it’s processed.", "success");
+            form.reset();
+            if (user?.email) {
+              emailInput.value = user.email;
+            }
+          } catch (err) {
+            setStatus("Unable to submit request. Please try again later.", "error");
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>
