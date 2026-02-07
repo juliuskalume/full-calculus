@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <meta name="theme-color" content="#1cb0f6" />
+    <title>Account Deletion Requests (Admin)</title>
+    <meta name="robots" content="noindex,nofollow" />
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700&display=swap"
+      rel="stylesheet"
+    />
+
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#1cb0f6",
+              "primary-hover": "#1599d4",
+              "background-light": "#f5f6f8",
+              "background-dark": "#101622",
+              "surface-light": "#ffffff",
+              "surface-dark": "#1a2332",
+              "text-main": "#0d121c",
+            },
+            fontFamily: {
+              display: ["Lexend", "sans-serif"],
+            },
+            borderRadius: {
+              DEFAULT: "1rem",
+              lg: "1.5rem",
+              xl: "2rem",
+              full: "9999px",
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      body {
+        font-family: "Lexend", sans-serif;
+        min-height: max(884px, 100dvh);
+      }
+      .material-symbols-outlined {
+        font-variation-settings: "FILL" 1, "wght" 550, "GRAD" 0, "opsz" 24;
+      }
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    </style>
+  </head>
+
+  <body class="bg-background-light dark:bg-background-dark text-text-main dark:text-white transition-colors duration-200 antialiased">
+    <div class="w-full max-w-none min-h-screen flex flex-col">
+      <header class="sticky top-0 z-30 bg-background-light/90 dark:bg-background-dark/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+        <div class="flex items-center justify-between p-4">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">admin_panel_settings</span>
+            <h1 class="text-lg font-extrabold">Deletion Requests</h1>
+          </div>
+          <button
+            id="signOutBtn"
+            class="hidden text-sm font-semibold px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+          >
+            Sign out
+          </button>
+        </div>
+      </header>
+
+      <main class="flex-1 px-5 pb-10 pt-6 no-scrollbar">
+        <section class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-5 mb-5" id="authCard">
+          <h2 class="text-base font-extrabold mb-2">Admin sign in</h2>
+          <p class="text-sm text-slate-600 dark:text-slate-300 mb-4">
+            Sign in with an authorized admin account to review deletion requests.
+          </p>
+          <div class="grid gap-3">
+            <input
+              id="adminEmail"
+              type="email"
+              placeholder="admin@example.com"
+              class="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-900 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+            />
+            <input
+              id="adminPassword"
+              type="password"
+              placeholder="Password"
+              class="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-900 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+            />
+            <button
+              id="signInBtn"
+              class="w-full rounded-2xl bg-primary hover:bg-primary-hover text-white font-bold py-3 transition-colors"
+            >
+              Sign in
+            </button>
+            <p id="authStatus" class="text-sm text-slate-500 dark:text-slate-400"></p>
+          </div>
+        </section>
+
+        <section class="hidden" id="requestsSection">
+          <div class="flex flex-wrap items-center gap-3 mb-4">
+            <select
+              id="statusFilter"
+              class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-900 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+            >
+              <option value="">All statuses</option>
+              <option value="pending">Pending</option>
+              <option value="denied">Denied</option>
+              <option value="deleted">Deleted</option>
+              <option value="completed">Completed</option>
+            </select>
+            <button
+              id="refreshBtn"
+              class="rounded-2xl border border-slate-200 dark:border-slate-700 px-4 py-2 text-sm font-semibold hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+              Refresh
+            </button>
+          </div>
+
+          <div id="requestsList" class="space-y-4"></div>
+          <p id="listStatus" class="text-sm text-slate-500 dark:text-slate-400 mt-4"></p>
+        </section>
+      </main>
+    </div>
+
+    <div id="confirmModal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50">
+      <div class="bg-white dark:bg-surface-dark rounded-2xl p-6 w-full max-w-md mx-4">
+        <h3 class="text-lg font-extrabold mb-2" id="confirmTitle">Confirm action</h3>
+        <p class="text-sm text-slate-600 dark:text-slate-300 mb-4" id="confirmBody"></p>
+        <div class="flex items-center justify-end gap-3">
+          <button id="confirmCancel" class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700">
+            Cancel
+          </button>
+          <button id="confirmOk" class="px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white font-semibold">
+            Yes, proceed
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script>
+      (function () {
+        const config = window.FC_FIREBASE_CONFIG || {};
+        if (!firebase.apps.length) {
+          firebase.initializeApp(config);
+        }
+        const auth = firebase.auth();
+
+        const authCard = document.getElementById("authCard");
+        const requestsSection = document.getElementById("requestsSection");
+        const signInBtn = document.getElementById("signInBtn");
+        const signOutBtn = document.getElementById("signOutBtn");
+        const authStatus = document.getElementById("authStatus");
+        const statusFilter = document.getElementById("statusFilter");
+        const refreshBtn = document.getElementById("refreshBtn");
+        const requestsList = document.getElementById("requestsList");
+        const listStatus = document.getElementById("listStatus");
+
+        const confirmModal = document.getElementById("confirmModal");
+        const confirmTitle = document.getElementById("confirmTitle");
+        const confirmBody = document.getElementById("confirmBody");
+        const confirmCancel = document.getElementById("confirmCancel");
+        const confirmOk = document.getElementById("confirmOk");
+
+        const projectId = config.projectId || "full-calculus";
+        const listEndpoint = `https://us-central1-${projectId}.cloudfunctions.net/listAccountDeletionRequests`;
+        const processEndpoint = `https://us-central1-${projectId}.cloudfunctions.net/processAccountDeletion`;
+
+        let pendingAction = null;
+
+        const setAuthStatus = (text, tone = "muted") => {
+          if (!authStatus) return;
+          authStatus.textContent = text;
+          authStatus.classList.remove("text-red-500", "text-emerald-500");
+          if (tone === "error") authStatus.classList.add("text-red-500");
+          if (tone === "success") authStatus.classList.add("text-emerald-500");
+        };
+
+        const setListStatus = (text, tone = "muted") => {
+          if (!listStatus) return;
+          listStatus.textContent = text;
+          listStatus.classList.remove("text-red-500", "text-emerald-500");
+          if (tone === "error") listStatus.classList.add("text-red-500");
+          if (tone === "success") listStatus.classList.add("text-emerald-500");
+        };
+
+        const openConfirm = (title, body, action) => {
+          pendingAction = action;
+          confirmTitle.textContent = title;
+          confirmBody.textContent = body;
+          confirmModal.classList.remove("hidden");
+          confirmModal.classList.add("flex");
+        };
+
+        const closeConfirm = () => {
+          confirmModal.classList.add("hidden");
+          confirmModal.classList.remove("flex");
+          pendingAction = null;
+        };
+
+        confirmCancel.addEventListener("click", closeConfirm);
+        confirmOk.addEventListener("click", async () => {
+          if (pendingAction) await pendingAction();
+          closeConfirm();
+        });
+
+        const renderList = (items) => {
+          requestsList.innerHTML = "";
+          if (!items.length) {
+            setListStatus("No requests found.", "muted");
+            return;
+          }
+          setListStatus("");
+          items.forEach((item) => {
+            const card = document.createElement("div");
+            card.className =
+              "bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-5 space-y-3";
+            const created = item.createdAt ? new Date(item.createdAt).toLocaleString() : "—";
+            card.innerHTML = `
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm font-semibold">${item.email || "Unknown email"}</p>
+                  <p class="text-xs text-slate-500 dark:text-slate-400">UID: ${item.uid || "—"}</p>
+                </div>
+                <span class="text-xs px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800">${item.status || "pending"}</span>
+              </div>
+              <div class="text-xs text-slate-500 dark:text-slate-400">Requested: ${created}</div>
+              <div class="text-sm text-slate-600 dark:text-slate-300">Reason: ${item.reason || "—"}</div>
+              <div class="text-sm text-slate-600 dark:text-slate-300">Details: ${item.details || "—"}</div>
+              <div class="flex flex-wrap gap-2 pt-2">
+                <button class="approveBtn px-3 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold">
+                  Approve & Delete
+                </button>
+                <button class="denyBtn px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-semibold">
+                  Deny
+                </button>
+                <button class="completeBtn px-3 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold">
+                  Mark Completed
+                </button>
+              </div>
+            `;
+            card.querySelector(".approveBtn").addEventListener("click", () => {
+              openConfirm(
+                "Approve & delete?",
+                "This will permanently delete the user account and data.",
+                () => processRequest(item.id, "approve_delete")
+              );
+            });
+            card.querySelector(".denyBtn").addEventListener("click", () => {
+              openConfirm("Deny request?", "The request will be marked as denied.", () =>
+                processRequest(item.id, "deny")
+              );
+            });
+            card.querySelector(".completeBtn").addEventListener("click", () => {
+              openConfirm(
+                "Mark completed?",
+                "This will mark the request as completed without deletion.",
+                () => processRequest(item.id, "complete")
+              );
+            });
+            requestsList.appendChild(card);
+          });
+        };
+
+        const loadRequests = async () => {
+          const user = auth.currentUser;
+          if (!user) return;
+          setListStatus("Loading...");
+          const token = await user.getIdToken(true);
+          const status = statusFilter.value;
+          const url = status ? `${listEndpoint}?status=${encodeURIComponent(status)}` : listEndpoint;
+          try {
+            const res = await fetch(url, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!res.ok) {
+              throw new Error(await res.text());
+            }
+            const data = await res.json();
+            renderList(Array.isArray(data.items) ? data.items : []);
+          } catch (err) {
+            setListStatus("Unable to load requests. Check admin access.", "error");
+          }
+        };
+
+        const processRequest = async (requestId, action) => {
+          const user = auth.currentUser;
+          if (!user) return;
+          const token = await user.getIdToken(true);
+          try {
+            const res = await fetch(processEndpoint, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+              body: JSON.stringify({ requestId, action }),
+            });
+            if (!res.ok) {
+              throw new Error(await res.text());
+            }
+            await loadRequests();
+          } catch (err) {
+            setListStatus("Action failed. Check permissions.", "error");
+          }
+        };
+
+        signInBtn.addEventListener("click", async () => {
+          const email = document.getElementById("adminEmail").value.trim();
+          const password = document.getElementById("adminPassword").value.trim();
+          if (!email || !password) {
+            setAuthStatus("Enter email and password.", "error");
+            return;
+          }
+          setAuthStatus("Signing in...");
+          try {
+            await auth.signInWithEmailAndPassword(email, password);
+            setAuthStatus("");
+          } catch (err) {
+            setAuthStatus("Sign in failed.", "error");
+          }
+        });
+
+        signOutBtn.addEventListener("click", async () => {
+          await auth.signOut();
+        });
+
+        statusFilter.addEventListener("change", loadRequests);
+        refreshBtn.addEventListener("click", loadRequests);
+
+        auth.onAuthStateChanged((user) => {
+          if (user) {
+            authCard.classList.add("hidden");
+            requestsSection.classList.remove("hidden");
+            signOutBtn.classList.remove("hidden");
+            loadRequests();
+          } else {
+            authCard.classList.remove("hidden");
+            requestsSection.classList.add("hidden");
+            signOutBtn.classList.add("hidden");
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

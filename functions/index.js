@@ -11,6 +11,11 @@ const subject = config.subject || "mailto:juliuskalume906@gmail.com";
 const timeZone = config.timezone || "Etc/UTC";
 const testKey = config.test_key || "";
 const leagueTimeZone = config.timezone || "Etc/UTC";
+const adminConfig = functions.config().admin || {};
+const adminEmails = String(adminConfig.emails || process.env.ADMIN_EMAILS || "")
+  .split(",")
+  .map((email) => email.trim().toLowerCase())
+  .filter(Boolean);
 
 const LEAGUES = [
   { id: "bronze", name: "Bronze League" },
@@ -78,6 +83,27 @@ const sendFcmBatch = async (items, payload) => {
     const batch = admin.firestore().batch();
     deletions.forEach((ref) => batch.delete(ref));
     await batch.commit();
+  }
+};
+
+const getAuthToken = (req) => {
+  const header = String(req.headers.authorization || "");
+  if (header.startsWith("Bearer ")) return header.slice(7);
+  return "";
+};
+
+const verifyAdminRequest = async (req) => {
+  const token = getAuthToken(req);
+  if (!token) return { ok: false, code: 401, message: "Missing auth token" };
+  try {
+    const decoded = await admin.auth().verifyIdToken(token);
+    const email = String(decoded.email || "").toLowerCase();
+    if (!email || !adminEmails.includes(email)) {
+      return { ok: false, code: 403, message: "Not authorized" };
+    }
+    return { ok: true, user: decoded };
+  } catch (err) {
+    return { ok: false, code: 401, message: "Invalid auth token" };
   }
 };
 
@@ -337,6 +363,174 @@ exports.requestAccountDeletion = functions.https.onRequest(async (req, res) => {
     res.status(200).json({ ok: true });
   } catch (err) {
     console.error("Account deletion request error", err);
+    res.status(500).send("Server error");
+  }
+});
+
+exports.listAccountDeletionRequests = functions.https.onRequest(async (req, res) => {
+  res.set("Access-Control-Allow-Origin", "*");
+  res.set("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  if (req.method === "OPTIONS") {
+    res.status(204).send("");
+    return;
+  }
+  if (req.method !== "GET") {
+    res.status(405).send("Method not allowed");
+    return;
+  }
+
+  const authResult = await verifyAdminRequest(req);
+  if (!authResult.ok) {
+    res.status(authResult.code).send(authResult.message);
+    return;
+  }
+
+  try {
+    const status = String(req.query.status || "").trim();
+    let query = admin.firestore().collection("account_deletion_requests").orderBy("createdAt", "desc");
+    if (status) query = query.where("status", "==", status);
+    const snap = await query.limit(200).get();
+    const items = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    res.status(200).json({ ok: true, items });
+  } catch (err) {
+    console.error("List deletion requests error", err);
+    res.status(500).send("Server error");
+  }
+});
+
+const deleteDocsByQuery = async (query) => {
+  const snap = await query.get();
+  if (snap.empty) return;
+  const batches = [];
+  let batch = admin.firestore().batch();
+  let count = 0;
+  snap.docs.forEach((doc) => {
+    batch.delete(doc.ref);
+    count += 1;
+    if (count >= 400) {
+      batches.push(batch);
+      batch = admin.firestore().batch();
+      count = 0;
+    }
+  });
+  if (count > 0) batches.push(batch);
+  for (const b of batches) {
+    await b.commit();
+  }
+};
+
+const deleteUserData = async (uid) => {
+  const db = admin.firestore();
+  await db.collection("users").doc(uid).delete().catch(() => {});
+  await db.collection("leaderboard").doc(uid).delete().catch(() => {});
+  await db.collection("public_profiles").doc(uid).delete().catch(() => {});
+  await deleteDocsByQuery(db.collection("name_registry").where("uid", "==", uid));
+  await deleteDocsByQuery(db.collection("push_subscriptions").where("uid", "==", uid));
+  await deleteDocsByQuery(db.collection("fcm_tokens").where("uid", "==", uid));
+  await deleteDocsByQuery(db.collection("friendships").where("from", "==", uid));
+  await deleteDocsByQuery(db.collection("friendships").where("to", "==", uid));
+};
+
+exports.processAccountDeletion = functions.https.onRequest(async (req, res) => {
+  res.set("Access-Control-Allow-Origin", "*");
+  res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  if (req.method === "OPTIONS") {
+    res.status(204).send("");
+    return;
+  }
+  if (req.method !== "POST") {
+    res.status(405).send("Method not allowed");
+    return;
+  }
+
+  const authResult = await verifyAdminRequest(req);
+  if (!authResult.ok) {
+    res.status(authResult.code).send(authResult.message);
+    return;
+  }
+
+  try {
+    const body = req.body || {};
+    const requestId = String(body.requestId || "").trim();
+    const action = String(body.action || "").trim();
+    if (!requestId || !action) {
+      res.status(400).send("Missing requestId/action");
+      return;
+    }
+
+    const reqRef = admin.firestore().collection("account_deletion_requests").doc(requestId);
+    const reqSnap = await reqRef.get();
+    if (!reqSnap.exists) {
+      res.status(404).send("Request not found");
+      return;
+    }
+
+    const data = reqSnap.data() || {};
+    const email = String(data.email || "").trim();
+    let uid = String(data.uid || "").trim();
+
+    if (action === "approve_delete") {
+      if (!uid && email) {
+        try {
+          const userRecord = await admin.auth().getUserByEmail(email);
+          uid = userRecord.uid;
+        } catch (err) {
+          // user may already be deleted
+        }
+      }
+
+      if (uid) {
+        await deleteUserData(uid);
+        try {
+          await admin.auth().deleteUser(uid);
+        } catch (err) {
+          // ignore auth delete errors
+        }
+      }
+
+      await reqRef.set(
+        {
+          status: "deleted",
+          handledAt: new Date().toISOString(),
+          handledBy: authResult.user?.email || "",
+        },
+        { merge: true }
+      );
+      res.status(200).json({ ok: true, status: "deleted" });
+      return;
+    }
+
+    if (action === "deny") {
+      await reqRef.set(
+        {
+          status: "denied",
+          handledAt: new Date().toISOString(),
+          handledBy: authResult.user?.email || "",
+        },
+        { merge: true }
+      );
+      res.status(200).json({ ok: true, status: "denied" });
+      return;
+    }
+
+    if (action === "complete") {
+      await reqRef.set(
+        {
+          status: "completed",
+          handledAt: new Date().toISOString(),
+          handledBy: authResult.user?.email || "",
+        },
+        { merge: true }
+      );
+      res.status(200).json({ ok: true, status: "completed" });
+      return;
+    }
+
+    res.status(400).send("Unknown action");
+  } catch (err) {
+    console.error("Process deletion request error", err);
     res.status(500).send("Server error");
   }
 });
