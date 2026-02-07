@@ -3,6 +3,7 @@
     <item name="colorPrimary">@color/colorPrimary</item>
     <item name="colorPrimaryVariant">@color/colorPrimaryDark</item>
     <item name="colorOnPrimary">@android:color/black</item>
-    <item name="android:statusBarColor">@color/colorPrimaryDark</item>
+    <item name="android:statusBarColor">@color/systemBarBlue</item>
+    <item name="android:navigationBarColor">@color/systemBarBlue</item>
   </style>
 </resources>
