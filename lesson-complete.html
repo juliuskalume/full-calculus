@@ -265,15 +265,37 @@
         return next.id;
       }
 
-      document.getElementById("continueBtn").addEventListener("click", () => {
-        const nextId = getNextLessonSectionId();
-        if (nextId) {
-          FCProgress.setCurrentSection(nextId);
-          window.location.href = "active-lesson.html";
-          return;
-        }
-        window.location.href = "path.html";
-      });
+        const shouldShowLessonAd = () => {
+          try {
+            const raw = localStorage.getItem("fc_lesson_ad_count") || "0";
+            const next = Number(raw) + 1;
+            localStorage.setItem("fc_lesson_ad_count", String(next));
+            return next % 7 === 0;
+          } catch {
+            return false;
+          }
+        };
+
+        const goNext = () => {
+          const nextId = getNextLessonSectionId();
+          if (nextId) {
+            FCProgress.setCurrentSection(nextId);
+            window.location.href = "active-lesson.html";
+            return;
+          }
+          window.location.href = "path.html";
+        };
+
+        document.getElementById("continueBtn").addEventListener("click", () => {
+          const nextId = getNextLessonSectionId();
+          const nextUrl = nextId ? "active-lesson.html" : "path.html";
+          if (nextId) FCProgress.setCurrentSection(nextId);
+          if (shouldShowLessonAd() && window.AndroidAds?.showAd) {
+            window.AndroidAds.showAd("interstitial", nextUrl);
+            return;
+          }
+          goNext();
+        });
 
       window.addEventListener("load", () => {
         if (window.FCSound?.play) FCSound.play("lessonComplete", { volume: 0.65 });

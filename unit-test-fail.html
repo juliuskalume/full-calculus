@@ -209,16 +209,24 @@
         tipLine.textContent = `Review needed for ${topics} topic${topics === 1 ? "" : "s"} to pass.`;
       }
 
+      const navigateWithAd = (nextUrl) => {
+        if (window.AndroidAds?.showAd) {
+          window.AndroidAds.showAd("rewarded", nextUrl);
+          return;
+        }
+        window.location.href = nextUrl;
+      };
+
       document.getElementById("reviewBtn").addEventListener("click", () => {
-        window.location.href = "notes.html";
+        navigateWithAd("notes.html");
       });
 
       document.getElementById("retryBtn").addEventListener("click", () => {
-        window.location.href = "unit-test.html";
+        navigateWithAd("unit-test.html");
       });
 
       document.getElementById("pathBtn").addEventListener("click", () => {
-        window.location.href = "path.html";
+        navigateWithAd("path.html");
       });
 
       window.addEventListener("load", () => {

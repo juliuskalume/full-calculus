@@ -32,6 +32,14 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.MobileAds;
+import com.google.android.gms.ads.interstitial.InterstitialAd;
+import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
+import com.google.android.gms.ads.LoadAdError;
+import com.google.android.gms.ads.FullScreenContentCallback;
+import com.google.android.gms.ads.rewarded.RewardedAd;
+import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback;
 import com.google.firebase.messaging.FirebaseMessaging;
 
 import org.json.JSONObject;
@@ -50,6 +58,8 @@ public class MainActivity extends AppCompatActivity {
   private static final String KEY_FCM_TOKEN = "fcm_token";
   private static final String KEY_FCM_DEVICE = "fcm_device_id";
   private static final String KEY_NOTIF_PROMPTED = "notifPrompted";
+  private InterstitialAd interstitialAd;
+  private RewardedAd rewardedAd;
 
   @SuppressLint("SetJavaScriptEnabled")
   @Override
@@ -62,6 +72,7 @@ public class MainActivity extends AppCompatActivity {
     webView = findViewById(R.id.webview);
     webView.addJavascriptInterface(new AuthBridge(), "AndroidAuth");
     webView.addJavascriptInterface(new FcmBridge(), "AndroidFcm");
+    webView.addJavascriptInterface(new AdsBridge(), "AndroidAds");
     WebSettings settings = webView.getSettings();
     settings.setJavaScriptEnabled(true);
     settings.setDomStorageEnabled(true);
@@ -144,6 +155,7 @@ public class MainActivity extends AppCompatActivity {
     );
 
     initFcm();
+    initAds();
     maybePromptNotifications();
 
     if (isOnline()) {
@@ -159,6 +171,132 @@ public class MainActivity extends AppCompatActivity {
 
   private void initFcm() {
     fetchFcmToken();
+  }
+
+  private void initAds() {
+    try {
+      MobileAds.initialize(this);
+      loadInterstitial();
+      loadRewarded();
+    } catch (Exception ignored) {
+      // ignore
+    }
+  }
+
+  private void loadInterstitial() {
+    try {
+      String adUnit = getString(R.string.admob_interstitial_id);
+      AdRequest request = new AdRequest.Builder().build();
+      InterstitialAd.load(
+          this,
+          adUnit,
+          request,
+          new InterstitialAdLoadCallback() {
+            @Override
+            public void onAdLoaded(@NonNull InterstitialAd ad) {
+              interstitialAd = ad;
+            }
+
+            @Override
+            public void onAdFailedToLoad(@NonNull LoadAdError error) {
+              interstitialAd = null;
+            }
+          }
+      );
+    } catch (Exception ignored) {
+      interstitialAd = null;
+    }
+  }
+
+  private void loadRewarded() {
+    try {
+      String adUnit = getString(R.string.admob_rewarded_id);
+      AdRequest request = new AdRequest.Builder().build();
+      RewardedAd.load(
+          this,
+          adUnit,
+          request,
+          new RewardedAdLoadCallback() {
+            @Override
+            public void onAdLoaded(@NonNull RewardedAd ad) {
+              rewardedAd = ad;
+            }
+
+            @Override
+            public void onAdFailedToLoad(@NonNull LoadAdError error) {
+              rewardedAd = null;
+            }
+          }
+      );
+    } catch (Exception ignored) {
+      rewardedAd = null;
+    }
+  }
+
+  private String toAbsoluteUrl(String nextUrl) {
+    if (nextUrl == null || nextUrl.isEmpty()) return getString(R.string.launch_url);
+    if (nextUrl.startsWith("http://") || nextUrl.startsWith("https://") || nextUrl.startsWith("file://")) {
+      return nextUrl;
+    }
+    String base = getString(R.string.launch_url);
+    if (!base.endsWith("/")) base = base + "/";
+    String trimmed = nextUrl.startsWith("/") ? nextUrl.substring(1) : nextUrl;
+    return base + trimmed;
+  }
+
+  private void navigateAfterAd(String nextUrl) {
+    String url = toAbsoluteUrl(nextUrl);
+    runOnUiThread(() -> webView.loadUrl(url));
+  }
+
+  private void showInterstitial(String nextUrl) {
+    if (interstitialAd == null) {
+      navigateAfterAd(nextUrl);
+      loadInterstitial();
+      return;
+    }
+    interstitialAd.setFullScreenContentCallback(new FullScreenContentCallback() {
+      @Override
+      public void onAdDismissedFullScreenContent() {
+        interstitialAd = null;
+        loadInterstitial();
+        navigateAfterAd(nextUrl);
+      }
+
+      @Override
+      public void onAdFailedToShowFullScreenContent(@NonNull com.google.android.gms.ads.AdError adError) {
+        interstitialAd = null;
+        loadInterstitial();
+        navigateAfterAd(nextUrl);
+      }
+    });
+    interstitialAd.show(this);
+  }
+
+  private void showRewarded(String nextUrl) {
+    if (rewardedAd == null) {
+      navigateAfterAd(nextUrl);
+      loadRewarded();
+      return;
+    }
+    rewardedAd.setFullScreenContentCallback(new FullScreenContentCallback() {
+      @Override
+      public void onAdDismissedFullScreenContent() {
+        rewardedAd = null;
+        loadRewarded();
+        navigateAfterAd(nextUrl);
+      }
+
+      @Override
+      public void onAdFailedToShowFullScreenContent(@NonNull com.google.android.gms.ads.AdError adError) {
+        rewardedAd = null;
+        loadRewarded();
+        navigateAfterAd(nextUrl);
+      }
+    });
+    rewardedAd.show(this, rewardItem -> {
+      // no reward logic required
+    });
   }
 
   private String ensureDeviceId() {
@@ -500,6 +638,21 @@ public class MainActivity extends AppCompatActivity {
     @SuppressWarnings("unused")
     public void requestPermission() {
       runOnUiThread(() -> requestNotificationPermission());
+    }
+  }
+
+  private class AdsBridge {
+    @JavascriptInterface
+    @SuppressWarnings("unused")
+    public void showAd(String type, String nextUrl) {
+      runOnUiThread(() -> {
+        String kind = type == null ? "" : type.toLowerCase();
+        if (kind.contains("reward")) {
+          showRewarded(nextUrl);
+        } else {
+          showInterstitial(nextUrl);
+        }
+      });
     }
   }
 }

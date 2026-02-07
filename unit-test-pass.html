@@ -250,15 +250,28 @@
         return sections.length ? sections[0].id : null;
       }
 
-      document.getElementById("continueBtn").addEventListener("click", () => {
-        const nextId = getNextSectionAfterTest();
-        if (nextId && window.FCProgress?.setCurrentSection) {
-          FCProgress.setCurrentSection(nextId);
-          window.location.href = "active-lesson.html";
-          return;
-        }
-        window.location.href = "path.html";
-      });
+        const goNext = () => {
+          const nextId = getNextSectionAfterTest();
+          if (nextId && window.FCProgress?.setCurrentSection) {
+            FCProgress.setCurrentSection(nextId);
+            window.location.href = "active-lesson.html";
+            return;
+          }
+          window.location.href = "path.html";
+        };
+
+        document.getElementById("continueBtn").addEventListener("click", () => {
+          const nextId = getNextSectionAfterTest();
+          const nextUrl = nextId ? "active-lesson.html" : "path.html";
+          if (nextId && window.FCProgress?.setCurrentSection) {
+            FCProgress.setCurrentSection(nextId);
+          }
+          if (window.AndroidAds?.showAd) {
+            window.AndroidAds.showAd("rewarded", nextUrl);
+            return;
+          }
+          goNext();
+        });
 
       document.getElementById("reviewBtn").addEventListener("click", () => {
         window.location.href = "notes.html";
