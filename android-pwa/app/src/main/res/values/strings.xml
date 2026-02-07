@@ -2,7 +2,7 @@
   <string name="app_name">Full Calculus</string>
   <string name="launch_url">https://full-calculus.vercel.app/</string>
   <!-- AdMob (replace with your production IDs before release) -->
-  <string name="admob_app_id">ca-app-pub-3940256099942544~3347511713</string>
+  <string name="admob_app_id">ca-app-pub-9897314776503581~3674645684</string>
   <string name="admob_interstitial_id">ca-app-pub-3940256099942544/1033173712</string>
   <string name="admob_rewarded_id">ca-app-pub-3940256099942544/5224354917</string>
 </resources>
