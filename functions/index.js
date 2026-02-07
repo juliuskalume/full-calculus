@@ -112,39 +112,36 @@ exports.sendLearningReminder = functions.pubsub
   .schedule("0 18 * * 2,5")
   .timeZone(timeZone)
   .onRun(async () => {
-    if (!publicKey || !privateKey) {
-      console.warn("Missing VAPID keys. Set functions config before deploying.");
-      return null;
-    }
-
-    const snapshot = await admin.firestore().collection(COLLECTION).get();
-    if (snapshot.empty) return null;
-
     const payload = {
       title: "Time to learn",
       body: "A short session keeps your streak strong. Ready for a quick lesson?",
       url: "path.html",
     };
 
-    const webPayload = JSON.stringify(payload);
-
-    const tasks = [];
-    snapshot.forEach((doc) => {
-      const data = doc.data() || {};
-      const sub = data.subscription;
-      if (!sub || !sub.endpoint) return;
-      tasks.push(
-        webpush.sendNotification(sub, webPayload).catch(async (err) => {
-          if (err?.statusCode === 404 || err?.statusCode === 410) {
-            await doc.ref.delete();
-          } else {
-            console.error("Push error", err);
-          }
-        })
-      );
-    });
-
-    await Promise.all(tasks);
+    if (!publicKey || !privateKey) {
+      console.warn("Missing VAPID keys. Web push will be skipped.");
+    } else {
+      const snapshot = await admin.firestore().collection(COLLECTION).get();
+      if (!snapshot.empty) {
+        const webPayload = JSON.stringify(payload);
+        const tasks = [];
+        snapshot.forEach((doc) => {
+          const data = doc.data() || {};
+          const sub = data.subscription;
+          if (!sub || !sub.endpoint) return;
+          tasks.push(
+            webpush.sendNotification(sub, webPayload).catch(async (err) => {
+              if (err?.statusCode === 404 || err?.statusCode === 410) {
+                await doc.ref.delete();
+              } else {
+                console.error("Push error", err);
+              }
+            })
+          );
+        });
+        await Promise.all(tasks);
+      }
+    }
 
     const fcmSnap = await admin.firestore().collection(FCM_COLLECTION).get();
     if (!fcmSnap.empty) {
@@ -161,8 +158,7 @@ exports.sendLearningReminder = functions.pubsub
 exports.sendTestPush = functions.https.onRequest(async (req, res) => {
   try {
     if (!publicKey || !privateKey) {
-      res.status(500).send("Missing VAPID keys.");
-      return;
+      console.warn("Missing VAPID keys. Web push will be skipped.");
     }
 
     const key = String(req.query.key || req.body?.key || "");
@@ -177,7 +173,9 @@ exports.sendTestPush = functions.https.onRequest(async (req, res) => {
       return;
     }
 
-    const snap = await admin.firestore().collection(COLLECTION).where("uid", "==", uid).get();
+    const snap = publicKey && privateKey
+      ? await admin.firestore().collection(COLLECTION).where("uid", "==", uid).get()
+      : null;
 
     const payload = {
       title: "Test reminder",
@@ -186,8 +184,8 @@ exports.sendTestPush = functions.https.onRequest(async (req, res) => {
     };
     const webPayload = JSON.stringify(payload);
 
-    const tasks = [];
-    if (!snap.empty) {
+    if (snap && !snap.empty) {
+      const tasks = [];
       snap.forEach((doc) => {
         const sub = doc.data()?.subscription;
         if (!sub || !sub.endpoint) return;
@@ -201,9 +199,8 @@ exports.sendTestPush = functions.https.onRequest(async (req, res) => {
           })
         );
       });
+      await Promise.all(tasks);
     }
-
-    await Promise.all(tasks);
 
     const fcmSnap = await admin.firestore().collection(FCM_COLLECTION).where("uid", "==", uid).get();
     if (!fcmSnap.empty) {
@@ -215,7 +212,7 @@ exports.sendTestPush = functions.https.onRequest(async (req, res) => {
       }
     }
 
-    if (snap.empty && fcmSnap.empty) {
+    if ((!snap || snap.empty) && fcmSnap.empty) {
       res.status(404).send("Subscription not found");
       return;
     }

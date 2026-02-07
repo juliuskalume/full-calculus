@@ -405,6 +405,18 @@
       let locked = false;
       let mathTypesetTries = 0;
 
+      if (window.FC?.get) {
+        const meta = FC.get();
+        if ((meta.lives ?? 0) <= 0) {
+          try {
+            localStorage.setItem("fc_show_hearts_modal", "1");
+          } catch {
+            // ignore
+          }
+          window.location.href = "path.html";
+        }
+      }
+
       function escapeHtml(value) {
         return String(value ?? "")
           .replace(/&/g, "&amp;")

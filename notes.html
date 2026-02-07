@@ -145,7 +145,7 @@
               <span class="material-symbols-outlined text-primary text-2xl">menu_book</span>
               My Notebook
             </h1>
-          </div>
+      </div>
 
           <button
             id="searchBtn"
@@ -206,6 +206,54 @@
       <main id="notesMain" class="flex-1 overflow-y-auto no-scrollbar p-4 space-y-4 pb-4">
         <div id="notesContent" class="space-y-4"></div>
       </main>
+
+      <!-- Hearts Depleted Overlay -->
+      <div id="heartsOverlay" class="fixed inset-0 z-[72] hidden">
+        <div class="absolute inset-0 bg-[#141414]/60 backdrop-blur-sm"></div>
+        <div class="absolute inset-0 flex flex-col justify-end sm:justify-center items-center px-0 sm:px-4">
+          <div class="w-full max-w-[460px] bg-white dark:bg-surface-dark rounded-t-3xl sm:rounded-3xl flex flex-col items-center shadow-2xl">
+            <div class="flex h-6 w-full items-center justify-center sm:hidden">
+              <div class="h-1.5 w-12 rounded-full bg-gray-300 dark:bg-gray-700"></div>
+            </div>
+            <div class="w-full px-8 pt-8 pb-4 flex justify-center">
+              <div class="relative w-36 h-36">
+                <div
+                  class="w-full h-full bg-center bg-no-repeat bg-contain rounded-full flex items-center justify-center"
+                  style="background-image: url('icons/apologetic-fox.png');"
+                  aria-label="Sad fox mascot"
+                ></div>
+                <div class="absolute top-2 right-2 bg-white dark:bg-background-dark p-2 rounded-full shadow-lg border border-gray-100 dark:border-gray-800">
+                  <span class="material-symbols-outlined text-red-500">favorite</span>
+                </div>
+              </div>
+            </div>
+            <div class="w-full px-6">
+              <h1 class="text-slate-900 dark:text-white tracking-tight text-2xl font-extrabold leading-tight text-center pb-2">
+                Out of hearts
+              </h1>
+              <p class="text-slate-600 dark:text-slate-300 text-base font-normal leading-relaxed text-center pb-4 pt-1">
+                Watch a short ad to refill your hearts and continue learning.
+              </p>
+              <p id="heartsStatus" class="text-xs text-slate-500 dark:text-slate-400 text-center"></p>
+            </div>
+            <div class="flex flex-col w-full gap-3 px-6 pb-10 sm:pb-8">
+              <button
+                id="watchAdBtn"
+                class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-14 px-5 bg-primary hover:bg-primary-dark text-black text-lg font-bold leading-normal tracking-wide transition-colors shadow-md"
+              >
+                <span class="truncate uppercase">Watch Ad</span>
+              </button>
+              <button
+                id="closeHeartsBtn"
+                class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-14 px-5 bg-[#f3f4f6] dark:bg-gray-800 text-[#6b7280] dark:text-gray-400 text-lg font-bold leading-normal tracking-wide transition-colors border border-transparent hover:border-gray-300"
+              >
+                <span class="truncate">Not now</span>
+              </button>
+            </div>
+            <div class="h-2 sm:hidden"></div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script src="state.js"></script>
@@ -417,13 +465,107 @@
 
         typesetMath([contentRoot]);
 
-      contentRoot.querySelectorAll(".startLessonBtn").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const sectionId = btn.getAttribute("data-section-id");
-          if (!sectionId) return;
-          const scroller = document.getElementById("notesMain");
-          setLessonReturn("notes.html", scroller ? scroller.scrollTop : 0);
+        const PENDING_START_KEY = "fc_pending_start";
+        const heartsOverlay = document.getElementById("heartsOverlay");
+        const heartsStatus = document.getElementById("heartsStatus");
+        const watchAdBtn = document.getElementById("watchAdBtn");
+        const closeHeartsBtn = document.getElementById("closeHeartsBtn");
+        let pendingStart = null;
+
+        const savePendingStart = (data) => {
+          try {
+            localStorage.setItem(PENDING_START_KEY, JSON.stringify(data));
+          } catch {
+            // ignore
+          }
+        };
+
+        const consumePendingStart = () => {
+          try {
+            const raw = localStorage.getItem(PENDING_START_KEY);
+            if (!raw) return null;
+            localStorage.removeItem(PENDING_START_KEY);
+            return JSON.parse(raw);
+          } catch {
+            return null;
+          }
+        };
+
+        const showHeartsOverlay = (startData) => {
+          pendingStart = startData || null;
+          if (!heartsOverlay) return;
+          heartsOverlay.classList.remove("hidden");
+          document.body.classList.add("overflow-hidden");
+          if (heartsStatus) {
+            heartsStatus.textContent = window.AndroidAds?.showAd
+              ? ""
+              : "Ads are only available in the Android app. Please wait for hearts to refill.";
+          }
+        };
+
+        const hideHeartsOverlay = () => {
+          heartsOverlay?.classList.add("hidden");
+          document.body.classList.remove("overflow-hidden");
+        };
+
+        watchAdBtn?.addEventListener("click", () => {
+          if (!pendingStart) {
+            hideHeartsOverlay();
+            return;
+          }
+          savePendingStart(pendingStart);
+          if (window.AndroidAds?.showAd) {
+            window.AndroidAds.showAd("rewarded", "notes.html");
+          }
+          hideHeartsOverlay();
+        });
+
+        closeHeartsBtn?.addEventListener("click", () => hideHeartsOverlay());
+
+        const startLessonFromPending = (pending) => {
+          if (!pending || pending.type !== "lesson") return false;
+          setLessonReturn("notes.html", pending.scrollTop || 0);
           const session = FCEngine.createSession({
+            mode: "practice",
+            sectionId: pending.sectionId,
+            count: 3,
+            types: ["mcq", "numeric", "expression"],
+            xpPerCorrect: 8,
+          });
+          FCEngine.saveSession(session);
+          FCProgress.setCurrentSection(pending.sectionId);
+          window.location.href = "active-lesson.html";
+          return true;
+        };
+
+        if (window.FC?.consumeRewardRefill) {
+          if (FC.consumeRewardRefill()) {
+            // no UI update needed here
+          }
+        }
+        const pending = consumePendingStart();
+        if (pending && (FC.get().lives ?? 0) > 0) {
+          startLessonFromPending(pending);
+        }
+
+        contentRoot.querySelectorAll(".startLessonBtn").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const sectionId = btn.getAttribute("data-section-id");
+            if (!sectionId) return;
+            const scroller = document.getElementById("notesMain");
+            const scrollTop = scroller ? scroller.scrollTop : 0;
+
+            if ((FC.get().lives ?? 0) <= 0) {
+              showHeartsOverlay({
+                type: "lesson",
+                sectionId,
+                scrollTop,
+              });
+              return;
+            }
+
+            setLessonReturn("notes.html", scrollTop);
+            const session = FCEngine.createSession({
               mode: "practice",
               sectionId,
               count: 3,
@@ -432,7 +574,7 @@
             });
             FCEngine.saveSession(session);
             FCProgress.setCurrentSection(sectionId);
-          window.location.href = "active-lesson.html";
+            window.location.href = "active-lesson.html";
           });
         });
       }
