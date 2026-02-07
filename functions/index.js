@@ -1,12 +1,10 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const webpush = require("web-push");
-const nodemailer = require("nodemailer");
 
 admin.initializeApp();
 
 const config = functions.config().webpush || {};
-const mailConfig = functions.config().smtp || {};
 const publicKey = config.public_key || "";
 const privateKey = config.private_key || "";
 const subject = config.subject || "mailto:juliuskalume906@gmail.com";
@@ -88,38 +86,6 @@ const sendFcmBatch = async (items, payload) => {
   }
 };
 
-const buildMailer = () => {
-  const host = mailConfig.host;
-  const port = Number(mailConfig.port || 587);
-  const user = mailConfig.user;
-  const pass = mailConfig.pass;
-  if (!host || !user || !pass) return null;
-  return nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,
-    auth: { user, pass },
-  });
-};
-
-const sendDeletionEmail = async (toEmail) => {
-  const transporter = buildMailer();
-  const from = mailConfig.from || mailConfig.user || "";
-  if (!transporter || !from || !toEmail) {
-    console.warn("SMTP not configured; skipping deletion email.");
-    return;
-  }
-  const subject = "Your Full Calculus account has been deleted";
-  const html = `
-    <div style="font-family:Arial,sans-serif;line-height:1.5;color:#0d121c;">
-      <p>Hello,</p>
-      <p>Your Full Calculus account and associated data have been deleted as requested.</p>
-      <p>If you did not request this, please contact support at sentira.official@gmail.com.</p>
-      <p>— Full Calculus Team</p>
-    </div>
-  `;
-  await transporter.sendMail({ from, to: toEmail, subject, html });
-};
 
 const getAuthToken = (req) => {
   const header = String(req.headers.authorization || "");
@@ -533,11 +499,6 @@ exports.processAccountDeletion = functions.https.onRequest(async (req, res) => {
         },
         { merge: true }
       );
-      try {
-        await sendDeletionEmail(email);
-      } catch (err) {
-        console.error("Deletion email failed", err);
-      }
       res.status(200).json({ ok: true, status: "deleted" });
       return;
     }
