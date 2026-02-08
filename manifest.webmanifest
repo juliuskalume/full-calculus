@@ -9,7 +9,7 @@
   "background_color": "#f5f6f8",
   "theme_color": "#0df26c",
   "id": "full-calculus",
-  "form_factor": ["narrow", "wide"]
+  "form_factor": ["narrow", "wide"],
   "icons": [
     {
       "src": "icons/fox-head.png",
