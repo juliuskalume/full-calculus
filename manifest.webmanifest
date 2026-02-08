@@ -9,7 +9,10 @@
   "background_color": "#f5f6f8",
   "theme_color": "#0df26c",
   "id": "full-calculus",
-  "form_factor": ["narrow", "wide"],
+  "form_factor": [
+    "narrow",
+    "wide"
+  ],
   "icons": [
     {
       "src": "icons/fox-head-blue-background.png",
@@ -36,82 +39,16 @@
       "form_factor": "wide"
     },
     {
-      "src": "screenshots/Screenshot_20260208_012206.png",
-      "sizes": "2798x1837",
-      "type": "image/png",
-      "form_factor": "wide"
-    },
-    {
-      "src": "screenshots/Screenshot_20260208_012234.png",
-      "sizes": "2798x1837",
-      "type": "image/png",
-      "form_factor": "wide"
-    },
-    {
-      "src": "screenshots/Screenshot_20260208_012259.png",
-      "sizes": "2798x1837",
-      "type": "image/png",
-      "form_factor": "wide"
-    },
-    {
-      "src": "screenshots/Screenshot_20260208_012336.png",
-      "sizes": "2798x1837",
-      "type": "image/png",
-      "form_factor": "wide"
-    },
-    {
-      "src": "screenshots/Screenshot_20260208_012516.png",
-      "sizes": "2798x1837",
-      "type": "image/png",
-      "form_factor": "wide"
-    },
-    {
-      "src": "screenshots/Screenshot_20260208_012553.png",
-      "sizes": "2798x1837",
-      "type": "image/png",
-      "form_factor": "wide"
-    },
-    {
-      "src": "screenshots/Screenshot_20260208_012728.png",
-      "sizes": "2798x1837",
-      "type": "image/png",
-      "form_factor": "wide"
-    },
-    {
-      "src": "screenshots/Screenshot_20260208_013333.png",
-      "sizes": "2798x1837",
-      "type": "image/png",
-      "form_factor": "wide"
-    },
-    {
-      "src": "screenshots/Screenshot_20260208_013642.png",
-      "sizes": "2798x1837",
-      "type": "image/png",
-      "form_factor": "wide"
-    },
-    {
-      "src": "screenshots/Screenshot_20260208_013804.png",
-      "sizes": "2798x1837",
-      "type": "image/png",
-      "form_factor": "wide"
-    },
-    {
-      "src": "screenshots/Screenshot_20260208_013949.png",
-      "sizes": "2798x1837",
-      "type": "image/png",
-      "form_factor": "wide"
-    },
-    {
-      "src": "screenshots/Screenshot_20260208_014039.png",
-      "sizes": "2798x1837",
-      "type": "image/png",
-      "form_factor": "wide"
-    },
-    {
       "src": "screenshots/Screenshot_20260208_015856.png",
       "sizes": "1466x3101",
       "type": "image/png",
       "form_factor": "narrow"
+    },
+    {
+      "src": "screenshots/Screenshot_20260208_012206.png",
+      "sizes": "2798x1837",
+      "type": "image/png",
+      "form_factor": "wide"
     },
     {
       "src": "screenshots/Screenshot_20260208_015921.png",
@@ -120,10 +57,22 @@
       "form_factor": "narrow"
     },
     {
+      "src": "screenshots/Screenshot_20260208_012234.png",
+      "sizes": "2798x1837",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
       "src": "screenshots/Screenshot_20260208_015950.png",
       "sizes": "1466x3101",
       "type": "image/png",
       "form_factor": "narrow"
+    },
+    {
+      "src": "screenshots/Screenshot_20260208_012259.png",
+      "sizes": "2798x1837",
+      "type": "image/png",
+      "form_factor": "wide"
     },
     {
       "src": "screenshots/Screenshot_20260208_020024.png",
@@ -132,10 +81,22 @@
       "form_factor": "narrow"
     },
     {
+      "src": "screenshots/Screenshot_20260208_012336.png",
+      "sizes": "2798x1837",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
       "src": "screenshots/Screenshot_20260208_020141.png",
       "sizes": "1466x3101",
       "type": "image/png",
       "form_factor": "narrow"
+    },
+    {
+      "src": "screenshots/Screenshot_20260208_012516.png",
+      "sizes": "2798x1837",
+      "type": "image/png",
+      "form_factor": "wide"
     },
     {
       "src": "screenshots/Screenshot_20260208_020230.png",
@@ -144,10 +105,22 @@
       "form_factor": "narrow"
     },
     {
+      "src": "screenshots/Screenshot_20260208_012553.png",
+      "sizes": "2798x1837",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
       "src": "screenshots/Screenshot_20260208_020353.png",
       "sizes": "1466x3101",
       "type": "image/png",
       "form_factor": "narrow"
+    },
+    {
+      "src": "screenshots/Screenshot_20260208_012728.png",
+      "sizes": "2798x1837",
+      "type": "image/png",
+      "form_factor": "wide"
     },
     {
       "src": "screenshots/Screenshot_20260208_020445.png",
@@ -156,10 +129,22 @@
       "form_factor": "narrow"
     },
     {
+      "src": "screenshots/Screenshot_20260208_013333.png",
+      "sizes": "2798x1837",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
       "src": "screenshots/Screenshot_20260208_020620.png",
       "sizes": "1466x3101",
       "type": "image/png",
       "form_factor": "narrow"
+    },
+    {
+      "src": "screenshots/Screenshot_20260208_013642.png",
+      "sizes": "2798x1837",
+      "type": "image/png",
+      "form_factor": "wide"
     },
     {
       "src": "screenshots/Screenshot_20260208_020913.png",
@@ -168,16 +153,34 @@
       "form_factor": "narrow"
     },
     {
+      "src": "screenshots/Screenshot_20260208_013804.png",
+      "sizes": "2798x1837",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
       "src": "screenshots/Screenshot_20260208_021048.png",
       "sizes": "1466x3101",
       "type": "image/png",
       "form_factor": "narrow"
     },
     {
+      "src": "screenshots/Screenshot_20260208_013949.png",
+      "sizes": "2798x1837",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
       "src": "screenshots/Screenshot_20260208_021452.png",
       "sizes": "1466x3101",
       "type": "image/png",
       "form_factor": "narrow"
+    },
+    {
+      "src": "screenshots/Screenshot_20260208_014039.png",
+      "sizes": "2798x1837",
+      "type": "image/png",
+      "form_factor": "wide"
     },
     {
       "src": "screenshots/Screenshot_20260208_022126.png",
