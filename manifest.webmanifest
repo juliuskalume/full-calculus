@@ -12,7 +12,7 @@
   "form_factor": ["narrow", "wide"],
   "icons": [
     {
-      "src": "icons/fox-head.png",
+      "src": "icons/fox-head-blue-background.png",
       "sizes": "192x192",
       "type": "image/png"
     },
