@@ -7,12 +7,20 @@ android {
   namespace "com.fullcalculus.app"
   compileSdk 35
 
+  def useTestAds = (project.findProperty("FULLCALCULUS_USE_TEST_ADS") ?: "true").toBoolean()
+
   defaultConfig {
     applicationId "com.fullcalculus.app"
     minSdk 21
     targetSdk 35
     versionCode 5
     versionName "1.0.4"
+
+    if (useTestAds) {
+      resValue "string", "admob_app_id", "ca-app-pub-3940256099942544~3347511713"
+      resValue "string", "admob_interstitial_id", "ca-app-pub-3940256099942544/1033173712"
+      resValue "string", "admob_rewarded_id", "ca-app-pub-3940256099942544/5224354917"
+    }
   }
 
   signingConfigs {
