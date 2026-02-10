@@ -314,6 +314,60 @@ exports.rotateLeaguesWeekly = functions.pubsub
     return null;
   });
 
+exports.notifyFriendRequest = functions.firestore
+  .document("friendships/{friendId}")
+  .onCreate(async (snap) => {
+    try {
+      const data = snap.data() || {};
+      if (data.status !== "pending") return null;
+      const toUid = String(data.to || "");
+      if (!toUid) return null;
+
+      const fromName = String(data.fromName || "A learner");
+      const payload = {
+        title: "New friend request",
+        body: `${fromName} wants to be your friend`,
+        url: "profile.html",
+      };
+
+      if (publicKey && privateKey) {
+        const webPayload = JSON.stringify(payload);
+        const snapSubs = await admin.firestore().collection(COLLECTION).where("uid", "==", toUid).get();
+        if (!snapSubs.empty) {
+          const tasks = [];
+          snapSubs.forEach((doc) => {
+            const sub = doc.data()?.subscription;
+            if (!sub || !sub.endpoint) return;
+            tasks.push(
+              webpush.sendNotification(sub, webPayload).catch(async (err) => {
+                if (err?.statusCode === 404 || err?.statusCode === 410) {
+                  await doc.ref.delete();
+                } else {
+                  console.error("Friend request push error", err);
+                }
+              })
+            );
+          });
+          await Promise.all(tasks);
+        }
+      }
+
+      const fcmSnap = await admin.firestore().collection(FCM_COLLECTION).where("uid", "==", toUid).get();
+      if (!fcmSnap.empty) {
+        const items = fcmSnap.docs
+          .map((doc) => ({ ref: doc.ref, token: doc.data()?.token || "" }))
+          .filter((item) => item.token);
+        for (const group of chunk(items, 500)) {
+          await sendFcmBatch(group, payload);
+        }
+      }
+      return null;
+    } catch (err) {
+      console.error("Friend request notification error", err);
+      return null;
+    }
+  });
+
 // Username-based sign-in removed. Use email + password only.
 
 exports.requestAccountDeletion = functions.https.onRequest(async (req, res) => {
