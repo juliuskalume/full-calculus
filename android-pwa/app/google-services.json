@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "810918393440-0rvmj0qqnji6pe9t8l8nei16qkt7bfb6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.fullcalculus.app",
+            "certificate_hash": "1337b1db55baa768382699f030fdca690f629fb1"
+          }
+        },
+        {
           "client_id": "810918393440-h4rhpumer57u8h09equohk0802p01dqn.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
