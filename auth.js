@@ -3,6 +3,7 @@
   const DEFAULT_PROGRESS_KEY = "fc_progress";
   const DEFAULT_META_KEY = "fc_meta";
   const DEFAULT_PREFS_KEY = "fc_prefs";
+  const META_SYNC_PENDING_KEY = "fc_meta_sync_pending";
 
   const config = window.FC_FIREBASE_CONFIG || null;
   const enabledFlag = window.FC_FIREBASE_ENABLED !== false;
@@ -816,6 +817,29 @@
     return payload;
   };
 
+  const flushPendingMetaSync = async () => {
+    let pending = false;
+    try {
+      pending = localStorage.getItem(META_SYNC_PENDING_KEY) === "1";
+    } catch {
+      pending = false;
+    }
+    if (!pending) return false;
+    const user = auth.currentUser;
+    if (!user || isRestrictedUser(user)) return false;
+    try {
+      await syncToRemote();
+      try {
+        localStorage.removeItem(META_SYNC_PENDING_KEY);
+      } catch {
+        // ignore
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   const queueProfileSync = (extra) => {
     if (!extra || typeof extra !== "object") return;
     const existing = safeParse(PENDING_PROFILE_SYNC_KEY, {});
@@ -1423,7 +1447,13 @@
       // ignore
     }
 
-    syncFromRemote().catch(() => {});
+    syncFromRemote()
+      .then(() => {
+        flushPendingMetaSync().catch(() => {});
+      })
+      .catch(() => {
+        flushPendingMetaSync().catch(() => {});
+      });
     ensureUsername().catch(() => {});
     flushQueuedProfileSync().catch(() => {});
     syncPublicProfile().catch(() => {});

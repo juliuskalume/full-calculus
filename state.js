@@ -1,6 +1,7 @@
 const HEART_MAX = 5;
 const HEART_REFILL_MIN = 5;
 const DAY_MS = 24 * 60 * 60 * 1000;
+const META_SYNC_PENDING_KEY = "fc_meta_sync_pending";
 
 window.FC = {
   _weekKey(date = new Date()) {
@@ -76,7 +77,12 @@ window.FC = {
     s = this._ensureWeekly(s);
     s = this._refillHearts(s);
     s = this._refreshStreak(s);
+    const beforeStreak = Number(s.streak) || 0;
+    const beforeDate = s.lastActiveDate || "";
+    s = this._touchDaily(s);
+    const changed = beforeStreak !== (Number(s.streak) || 0) || beforeDate !== (s.lastActiveDate || "");
     this.set(s);
+    this._maybeSyncMeta(changed);
     return s;
   },
 
@@ -148,8 +154,7 @@ window.FC = {
     return s;
   },
 
-  recordDailyActivity() {
-    const s = this.get();
+  _touchDaily(s) {
     const today = this._todayKey();
     const last = typeof s.lastActiveDate === "string" ? s.lastActiveDate : "";
     if (last === today) return s;
@@ -162,7 +167,43 @@ window.FC = {
     }
 
     s.lastActiveDate = today;
+    return s;
+  },
+
+  _maybeSyncMeta(changed) {
+    if (!changed) return;
+    try {
+      localStorage.setItem(META_SYNC_PENDING_KEY, "1");
+    } catch {
+      // ignore
+    }
+    const canSync =
+      window.FCAuth?.syncToRemote &&
+      typeof window.FCAuth.getCurrentUser === "function" &&
+      window.FCAuth.getCurrentUser();
+    if (!canSync) return;
+    window.FCAuth
+      .syncToRemote()
+      .then(() => {
+        try {
+          localStorage.removeItem(META_SYNC_PENDING_KEY);
+        } catch {
+          // ignore
+        }
+      })
+      .catch(() => {
+        // keep pending flag
+      });
+  },
+
+  recordDailyActivity() {
+    const s = this.get();
+    const beforeStreak = Number(s.streak) || 0;
+    const beforeDate = s.lastActiveDate || "";
+    this._touchDaily(s);
+    const changed = beforeStreak !== (Number(s.streak) || 0) || beforeDate !== (s.lastActiveDate || "");
     this.set(s);
+    this._maybeSyncMeta(changed);
     return s;
   },
 };
