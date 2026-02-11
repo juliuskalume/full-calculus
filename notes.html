@@ -231,23 +231,29 @@
               <h1 class="text-slate-900 dark:text-white tracking-tight text-2xl font-extrabold leading-tight text-center pb-2">
                 Out of hearts
               </h1>
-              <p class="text-slate-600 dark:text-slate-300 text-base font-normal leading-relaxed text-center pb-4 pt-1">
-                Watch a short ad to refill your hearts and continue learning.
-              </p>
-              <p id="heartsStatus" class="text-xs text-slate-500 dark:text-slate-400 text-center"></p>
-            </div>
-            <div class="flex flex-col w-full gap-3 px-6 pb-10 sm:pb-8">
-              <button
-                id="watchAdBtn"
-                class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-14 px-5 bg-primary hover:bg-primary-dark text-black text-lg font-bold leading-normal tracking-wide transition-colors shadow-md"
-              >
-                <span class="truncate uppercase">Watch Ad</span>
-              </button>
-              <button
-                id="closeHeartsBtn"
-                class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-14 px-5 bg-[#f3f4f6] dark:bg-gray-800 text-[#6b7280] dark:text-gray-400 text-lg font-bold leading-normal tracking-wide transition-colors border border-transparent hover:border-gray-300"
-              >
-                <span class="truncate">Not now</span>
+                <p class="text-slate-600 dark:text-slate-300 text-base font-normal leading-relaxed text-center pb-4 pt-1">
+                  Watch a short ad to gain 1 heart and continue learning.
+                </p>
+                <p id="heartsStatus" class="text-xs text-slate-500 dark:text-slate-400 text-center"></p>
+              </div>
+              <div class="flex flex-col w-full gap-3 px-6 pb-10 sm:pb-8">
+                <button
+                  id="watchAdBtn"
+                  class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-14 px-5 bg-primary hover:bg-primary-dark text-black text-lg font-bold leading-normal tracking-wide transition-colors shadow-md"
+                >
+                  <span class="truncate uppercase">Watch Ad</span>
+                </button>
+                <button
+                  id="buyHeartsBtn"
+                  class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-14 px-5 bg-[#e6f7ff] text-[#1b4b66] text-lg font-bold leading-normal tracking-wide transition-colors border border-[#b7e7ff] hover:border-[#8fd7ff]"
+                >
+                  <span class="truncate">Use 500 XP to refill 5 hearts</span>
+                </button>
+                <button
+                  id="closeHeartsBtn"
+                  class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-14 px-5 bg-[#f3f4f6] dark:bg-gray-800 text-[#6b7280] dark:text-gray-400 text-lg font-bold leading-normal tracking-wide transition-colors border border-transparent hover:border-gray-300"
+                >
+                  <span class="truncate">Not now</span>
               </button>
             </div>
             <div class="h-2 sm:hidden"></div>
@@ -469,7 +475,9 @@
         const heartsOverlay = document.getElementById("heartsOverlay");
         const heartsStatus = document.getElementById("heartsStatus");
         const watchAdBtn = document.getElementById("watchAdBtn");
+        const buyHeartsBtn = document.getElementById("buyHeartsBtn");
         const closeHeartsBtn = document.getElementById("closeHeartsBtn");
+        const HEART_XP_COST = 500;
         let pendingStart = null;
 
         const savePendingStart = (data) => {
@@ -501,11 +509,21 @@
               ? ""
               : "Ads are only available in the Android app. Please wait for hearts to refill.";
           }
+          updateBuyHeartsButton();
         };
 
         const hideHeartsOverlay = () => {
           heartsOverlay?.classList.add("hidden");
           document.body.classList.remove("overflow-hidden");
+        };
+
+        const updateBuyHeartsButton = () => {
+          if (!buyHeartsBtn) return;
+          const xp = Number(FC.get().xp || 0);
+          const canBuy = xp >= HEART_XP_COST;
+          buyHeartsBtn.disabled = !canBuy;
+          buyHeartsBtn.classList.toggle("opacity-50", !canBuy);
+          buyHeartsBtn.classList.toggle("cursor-not-allowed", !canBuy);
         };
 
         watchAdBtn?.addEventListener("click", () => {
@@ -518,6 +536,36 @@
             window.AndroidAds.showAd("rewarded", "notes.html");
           }
           hideHeartsOverlay();
+        });
+
+        buyHeartsBtn?.addEventListener("click", () => {
+          const meta = FC.get();
+          const xp = Number(meta.xp || 0);
+          if (xp < HEART_XP_COST) {
+            if (heartsStatus) heartsStatus.textContent = "You need 500 XP to refill your hearts.";
+            updateBuyHeartsButton();
+            return;
+          }
+          if (window.FC?.addXP) {
+            FC.addXP(-HEART_XP_COST);
+          } else {
+            meta.xp = Math.max(0, xp - HEART_XP_COST);
+            FC.set(meta);
+          }
+          if (window.FC?.refillLives) {
+            FC.refillLives();
+          } else {
+            meta.lives = 5;
+            meta.lastHeartTime = Date.now();
+            FC.set(meta);
+          }
+          if (window.FCAuth?.syncToRemote) {
+            window.FCAuth.syncToRemote().catch(() => {});
+          }
+          hideHeartsOverlay();
+          if (pendingStart && (FC.get().lives ?? 0) > 0) {
+            startLessonFromPending(pendingStart);
+          }
         });
 
         closeHeartsBtn?.addEventListener("click", () => hideHeartsOverlay());

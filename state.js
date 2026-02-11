@@ -120,7 +120,14 @@ window.FC = {
       const flag = localStorage.getItem("fc_reward_refill");
       if (flag !== "1") return false;
       localStorage.removeItem("fc_reward_refill");
-      this.refillLives();
+      const s = this.get();
+      if (s.lives < HEART_MAX) {
+        s.lives = Math.min(HEART_MAX, s.lives + 1);
+        s.lastHeartTime = Date.now();
+        this.set(s);
+        this._maybeSyncMeta(true);
+        return true;
+      }
       return true;
     } catch {
       return false;
