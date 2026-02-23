@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <meta name="robots" content="noindex,nofollow" />
+    <meta name="theme-color" content="#1cb0f6" />
+    <title>Full Calculus Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body { font-family: "Lexend", sans-serif; }
+      .panel { display: none; }
+      .panel.active { display: block; }
+    </style>
+  </head>
+  <body class="bg-slate-100 text-slate-900 min-h-screen">
+    <header class="sticky top-0 z-20 bg-white border-b border-slate-200">
+      <div class="max-w-[1800px] mx-auto px-4 py-3 flex items-center justify-between">
+        <div>
+          <h1 class="text-lg md:text-xl font-extrabold">Full Calculus Admin</h1>
+          <p class="text-xs text-slate-500">Users, support, reports, notifications</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span id="adminEmail" class="hidden text-xs text-slate-500"></span>
+          <button id="signOutBtn" class="hidden px-3 py-2 rounded-lg border border-slate-300 text-sm font-semibold">Sign out</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-[1800px] mx-auto p-4">
+      <section id="authCard" class="max-w-md mx-auto rounded-2xl border border-slate-200 bg-white p-5">
+        <h2 class="text-lg font-extrabold mb-2">Admin sign in</h2>
+        <input id="loginEmail" type="email" placeholder="admin@example.com" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm mb-2" />
+        <input id="loginPass" type="password" placeholder="Password" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm mb-2" />
+        <button id="signInBtn" class="w-full rounded-lg bg-sky-500 hover:bg-sky-600 text-white font-bold py-2.5">Sign in</button>
+        <p id="authMsg" class="text-sm text-slate-500 min-h-[1.25rem] mt-2"></p>
+      </section>
+
+      <section id="app" class="hidden">
+        <div class="grid xl:grid-cols-[220px_minmax(0,1fr)] gap-4">
+          <aside class="rounded-2xl border border-slate-200 bg-white p-3 h-fit sticky top-20">
+            <nav class="space-y-2">
+              <button class="tab w-full text-left px-3 py-2 rounded-lg bg-sky-100 text-sky-700 font-bold" data-tab="dashboard">Dashboard</button>
+              <button class="tab w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 font-semibold" data-tab="users">Users</button>
+              <button class="tab w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 font-semibold" data-tab="deletions">Deletion Requests</button>
+              <button class="tab w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 font-semibold" data-tab="reports">Problem Reports</button>
+              <button class="tab w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 font-semibold" data-tab="notifications">Notifications</button>
+            </nav>
+          </aside>
+
+          <div class="space-y-4">
+            <section id="dashboard" class="panel active rounded-2xl border border-slate-200 bg-white p-4">
+              <div class="flex items-center justify-between mb-3">
+                <h2 class="text-lg font-extrabold">Dashboard</h2>
+                <button id="refreshDashboard" class="px-3 py-2 rounded-lg border border-slate-300 text-sm font-semibold">Refresh</button>
+              </div>
+              <div id="dashboardCards" class="grid sm:grid-cols-2 xl:grid-cols-3 gap-3"></div>
+              <p id="dashboardMsg" class="text-sm text-slate-500 mt-3"></p>
+            </section>
+
+            <section id="users" class="panel rounded-2xl border border-slate-200 bg-white p-4">
+              <div class="flex flex-wrap gap-2 mb-3">
+                <input id="userQuery" type="text" placeholder="Search email, username, uid..." class="flex-1 min-w-[220px] rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                <button id="usersLoad" class="px-3 py-2 rounded-lg bg-sky-500 hover:bg-sky-600 text-white text-sm font-bold">Load</button>
+                <button id="usersNext" class="px-3 py-2 rounded-lg border border-slate-300 text-sm font-semibold">Next</button>
+                <button id="usersExport" class="px-3 py-2 rounded-lg border border-slate-300 text-sm font-semibold">Export CSV</button>
+              </div>
+              <p id="usersMsg" class="text-sm text-slate-500 mb-3"></p>
+              <div id="usersList" class="space-y-3"></div>
+              <div id="actionLinkWrap" class="hidden rounded-lg border border-sky-300 bg-sky-50 p-3 mt-3">
+                <p class="text-xs font-semibold text-sky-700 mb-1">Generated link</p>
+                <p id="actionLink" class="text-xs break-all"></p>
+              </div>
+            </section>
+
+            <section id="deletions" class="panel rounded-2xl border border-slate-200 bg-white p-4">
+              <div class="flex flex-wrap gap-2 mb-3">
+                <select id="deletionsFilter" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                  <option value="">All</option>
+                  <option value="pending">Pending</option>
+                  <option value="denied">Denied</option>
+                  <option value="deleted">Deleted</option>
+                  <option value="completed">Completed</option>
+                </select>
+                <button id="deletionsLoad" class="px-3 py-2 rounded-lg border border-slate-300 text-sm font-semibold">Refresh</button>
+                <button id="deletionsExport" class="px-3 py-2 rounded-lg border border-slate-300 text-sm font-semibold">Export CSV</button>
+              </div>
+              <p id="deletionsMsg" class="text-sm text-slate-500 mb-3"></p>
+              <div id="deletionsList" class="space-y-3"></div>
+            </section>
+
+            <section id="reports" class="panel rounded-2xl border border-slate-200 bg-white p-4">
+              <div class="flex flex-wrap gap-2 mb-3">
+                <select id="reportsFilter" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                  <option value="">All</option>
+                  <option value="pending">Pending</option>
+                  <option value="in_review">In review</option>
+                  <option value="resolved">Resolved</option>
+                  <option value="closed">Closed</option>
+                </select>
+                <button id="reportsLoad" class="px-3 py-2 rounded-lg border border-slate-300 text-sm font-semibold">Refresh</button>
+                <button id="reportsExport" class="px-3 py-2 rounded-lg border border-slate-300 text-sm font-semibold">Export CSV</button>
+              </div>
+              <p id="reportsMsg" class="text-sm text-slate-500 mb-3"></p>
+              <div id="reportsList" class="space-y-3"></div>
+            </section>
+
+            <section id="notifications" class="panel rounded-2xl border border-slate-200 bg-white p-4">
+              <div class="rounded-xl border border-slate-200 p-3 mb-4">
+                <h3 class="font-bold mb-2">Send notification</h3>
+                <div class="grid md:grid-cols-2 gap-2">
+                  <select id="notifyTargetType" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                    <option value="all">All users</option>
+                    <option value="user">One user (UID)</option>
+                  </select>
+                  <input id="notifyTargetUid" type="text" placeholder="UID for one user target" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                  <input id="notifyTitle" type="text" maxlength="80" placeholder="Title" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                  <input id="notifyUrl" type="text" placeholder="path.html" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                </div>
+                <textarea id="notifyBody" rows="3" maxlength="240" placeholder="Message body" class="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"></textarea>
+                <div class="mt-2 flex flex-wrap items-center gap-4">
+                  <label class="inline-flex items-center gap-2 text-sm"><input id="notifyInApp" type="checkbox" checked />In-app</label>
+                  <label class="inline-flex items-center gap-2 text-sm"><input id="notifyOffApp" type="checkbox" checked />Off-app push</label>
+                  <button id="notifySend" class="px-4 py-2 rounded-lg bg-sky-500 hover:bg-sky-600 text-white text-sm font-bold">Send</button>
+                </div>
+              </div>
+              <div class="flex flex-wrap gap-2 mb-2">
+                <button id="notifyLoad" class="px-3 py-2 rounded-lg border border-slate-300 text-sm font-semibold">Refresh history</button>
+                <button id="notifyExport" class="px-3 py-2 rounded-lg border border-slate-300 text-sm font-semibold">Export CSV</button>
+              </div>
+              <p id="notifyMsg" class="text-sm text-slate-500 mb-3"></p>
+              <div id="notifyList" class="space-y-3"></div>
+            </section>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div id="confirmBox" class="fixed inset-0 hidden items-center justify-center bg-black/60 p-4">
+      <div class="w-full max-w-md rounded-xl bg-white p-4">
+        <h3 id="confirmTitle" class="font-extrabold mb-1">Confirm</h3>
+        <p id="confirmText" class="text-sm text-slate-600 mb-4"></p>
+        <div class="flex justify-end gap-2">
+          <button id="confirmCancel" class="px-3 py-2 rounded-lg border border-slate-300 text-sm font-semibold">Cancel</button>
+          <button id="confirmOk" class="px-3 py-2 rounded-lg bg-rose-500 hover:bg-rose-600 text-white text-sm font-bold">Proceed</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="admin-console.js"></script>
+  </body>
+</html>

@@ -1377,6 +1377,161 @@
     clearPendingFcmToken();
   };
 
+  const IN_APP_SEEN_KEY = "fc_in_app_seen";
+  let inAppTimer = null;
+  let inAppToastHost = null;
+  const inAppToastQueue = [];
+  let inAppToastActive = false;
+
+  const readSeenInApp = () => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(IN_APP_SEEN_KEY) || "{}");
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) return parsed;
+    } catch {
+      // ignore
+    }
+    return {};
+  };
+
+  const writeSeenInApp = (seen) => {
+    try {
+      const sorted = Object.entries(seen)
+        .sort((a, b) => String(b[1] || "").localeCompare(String(a[1] || "")))
+        .slice(0, 500);
+      localStorage.setItem(IN_APP_SEEN_KEY, JSON.stringify(Object.fromEntries(sorted)));
+    } catch {
+      // ignore
+    }
+  };
+
+  const resolveNotificationUrl = (url) => {
+    const value = String(url || "").trim();
+    if (!value) return "path.html";
+    if (value.startsWith("http://") || value.startsWith("https://")) return value;
+    return value.startsWith("/") ? value.slice(1) : value;
+  };
+
+  const ensureInAppToastHost = () => {
+    if (inAppToastHost && document.body.contains(inAppToastHost)) return inAppToastHost;
+    const host = document.createElement("div");
+    host.id = "fcInAppToastHost";
+    host.style.position = "fixed";
+    host.style.left = "50%";
+    host.style.transform = "translateX(-50%)";
+    host.style.bottom = "16px";
+    host.style.zIndex = "10000";
+    host.style.width = "min(92vw, 460px)";
+    host.style.pointerEvents = "none";
+    document.body.appendChild(host);
+    inAppToastHost = host;
+    return host;
+  };
+
+  const showNextInAppToast = () => {
+    if (inAppToastActive || !inAppToastQueue.length) return;
+    const item = inAppToastQueue.shift();
+    if (!item) return;
+    const host = ensureInAppToastHost();
+    const card = document.createElement("div");
+    card.style.pointerEvents = "auto";
+    card.style.background = "rgba(15,23,42,0.97)";
+    card.style.color = "#ffffff";
+    card.style.border = "1px solid rgba(148,163,184,0.35)";
+    card.style.borderRadius = "14px";
+    card.style.padding = "12px";
+    card.style.boxShadow = "0 16px 40px rgba(0,0,0,0.35)";
+    card.style.marginTop = "10px";
+    const title = String(item.title || "Notification");
+    const body = String(item.body || "");
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
+        <div style="min-width:0;">
+          <div style="font-size:13px;font-weight:700;line-height:1.3;word-break:break-word;">${title.replace(/</g, "&lt;")}</div>
+          <div style="font-size:12px;opacity:.9;margin-top:4px;line-height:1.35;word-break:break-word;">${body.replace(/</g, "&lt;")}</div>
+        </div>
+        <button type="button" data-close style="border:0;background:transparent;color:#cbd5e1;font-size:15px;cursor:pointer;">x</button>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px;">
+        <button type="button" data-open style="border:0;background:#1cb0f6;color:#fff;font-size:12px;font-weight:700;padding:6px 10px;border-radius:9px;cursor:pointer;">Open</button>
+      </div>
+    `;
+    host.appendChild(card);
+    inAppToastActive = true;
+
+    const close = () => {
+      if (card.parentNode) card.parentNode.removeChild(card);
+      inAppToastActive = false;
+      showNextInAppToast();
+    };
+
+    card.querySelector("[data-close]")?.addEventListener("click", close);
+    card.querySelector("[data-open]")?.addEventListener("click", () => {
+      const target = resolveNotificationUrl(item.url);
+      if (target.startsWith("http://") || target.startsWith("https://")) {
+        window.location.href = target;
+      } else {
+        window.location.href = target || "path.html";
+      }
+    });
+    setTimeout(close, 7000);
+  };
+
+  const queueInAppToast = (item) => {
+    if (!item || !item.id) return;
+    inAppToastQueue.push(item);
+    showNextInAppToast();
+  };
+
+  const fetchInAppNotifications = async (user, forceToken = false) => {
+    if (!user) return;
+    const token = await user.getIdToken(!!forceToken);
+    const projectId = String(config.projectId || "full-calculus");
+    const endpoint = `https://us-central1-${projectId}.cloudfunctions.net/getInAppNotifications`;
+    const res = await fetch(endpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return;
+    const data = await res.json().catch(() => null);
+    const items = Array.isArray(data?.items) ? data.items : [];
+    if (!items.length) return;
+
+    const seen = readSeenInApp();
+    let changed = false;
+    items
+      .slice()
+      .sort((a, b) => String(a.createdAt || "").localeCompare(String(b.createdAt || "")))
+      .forEach((item) => {
+        const id = String(item.id || "");
+        if (!id || seen[id]) return;
+        seen[id] = new Date().toISOString();
+        changed = true;
+        queueInAppToast(item);
+      });
+    if (changed) writeSeenInApp(seen);
+  };
+
+  const startInAppPolling = (user) => {
+    if (!user) return;
+    if (inAppTimer) {
+      clearInterval(inAppTimer);
+      inAppTimer = null;
+    }
+    fetchInAppNotifications(user, true).catch(() => {});
+    inAppTimer = setInterval(() => {
+      const current = auth.currentUser;
+      if (!current || current.uid !== user.uid) return;
+      fetchInAppNotifications(current, false).catch(() => {});
+    }, 45000);
+  };
+
+  const stopInAppPolling = () => {
+    if (inAppTimer) {
+      clearInterval(inAppTimer);
+      inAppTimer = null;
+    }
+  };
+
   let presenceTimer = null;
   const startPresenceTimer = () => {
     if (presenceTimer) return;
@@ -1394,6 +1549,8 @@
   const handleVisibilityChange = () => {
     if (document.visibilityState === "visible") {
       syncPublicProfile(null, { presenceOnly: true }).catch(() => {});
+      const user = auth.currentUser;
+      if (user) fetchInAppNotifications(user, false).catch(() => {});
     }
   };
 
@@ -1408,6 +1565,7 @@
 
     if (!currentUid) {
       stopPresenceTimer();
+      stopInAppPolling();
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       const skipClear = shouldSkipClearOnSignOut();
       if (skipClear) {
@@ -1433,6 +1591,7 @@
     if (requiresEmailVerification(user)) {
       setVerifyRequired(user.email || "");
       stopPresenceTimer();
+      startInAppPolling(user);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       return;
     }
@@ -1458,6 +1617,7 @@
     flushQueuedProfileSync().catch(() => {});
     syncPublicProfile().catch(() => {});
     startPresenceTimer();
+    startInAppPolling(user);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     if (user && getNotificationPref()) {

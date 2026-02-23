@@ -108,6 +108,17 @@ const verifyAdminRequest = async (req) => {
   }
 };
 
+const verifyUserRequest = async (req) => {
+  const token = getAuthToken(req);
+  if (!token) return { ok: false, code: 401, message: "Missing auth token" };
+  try {
+    const decoded = await admin.auth().verifyIdToken(token);
+    return { ok: true, user: decoded };
+  } catch (err) {
+    return { ok: false, code: 401, message: "Invalid auth token" };
+  }
+};
+
 exports.sendLearningReminder = functions.pubsub
   .schedule("0 18 * * 2,5")
   .timeZone(timeZone)
@@ -440,10 +451,16 @@ exports.listAccountDeletionRequests = functions.https.onRequest(async (req, res)
 
   try {
     const status = String(req.query.status || "").trim();
-    let query = admin.firestore().collection("account_deletion_requests").orderBy("createdAt", "desc");
-    if (status) query = query.where("status", "==", status);
+    let query = admin.firestore().collection("account_deletion_requests");
+    if (!status) {
+      query = query.orderBy("createdAt", "desc");
+    } else {
+      query = query.where("status", "==", status);
+    }
     const snap = await query.limit(200).get();
-    const items = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    const items = snap.docs
+      .map((doc) => ({ id: doc.id, ...doc.data() }))
+      .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
     res.status(200).json({ ok: true, items });
   } catch (err) {
     console.error("List deletion requests error", err);
@@ -482,6 +499,9 @@ const deleteUserData = async (uid) => {
   await deleteDocsByQuery(db.collection("fcm_tokens").where("uid", "==", uid));
   await deleteDocsByQuery(db.collection("friendships").where("from", "==", uid));
   await deleteDocsByQuery(db.collection("friendships").where("to", "==", uid));
+  await deleteDocsByQuery(db.collection("problem_reports").where("uid", "==", uid));
+  await deleteDocsByQuery(db.collection("account_deletion_requests").where("uid", "==", uid));
+  await deleteDocsByQuery(db.collection("in_app_notifications").where("targetUid", "==", uid));
 };
 
 exports.processAccountDeletion = functions.https.onRequest(async (req, res) => {
@@ -583,6 +603,555 @@ exports.processAccountDeletion = functions.https.onRequest(async (req, res) => {
     res.status(400).send("Unknown action");
   } catch (err) {
     console.error("Process deletion request error", err);
+    res.status(500).send("Server error");
+  }
+});
+
+const setAdminCors = (res, methods) => {
+  res.set("Access-Control-Allow-Origin", "*");
+  res.set("Access-Control-Allow-Methods", methods || "GET, POST, OPTIONS");
+  res.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+};
+
+const toBool = (value, fallback = false) => {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    const v = value.trim().toLowerCase();
+    if (v === "true" || v === "1" || v === "yes") return true;
+    if (v === "false" || v === "0" || v === "no") return false;
+  }
+  return fallback;
+};
+
+const trimText = (value, maxLen = 500) =>
+  String(value || "")
+    .trim()
+    .slice(0, maxLen);
+
+const normalizeRoute = (value) => {
+  const raw = trimText(value, 300);
+  if (!raw) return "path.html";
+  if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
+  const clean = raw.startsWith("/") ? raw.slice(1) : raw;
+  return clean || "path.html";
+};
+
+const countQuery = async (queryRef) => {
+  try {
+    const agg = await queryRef.count().get();
+    if (typeof agg?.data === "function") {
+      const data = agg.data();
+      if (typeof data?.count === "number") return data.count;
+    }
+  } catch (err) {
+    // fall through to full read
+  }
+  const snap = await queryRef.get();
+  return snap.size;
+};
+
+const fetchPublicProfilesByUid = async (uids) => {
+  const db = admin.firestore();
+  const map = new Map();
+  const idField = admin.firestore.FieldPath.documentId();
+  for (const group of chunk(uids, 10)) {
+    if (!group.length) continue;
+    const snap = await db
+      .collection("public_profiles")
+      .where(idField, "in", group)
+      .get();
+    snap.forEach((doc) => {
+      map.set(doc.id, doc.data() || {});
+    });
+  }
+  return map;
+};
+
+const listTokensByTarget = async (targetType, targetUid) => {
+  const db = admin.firestore();
+  const webRef =
+    targetType === "user"
+      ? db.collection(COLLECTION).where("uid", "==", targetUid)
+      : db.collection(COLLECTION);
+  const fcmRef =
+    targetType === "user"
+      ? db.collection(FCM_COLLECTION).where("uid", "==", targetUid)
+      : db.collection(FCM_COLLECTION);
+
+  const [webSnap, fcmSnap] = await Promise.all([webRef.get(), fcmRef.get()]);
+  const webItems = webSnap.docs.map((doc) => ({ ref: doc.ref, data: doc.data() || {} }));
+  const fcmItems = fcmSnap.docs
+    .map((doc) => ({ ref: doc.ref, token: String(doc.data()?.token || "") }))
+    .filter((item) => item.token);
+  return { webItems, fcmItems };
+};
+
+const sendWebPushItems = async (items, payload) => {
+  if (!publicKey || !privateKey || !items.length) return { sent: 0, failed: 0 };
+  const webPayload = JSON.stringify(payload);
+  let sent = 0;
+  let failed = 0;
+  const tasks = items.map(async (item) => {
+    const sub = item.data?.subscription;
+    if (!sub || !sub.endpoint) return;
+    try {
+      await webpush.sendNotification(sub, webPayload);
+      sent += 1;
+    } catch (err) {
+      failed += 1;
+      if (err?.statusCode === 404 || err?.statusCode === 410) {
+        await item.ref.delete().catch(() => {});
+      }
+    }
+  });
+  await Promise.all(tasks);
+  return { sent, failed };
+};
+
+const sendFcmItems = async (items, payload) => {
+  if (!items.length) return { sent: 0, failed: 0 };
+  let sent = 0;
+  let failed = 0;
+  for (const group of chunk(items, 500)) {
+    const message = {
+      tokens: group.map((item) => item.token),
+      notification: {
+        title: payload.title,
+        body: payload.body,
+      },
+      data: {
+        url: payload.url || "path.html",
+      },
+      android: {
+        priority: "high",
+      },
+    };
+    const response = await admin.messaging().sendEachForMulticast(message);
+    response.responses.forEach((res, idx) => {
+      if (res.success) {
+        sent += 1;
+      } else {
+        failed += 1;
+        const code = res.error?.code || "";
+        if (code === "messaging/registration-token-not-registered" || code === "messaging/invalid-registration-token") {
+          group[idx].ref.delete().catch(() => {});
+        }
+      }
+    });
+  }
+  return { sent, failed };
+};
+
+exports.adminDashboard = functions.https.onRequest(async (req, res) => {
+  setAdminCors(res, "GET, OPTIONS");
+  if (req.method === "OPTIONS") return res.status(204).send("");
+  if (req.method !== "GET") return res.status(405).send("Method not allowed");
+
+  const authResult = await verifyAdminRequest(req);
+  if (!authResult.ok) return res.status(authResult.code).send(authResult.message);
+
+  try {
+    const db = admin.firestore();
+    const [usersCount, pendingDeletion, pendingReports, openReports, webSubs, fcmTokens] = await Promise.all([
+      countQuery(db.collection("public_profiles")),
+      countQuery(db.collection("account_deletion_requests").where("status", "==", "pending")),
+      countQuery(db.collection("problem_reports").where("status", "==", "pending")),
+      countQuery(db.collection("problem_reports")),
+      countQuery(db.collection(COLLECTION)),
+      countQuery(db.collection(FCM_COLLECTION)),
+    ]);
+
+    res.status(200).json({
+      ok: true,
+      stats: {
+        users: usersCount,
+        pendingDeletionRequests: pendingDeletion,
+        pendingProblemReports: pendingReports,
+        totalProblemReports: openReports,
+        pushSubscriptions: webSubs,
+        fcmTokens,
+      },
+    });
+  } catch (err) {
+    console.error("adminDashboard error", err);
+    res.status(500).send("Server error");
+  }
+});
+
+exports.adminListUsers = functions.https.onRequest(async (req, res) => {
+  setAdminCors(res, "GET, OPTIONS");
+  if (req.method === "OPTIONS") return res.status(204).send("");
+  if (req.method !== "GET") return res.status(405).send("Method not allowed");
+
+  const authResult = await verifyAdminRequest(req);
+  if (!authResult.ok) return res.status(authResult.code).send(authResult.message);
+
+  try {
+    const limit = Math.max(1, Math.min(200, Number(req.query.limit) || 50));
+    const pageToken = trimText(req.query.pageToken, 1000) || undefined;
+    const q = trimText(req.query.q, 120).toLowerCase();
+    const usersResult = await admin.auth().listUsers(limit, pageToken);
+    const authUsers = usersResult.users || [];
+    const uids = authUsers.map((u) => u.uid);
+    const profileMap = await fetchPublicProfilesByUid(uids);
+
+    let items = authUsers.map((u) => {
+      const profile = profileMap.get(u.uid) || {};
+      return {
+        uid: u.uid,
+        email: u.email || "",
+        emailVerified: !!u.emailVerified,
+        disabled: !!u.disabled,
+        displayName: u.displayName || "",
+        photoURL: u.photoURL || profile.avatarUrl || "",
+        createdAt: u.metadata?.creationTime || "",
+        lastSignInAt: u.metadata?.lastSignInTime || "",
+        providerIds: (u.providerData || []).map((p) => p.providerId).filter(Boolean),
+        username: profile.username || "",
+        fullName: profile.fullName || "",
+        nationality: profile.nationality || "",
+        nationalityFlag: profile.nationalityFlag || "",
+        xp: Number(profile.xp) || 0,
+        streak: Number(profile.streak) || 0,
+        leagueName: profile.leagueName || "",
+      };
+    });
+
+    if (q) {
+      items = items.filter((item) => {
+        const combined = [
+          item.uid,
+          item.email,
+          item.displayName,
+          item.username,
+          item.fullName,
+          item.nationality,
+        ]
+          .join(" ")
+          .toLowerCase();
+        return combined.includes(q);
+      });
+    }
+
+    res.status(200).json({
+      ok: true,
+      items,
+      nextPageToken: usersResult.pageToken || "",
+    });
+  } catch (err) {
+    console.error("adminListUsers error", err);
+    res.status(500).send("Server error");
+  }
+});
+
+exports.adminUserAction = functions.https.onRequest(async (req, res) => {
+  setAdminCors(res, "POST, OPTIONS");
+  if (req.method === "OPTIONS") return res.status(204).send("");
+  if (req.method !== "POST") return res.status(405).send("Method not allowed");
+
+  const authResult = await verifyAdminRequest(req);
+  if (!authResult.ok) return res.status(authResult.code).send(authResult.message);
+
+  try {
+    const body = req.body || {};
+    const action = trimText(body.action, 60);
+    const uid = trimText(body.uid, 128);
+    const email = trimText(body.email, 320).toLowerCase();
+
+    if (!action) return res.status(400).send("Missing action");
+    if (!uid && action !== "reset_password" && action !== "send_verification") {
+      return res.status(400).send("Missing uid");
+    }
+
+    if (action === "disable") {
+      await admin.auth().updateUser(uid, { disabled: true });
+      return res.status(200).json({ ok: true });
+    }
+    if (action === "enable") {
+      await admin.auth().updateUser(uid, { disabled: false });
+      return res.status(200).json({ ok: true });
+    }
+    if (action === "delete") {
+      await deleteUserData(uid);
+      await admin.auth().deleteUser(uid).catch(() => {});
+      return res.status(200).json({ ok: true });
+    }
+    if (action === "reset_password") {
+      const targetEmail = email || (uid ? (await admin.auth().getUser(uid)).email || "" : "");
+      if (!targetEmail) return res.status(400).send("Missing email");
+      const link = await admin.auth().generatePasswordResetLink(targetEmail);
+      return res.status(200).json({ ok: true, link });
+    }
+    if (action === "send_verification") {
+      const targetEmail = email || (uid ? (await admin.auth().getUser(uid)).email || "" : "");
+      if (!targetEmail) return res.status(400).send("Missing email");
+      const link = await admin.auth().generateEmailVerificationLink(targetEmail);
+      return res.status(200).json({ ok: true, link });
+    }
+    if (action === "grant_admin" || action === "revoke_admin") {
+      const userRecord = await admin.auth().getUser(uid);
+      const claims = { ...(userRecord.customClaims || {}) };
+      if (action === "grant_admin") claims.admin = true;
+      if (action === "revoke_admin") delete claims.admin;
+      await admin.auth().setCustomUserClaims(uid, claims);
+      return res.status(200).json({ ok: true });
+    }
+
+    return res.status(400).send("Unknown action");
+  } catch (err) {
+    console.error("adminUserAction error", err);
+    res.status(500).send("Server error");
+  }
+});
+
+exports.adminListProblemReports = functions.https.onRequest(async (req, res) => {
+  setAdminCors(res, "GET, OPTIONS");
+  if (req.method === "OPTIONS") return res.status(204).send("");
+  if (req.method !== "GET") return res.status(405).send("Method not allowed");
+
+  const authResult = await verifyAdminRequest(req);
+  if (!authResult.ok) return res.status(authResult.code).send(authResult.message);
+
+  try {
+    const status = trimText(req.query.status, 40);
+    let query = admin.firestore().collection("problem_reports");
+    if (!status) {
+      query = query.orderBy("createdAt", "desc");
+    } else {
+      query = query.where("status", "==", status);
+    }
+    const snap = await query.limit(250).get();
+    const items = snap.docs
+      .map((doc) => ({ id: doc.id, ...doc.data() }))
+      .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+    res.status(200).json({ ok: true, items });
+  } catch (err) {
+    console.error("adminListProblemReports error", err);
+    res.status(500).send("Server error");
+  }
+});
+
+exports.adminUpdateProblemReport = functions.https.onRequest(async (req, res) => {
+  setAdminCors(res, "POST, OPTIONS");
+  if (req.method === "OPTIONS") return res.status(204).send("");
+  if (req.method !== "POST") return res.status(405).send("Method not allowed");
+
+  const authResult = await verifyAdminRequest(req);
+  if (!authResult.ok) return res.status(authResult.code).send(authResult.message);
+
+  try {
+    const body = req.body || {};
+    const reportId = trimText(body.reportId, 128);
+    const status = trimText(body.status, 40) || "pending";
+    const adminNote = trimText(body.adminNote, 1000);
+    if (!reportId) return res.status(400).send("Missing reportId");
+
+    await admin
+      .firestore()
+      .collection("problem_reports")
+      .doc(reportId)
+      .set(
+        {
+          status,
+          adminNote,
+          handledAt: new Date().toISOString(),
+          handledBy: authResult.user?.email || "",
+        },
+        { merge: true }
+      );
+
+    res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error("adminUpdateProblemReport error", err);
+    res.status(500).send("Server error");
+  }
+});
+
+exports.adminSendNotification = functions.https.onRequest(async (req, res) => {
+  setAdminCors(res, "POST, OPTIONS");
+  if (req.method === "OPTIONS") return res.status(204).send("");
+  if (req.method !== "POST") return res.status(405).send("Method not allowed");
+
+  const authResult = await verifyAdminRequest(req);
+  if (!authResult.ok) return res.status(authResult.code).send(authResult.message);
+
+  try {
+    const body = req.body || {};
+    const targetType = trimText(body.targetType, 10) === "user" ? "user" : "all";
+    const targetUid = trimText(body.uid, 128);
+    const sendInApp = toBool(body.inApp, true);
+    const sendOffApp = toBool(body.offApp, true);
+    const title = trimText(body.title, 80);
+    const message = trimText(body.body, 240);
+    const url = normalizeRoute(body.url);
+
+    if (!title || !message) return res.status(400).send("Missing title/body");
+    if (targetType === "user" && !targetUid) return res.status(400).send("Missing uid for user target");
+
+    const payload = { title, body: message, url };
+    const nowIso = new Date().toISOString();
+
+    let webSent = 0;
+    let webFailed = 0;
+    let fcmSent = 0;
+    let fcmFailed = 0;
+
+    if (sendOffApp) {
+      const { webItems, fcmItems } = await listTokensByTarget(targetType, targetUid);
+      const webResult = await sendWebPushItems(webItems, payload);
+      webSent = webResult.sent;
+      webFailed = webResult.failed;
+      const fcmResult = await sendFcmItems(fcmItems, payload);
+      fcmSent = fcmResult.sent;
+      fcmFailed = fcmResult.failed;
+    }
+
+    let inAppId = "";
+    if (sendInApp) {
+      const ref = await admin.firestore().collection("in_app_notifications").add({
+        targetType,
+        targetUid: targetType === "user" ? targetUid : null,
+        title,
+        body: message,
+        url,
+        active: true,
+        createdAt: nowIso,
+        createdBy: authResult.user?.email || "",
+      });
+      inAppId = ref.id;
+    }
+
+    res.status(200).json({
+      ok: true,
+      targetType,
+      targetUid: targetType === "user" ? targetUid : null,
+      webSent,
+      webFailed,
+      fcmSent,
+      fcmFailed,
+      inAppId,
+    });
+  } catch (err) {
+    console.error("adminSendNotification error", err);
+    res.status(500).send("Server error");
+  }
+});
+
+exports.adminListNotifications = functions.https.onRequest(async (req, res) => {
+  setAdminCors(res, "GET, OPTIONS");
+  if (req.method === "OPTIONS") return res.status(204).send("");
+  if (req.method !== "GET") return res.status(405).send("Method not allowed");
+
+  const authResult = await verifyAdminRequest(req);
+  if (!authResult.ok) return res.status(authResult.code).send(authResult.message);
+
+  try {
+    const status = trimText(req.query.status, 20).toLowerCase();
+    const targetType = trimText(req.query.targetType, 10).toLowerCase();
+    let query = admin.firestore().collection("in_app_notifications");
+    if (status === "active") query = query.where("active", "==", true);
+    if (status === "inactive") query = query.where("active", "==", false);
+    if (targetType === "all" || targetType === "user") query = query.where("targetType", "==", targetType);
+    const snap = await query.limit(300).get();
+    const items = snap.docs
+      .map((doc) => ({ id: doc.id, ...doc.data() }))
+      .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+    res.status(200).json({ ok: true, items });
+  } catch (err) {
+    console.error("adminListNotifications error", err);
+    res.status(500).send("Server error");
+  }
+});
+
+exports.adminUpdateNotification = functions.https.onRequest(async (req, res) => {
+  setAdminCors(res, "POST, OPTIONS");
+  if (req.method === "OPTIONS") return res.status(204).send("");
+  if (req.method !== "POST") return res.status(405).send("Method not allowed");
+
+  const authResult = await verifyAdminRequest(req);
+  if (!authResult.ok) return res.status(authResult.code).send(authResult.message);
+
+  try {
+    const body = req.body || {};
+    const notificationId = trimText(body.notificationId, 128);
+    const action = trimText(body.action, 40);
+    if (!notificationId || !action) return res.status(400).send("Missing notificationId/action");
+
+    const ref = admin.firestore().collection("in_app_notifications").doc(notificationId);
+    if (action === "activate") {
+      await ref.set(
+        {
+          active: true,
+          updatedAt: new Date().toISOString(),
+          updatedBy: authResult.user?.email || "",
+        },
+        { merge: true }
+      );
+      return res.status(200).json({ ok: true, active: true });
+    }
+    if (action === "deactivate") {
+      await ref.set(
+        {
+          active: false,
+          updatedAt: new Date().toISOString(),
+          updatedBy: authResult.user?.email || "",
+        },
+        { merge: true }
+      );
+      return res.status(200).json({ ok: true, active: false });
+    }
+    if (action === "delete") {
+      await ref.delete();
+      return res.status(200).json({ ok: true, deleted: true });
+    }
+
+    return res.status(400).send("Unknown action");
+  } catch (err) {
+    console.error("adminUpdateNotification error", err);
+    res.status(500).send("Server error");
+  }
+});
+
+exports.getInAppNotifications = functions.https.onRequest(async (req, res) => {
+  setAdminCors(res, "GET, OPTIONS");
+  if (req.method === "OPTIONS") return res.status(204).send("");
+  if (req.method !== "GET") return res.status(405).send("Method not allowed");
+
+  const authResult = await verifyUserRequest(req);
+  if (!authResult.ok) return res.status(authResult.code).send(authResult.message);
+
+  try {
+    const uid = String(authResult.user?.uid || "");
+    if (!uid) return res.status(401).send("Invalid auth token");
+
+    const [allSnap, userSnap] = await Promise.all([
+      admin
+        .firestore()
+        .collection("in_app_notifications")
+        .where("active", "==", true)
+        .where("targetType", "==", "all")
+        .limit(25)
+        .get(),
+      admin
+        .firestore()
+        .collection("in_app_notifications")
+        .where("active", "==", true)
+        .where("targetType", "==", "user")
+        .where("targetUid", "==", uid)
+        .limit(25)
+        .get(),
+    ]);
+
+    const map = new Map();
+    allSnap.forEach((doc) => map.set(doc.id, { id: doc.id, ...doc.data() }));
+    userSnap.forEach((doc) => map.set(doc.id, { id: doc.id, ...doc.data() }));
+
+    const items = Array.from(map.values())
+      .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")))
+      .slice(0, 30);
+    res.status(200).json({ ok: true, items });
+  } catch (err) {
+    console.error("getInAppNotifications error", err);
     res.status(500).send("Server error");
   }
 });
