@@ -74,6 +74,16 @@ service cloud.firestore {
         request.auth.uid == resource.data.uid;
     }
 
+    match /problem_reports/{reportId} {
+      allow create: if isVerified() &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.message is string &&
+        request.resource.data.message.size() >= 10 &&
+        request.resource.data.message.size() <= 1500;
+      allow read: if isVerified() && request.auth.uid == resource.data.uid;
+      allow update, delete: if false;
+    }
+
     match /friendships/{friendId} {
       allow read: if isSignedIn() &&
         (request.auth.uid == resource.data.from || request.auth.uid == resource.data.to);

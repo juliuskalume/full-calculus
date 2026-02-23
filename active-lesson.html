@@ -349,6 +349,66 @@
           </div>
         </div>
       </div>
+
+      <!-- Report Problem Overlay -->
+      <div id="reportOverlay" class="fixed inset-0 z-[70] hidden">
+        <div class="absolute inset-0 bg-[#141414]/70 backdrop-blur-sm"></div>
+        <div class="absolute inset-0 flex items-end sm:items-center justify-center px-0 sm:px-4">
+          <div class="w-full max-w-[520px] bg-white dark:bg-[#1a2235] rounded-t-3xl sm:rounded-3xl p-6 sm:p-7">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-xl font-bold text-[#0d121c] dark:text-white">Report a problem</h2>
+              <button
+                id="closeReportBtn"
+                type="button"
+                class="rounded-lg p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                aria-label="Close report dialog"
+              >
+                <span class="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <label for="reportType" class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Issue type</label>
+            <select
+              id="reportType"
+              class="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 mb-4 text-slate-800 dark:text-white focus:border-primary focus:ring-0"
+            >
+              <option value="wrong-answer">Wrong answer key</option>
+              <option value="wrong-explanation">Wrong explanation</option>
+              <option value="content-issue">Content issue / typo</option>
+              <option value="ui-bug">UI bug</option>
+              <option value="performance">Performance issue</option>
+              <option value="other">Other</option>
+            </select>
+
+            <label for="reportDetails" class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Details</label>
+            <textarea
+              id="reportDetails"
+              rows="4"
+              maxlength="1500"
+              class="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-slate-800 dark:text-white focus:border-primary focus:ring-0"
+              placeholder="Describe what is wrong so we can fix it quickly."
+            ></textarea>
+            <p id="reportStatus" class="mt-3 min-h-[1.25rem] text-xs font-semibold text-slate-500 dark:text-slate-400"></p>
+
+            <div class="mt-5 flex flex-col sm:flex-row gap-3">
+              <button
+                id="submitReportBtn"
+                type="button"
+                class="flex-1 rounded-xl h-12 bg-primary hover:bg-primary-dark text-white font-bold transition-colors"
+              >
+                Send report
+              </button>
+              <button
+                id="cancelReportBtn"
+                type="button"
+                class="flex-1 rounded-xl h-12 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/mathjs@11.8.0/lib/browser/math.min.js"></script>
@@ -380,6 +440,13 @@
       const quitOverlay = document.getElementById("quitOverlay");
       const keepLearningBtn = document.getElementById("keepLearningBtn");
       const quitLessonBtn = document.getElementById("quitLessonBtn");
+      const reportOverlay = document.getElementById("reportOverlay");
+      const closeReportBtn = document.getElementById("closeReportBtn");
+      const cancelReportBtn = document.getElementById("cancelReportBtn");
+      const submitReportBtn = document.getElementById("submitReportBtn");
+      const reportType = document.getElementById("reportType");
+      const reportDetails = document.getElementById("reportDetails");
+      const reportStatus = document.getElementById("reportStatus");
 
       const questionTitle = document.getElementById("questionTitle");
       const questionHint = document.getElementById("questionHint");
@@ -404,6 +471,7 @@
       let currentResponse = "";
       let locked = false;
       let mathTypesetTries = 0;
+      const REPORT_QUEUE_KEY = "fc_problem_reports_queue";
 
       if (window.FC?.get) {
         const meta = FC.get();
@@ -428,6 +496,136 @@
 
       function formatMathText(value) {
         return escapeHtml(value).replace(/\n/g, "<br>");
+      }
+
+      function readReportQueue() {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(REPORT_QUEUE_KEY) || "[]");
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          return [];
+        }
+      }
+
+      function saveReportQueue(queue) {
+        try {
+          localStorage.setItem(REPORT_QUEUE_KEY, JSON.stringify(queue));
+        } catch {
+          // ignore
+        }
+      }
+
+      function enqueueReport(payload) {
+        const queue = readReportQueue();
+        queue.push(payload);
+        saveReportQueue(queue);
+      }
+
+      function getReportAccessState() {
+        const auth = window.FCAuth;
+        if (!auth || !auth.enabled) {
+          return { allowed: false, message: "Sign in is required to send a report." };
+        }
+        const user = auth.getCurrentUser?.();
+        if (user) return { allowed: true, message: "" };
+        const raw = auth.getRawUser?.();
+        if (raw && !raw.emailVerified) {
+          return { allowed: false, message: "Verify your email in Settings before sending reports." };
+        }
+        return { allowed: false, message: "Sign in to send a report." };
+      }
+
+      function setReportStatus(message, tone) {
+        if (!reportStatus) return;
+        reportStatus.textContent = message || "";
+        reportStatus.className = "mt-3 min-h-[1.25rem] text-xs font-semibold";
+        if (tone === "error") {
+          reportStatus.classList.add("text-rose-500");
+        } else if (tone === "ok") {
+          reportStatus.classList.add("text-emerald-500");
+        } else {
+          reportStatus.classList.add("text-slate-500", "dark:text-slate-400");
+        }
+      }
+
+      function setReportSubmitting(isSubmitting) {
+        if (!submitReportBtn) return;
+        submitReportBtn.disabled = isSubmitting;
+        submitReportBtn.classList.toggle("opacity-60", isSubmitting);
+        submitReportBtn.textContent = isSubmitting ? "Sending..." : "Send report";
+      }
+
+      function buildReportPayload() {
+        const access = getReportAccessState();
+        if (!access.allowed) return null;
+        const user = window.FCAuth.getCurrentUser();
+        const answer = currentItem?.answer?.value;
+        const answerText = answer == null ? "" : String(answer);
+        return {
+          uid: user.uid,
+          email: user.email || "",
+          issueType: String(reportType?.value || "other"),
+          message: String(reportDetails?.value || "").trim(),
+          page: "active-lesson",
+          sessionId: session?.id || "",
+          sessionMode: session?.mode || "",
+          sectionId: session?.sectionId || currentItem?.sectionId || "",
+          itemId: currentItem?.id || "",
+          itemType: currentItem?.type || "",
+          prompt: String(currentItem?.prompt || "").slice(0, 500),
+          expectedAnswer: answerText.slice(0, 200),
+          userResponse: String(currentResponse || "").slice(0, 200),
+          questionIndex: Number(session?.index ?? 0),
+          questionCount: Number(session?.itemIds?.length ?? 0),
+          url: window.location.href,
+          userAgent: navigator.userAgent || "",
+          clientCreatedAt: new Date().toISOString(),
+        };
+      }
+
+      async function submitReportPayload(payload) {
+        const db = window.FCAuth?.db;
+        const serverTimestamp = window.firebase?.firestore?.FieldValue?.serverTimestamp?.();
+        if (!db) throw Object.assign(new Error("Firestore unavailable"), { code: "firestore/unavailable" });
+        await db.collection("problem_reports").add({
+          ...payload,
+          createdAt: serverTimestamp || payload.clientCreatedAt,
+        });
+      }
+
+      async function flushQueuedReports() {
+        const access = getReportAccessState();
+        if (!access.allowed || !navigator.onLine) return;
+        const queue = readReportQueue();
+        if (!queue.length) return;
+        const pending = [...queue];
+        const remaining = [];
+        for (let i = 0; i < pending.length; i += 1) {
+          try {
+            await submitReportPayload(pending[i]);
+          } catch {
+            remaining.push(pending[i]);
+          }
+        }
+        saveReportQueue(remaining);
+      }
+
+      function openReportOverlay() {
+        if (!reportOverlay) return;
+        reportOverlay.classList.remove("hidden");
+        document.body.classList.add("overflow-hidden");
+        if (reportDetails) reportDetails.value = "";
+        if (reportType) reportType.value = "wrong-answer";
+        const access = getReportAccessState();
+        setReportStatus(access.allowed ? "" : access.message, access.allowed ? "default" : "error");
+      }
+
+      function closeReportOverlay() {
+        if (!reportOverlay) return;
+        reportOverlay.classList.add("hidden");
+        if (quitOverlay?.classList.contains("hidden")) {
+          document.body.classList.remove("overflow-hidden");
+        }
       }
 
       function typesetMath(targets) {
@@ -734,11 +932,61 @@
       });
 
       reportBtn.addEventListener("click", () => {
-        if (window.FCUI?.showComingSoon) {
-          window.FCUI.showComingSoon({
-            title: "Coming Soon!",
-            message: "We are still building the report flow. This tool will be available soon.",
-          });
+        openReportOverlay();
+      });
+
+      closeReportBtn?.addEventListener("click", closeReportOverlay);
+      cancelReportBtn?.addEventListener("click", closeReportOverlay);
+
+      submitReportBtn?.addEventListener("click", async () => {
+        const access = getReportAccessState();
+        if (!access.allowed) {
+          setReportStatus(access.message, "error");
+          return;
+        }
+        const details = String(reportDetails?.value || "").trim();
+        if (details.length < 10) {
+          setReportStatus("Please add at least 10 characters so we can investigate.", "error");
+          return;
+        }
+
+        const payload = buildReportPayload();
+        if (!payload) {
+          setReportStatus("Unable to prepare report data. Try again.", "error");
+          return;
+        }
+
+        setReportSubmitting(true);
+        try {
+          await submitReportPayload(payload);
+          setReportStatus("Report sent. Thank you.", "ok");
+          setTimeout(() => {
+            setReportSubmitting(false);
+            closeReportOverlay();
+          }, 550);
+        } catch (err) {
+          const code = String(err?.code || "");
+          const message = String(err?.message || "").toLowerCase();
+          const isOfflineError =
+            !navigator.onLine ||
+            code.includes("unavailable") ||
+            code.includes("deadline-exceeded") ||
+            message.includes("network");
+
+          if (isOfflineError) {
+            enqueueReport(payload);
+            setReportStatus("No internet. Report saved and will sync automatically.", "ok");
+            setTimeout(() => {
+              setReportSubmitting(false);
+              closeReportOverlay();
+            }, 900);
+          } else if (code.includes("permission-denied")) {
+            setReportStatus("Verify your email in Settings before sending reports.", "error");
+            setReportSubmitting(false);
+          } else {
+            setReportStatus("Could not send report right now. Please try again.", "error");
+            setReportSubmitting(false);
+          }
         }
       });
 
@@ -836,6 +1084,11 @@
         renderItem();
         setLives();
       }
+
+      flushQueuedReports().catch(() => {});
+      window.addEventListener("online", () => {
+        flushQueuedReports().catch(() => {});
+      });
     </script>
   </body>
 </html>
