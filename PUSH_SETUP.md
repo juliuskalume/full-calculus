@@ -24,23 +24,23 @@ cd functions
 npm install
 ```
 
-## 4) Configure Web Push Keys
+## 4) Configure Runtime Params (No `functions.config()`)
 
-Use the keys generated in this repo:
-
-- Public key (client): already stored in `firebase-config.js`
-- Private key (server): set below
+Create `functions/.env.full-calculus` from `functions/.env.example` and fill values:
 
 ```bash
-firebase functions:config:set \
-  webpush.public_key="BH0mxXqAfmTAP45v5iHf8J2gdyQHlC5qiMiAlTbeR0Q3z_8YSnr17Y7CPQ1v3uWMBIZwZPkABb_HcULAvCUz4wU" \
-  webpush.private_key="XWgmQ0AIIwK0OokXGfiuRRuNKK3gP43jBLN9dES26ww" \
-  webpush.subject="mailto:juliuskalume906@gmail.com" \
-  webpush.timezone="Etc/UTC" \
-  webpush.test_key="CHANGE_ME"
+WEBPUSH_PUBLIC_KEY=BH0mxXqAfmTAP45v5iHf8J2gdyQHlC5qiMiAlTbeR0Q3z_8YSnr17Y7CPQ1v3uWMBIZwZPkABb_HcULAvCUz4wU
+WEBPUSH_PRIVATE_KEY=REPLACE_WITH_YOUR_PRIVATE_KEY
+WEBPUSH_SUBJECT=mailto:juliuskalume906@gmail.com
+WEBPUSH_TIMEZONE=Etc/UTC
+WEBPUSH_TEST_KEY=CHANGE_ME
+ADMIN_EMAILS=sentira.official@gmail.com,skalmistjulius@gmail.com
 ```
 
-Adjust `webpush.timezone` if you want a different local time for reminders (e.g. `Africa/Nairobi`).
+Notes:
+- Public key (client) is also stored in `firebase-config.js`.
+- Keep `functions/.env.*` out of git (already ignored).
+- Adjust `WEBPUSH_TIMEZONE` if needed (e.g. `Africa/Nairobi`).
 
 ## 5) Deploy Firestore Rules + Functions
 

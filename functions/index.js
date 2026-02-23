@@ -1,21 +1,50 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
+const { defineString } = require("firebase-functions/params");
 const webpush = require("web-push");
 
 admin.initializeApp();
 
-const config = functions.config().webpush || {};
-const publicKey = config.public_key || "";
-const privateKey = config.private_key || "";
-const subject = config.subject || "mailto:juliuskalume906@gmail.com";
-const timeZone = config.timezone || "Etc/UTC";
-const testKey = config.test_key || "";
-const leagueTimeZone = config.timezone || "Etc/UTC";
-const adminConfig = functions.config().admin || {};
-const adminEmails = String(adminConfig.emails || process.env.ADMIN_EMAILS || "")
-  .split(",")
-  .map((email) => email.trim().toLowerCase())
-  .filter(Boolean);
+const WEBPUSH_PUBLIC_KEY = defineString("WEBPUSH_PUBLIC_KEY");
+const WEBPUSH_PRIVATE_KEY = defineString("WEBPUSH_PRIVATE_KEY");
+const WEBPUSH_SUBJECT = defineString("WEBPUSH_SUBJECT");
+const WEBPUSH_TIMEZONE = defineString("WEBPUSH_TIMEZONE");
+const WEBPUSH_TEST_KEY = defineString("WEBPUSH_TEST_KEY");
+const ADMIN_EMAILS_PARAM = defineString("ADMIN_EMAILS");
+const DEFAULT_VAPID_SUBJECT = "mailto:juliuskalume906@gmail.com";
+const DEFAULT_TIMEZONE = "Etc/UTC";
+
+const getRuntimeConfig = () => {
+  const publicKey = String(WEBPUSH_PUBLIC_KEY.value() || process.env.WEBPUSH_PUBLIC_KEY || "").trim();
+  const privateKey = String(WEBPUSH_PRIVATE_KEY.value() || process.env.WEBPUSH_PRIVATE_KEY || "").trim();
+  const subject =
+    String(WEBPUSH_SUBJECT.value() || process.env.WEBPUSH_SUBJECT || DEFAULT_VAPID_SUBJECT).trim() ||
+    DEFAULT_VAPID_SUBJECT;
+  const timeZone =
+    String(WEBPUSH_TIMEZONE.value() || process.env.WEBPUSH_TIMEZONE || DEFAULT_TIMEZONE).trim() ||
+    DEFAULT_TIMEZONE;
+  const testKey = String(WEBPUSH_TEST_KEY.value() || process.env.WEBPUSH_TEST_KEY || "").trim();
+  const adminEmails = String(ADMIN_EMAILS_PARAM.value() || process.env.ADMIN_EMAILS || "")
+    .split(",")
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
+  return { publicKey, privateKey, subject, timeZone, testKey, adminEmails };
+};
+
+let vapidSignature = "";
+const ensureVapidDetails = (runtimeConfig = getRuntimeConfig()) => {
+  if (!runtimeConfig.publicKey || !runtimeConfig.privateKey) return false;
+  const signature = `${runtimeConfig.subject}|${runtimeConfig.publicKey}|${runtimeConfig.privateKey}`;
+  if (vapidSignature !== signature) {
+    webpush.setVapidDetails(
+      runtimeConfig.subject || DEFAULT_VAPID_SUBJECT,
+      runtimeConfig.publicKey,
+      runtimeConfig.privateKey
+    );
+    vapidSignature = signature;
+  }
+  return true;
+};
 
 const LEAGUES = [
   { id: "bronze", name: "Bronze League" },
@@ -38,10 +67,6 @@ const getWeekKey = (date = new Date()) => {
   const weekNo = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
   return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
 };
-
-if (publicKey && privateKey) {
-  webpush.setVapidDetails(subject, publicKey, privateKey);
-}
 
 const COLLECTION = "push_subscriptions";
 const FCM_COLLECTION = "fcm_tokens";
@@ -98,6 +123,7 @@ const verifyAdminRequest = async (req) => {
   if (!token) return { ok: false, code: 401, message: "Missing auth token" };
   try {
     const decoded = await admin.auth().verifyIdToken(token);
+    const { adminEmails } = getRuntimeConfig();
     const email = String(decoded.email || "").toLowerCase();
     if (!email || !adminEmails.includes(email)) {
       return { ok: false, code: 403, message: "Not authorized" };
@@ -121,15 +147,16 @@ const verifyUserRequest = async (req) => {
 
 exports.sendLearningReminder = functions.pubsub
   .schedule("0 18 * * 2,5")
-  .timeZone(timeZone)
+  .timeZone(getRuntimeConfig().timeZone)
   .onRun(async () => {
+    const runtimeConfig = getRuntimeConfig();
     const payload = {
       title: "Time to learn",
       body: "A short session keeps your streak strong. Ready for a quick lesson?",
       url: "path.html",
     };
 
-    if (!publicKey || !privateKey) {
+    if (!ensureVapidDetails(runtimeConfig)) {
       console.warn("Missing VAPID keys. Web push will be skipped.");
     } else {
       const snapshot = await admin.firestore().collection(COLLECTION).get();
@@ -168,12 +195,14 @@ exports.sendLearningReminder = functions.pubsub
 
 exports.sendTestPush = functions.https.onRequest(async (req, res) => {
   try {
-    if (!publicKey || !privateKey) {
+    const runtimeConfig = getRuntimeConfig();
+    const hasWebPush = ensureVapidDetails(runtimeConfig);
+    if (!hasWebPush) {
       console.warn("Missing VAPID keys. Web push will be skipped.");
     }
 
     const key = String(req.query.key || req.body?.key || "");
-    if (!testKey || key !== testKey) {
+    if (!runtimeConfig.testKey || key !== runtimeConfig.testKey) {
       res.status(403).send("Forbidden");
       return;
     }
@@ -184,7 +213,7 @@ exports.sendTestPush = functions.https.onRequest(async (req, res) => {
       return;
     }
 
-    const snap = publicKey && privateKey
+    const snap = hasWebPush
       ? await admin.firestore().collection(COLLECTION).where("uid", "==", uid).get()
       : null;
 
@@ -236,7 +265,7 @@ exports.sendTestPush = functions.https.onRequest(async (req, res) => {
 
 exports.rotateLeaguesWeekly = functions.pubsub
   .schedule("5 0 * * 1")
-  .timeZone(leagueTimeZone)
+  .timeZone(getRuntimeConfig().timeZone)
   .onRun(async () => {
     const db = admin.firestore();
     const metaRef = db.collection("leaderboard_meta").doc("rotation");
@@ -341,7 +370,7 @@ exports.notifyFriendRequest = functions.firestore
         url: "profile.html",
       };
 
-      if (publicKey && privateKey) {
+      if (ensureVapidDetails(getRuntimeConfig())) {
         const webPayload = JSON.stringify(payload);
         const snapSubs = await admin.firestore().collection(COLLECTION).where("uid", "==", toUid).get();
         if (!snapSubs.empty) {
@@ -687,7 +716,8 @@ const listTokensByTarget = async (targetType, targetUid) => {
 };
 
 const sendWebPushItems = async (items, payload) => {
-  if (!publicKey || !privateKey || !items.length) return { sent: 0, failed: 0 };
+  if (!items.length) return { sent: 0, failed: 0 };
+  if (!ensureVapidDetails(getRuntimeConfig())) return { sent: 0, failed: 0 };
   const webPayload = JSON.stringify(payload);
   let sent = 0;
   let failed = 0;
