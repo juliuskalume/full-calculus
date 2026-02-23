@@ -2,7 +2,8 @@
   const cfg = window.FC_FIREBASE_CONFIG || {};
   if (!firebase.apps.length) firebase.initializeApp(cfg);
   const auth = firebase.auth();
-  const base = `https://us-central1-${cfg.projectId || "full-calculus"}.cloudfunctions.net`;
+  const remoteBase = `https://us-central1-${cfg.projectId || "full-calculus"}.cloudfunctions.net`;
+  const localBase = "/api";
 
   const el = (id) => document.getElementById(id);
   const state = {
@@ -41,27 +42,52 @@
     return user.getIdToken(true);
   };
 
-  const api = async (name, options = {}) => {
-    const token = await getToken();
-    let url = `${base}/${name}`;
-    const method = options.method || "GET";
-    const query = options.query || {};
+  const isLikelyNetworkError = (err) => {
+    const msg = String(err?.message || "").toLowerCase();
+    return msg.includes("failed to fetch") || msg.includes("networkerror") || msg.includes("network request failed");
+  };
+
+  const buildUrl = (base, name, query) => {
     const qs = new URLSearchParams();
-    Object.keys(query).forEach((key) => {
+    Object.keys(query || {}).forEach((key) => {
       const value = query[key];
       if (value != null && String(value) !== "") qs.set(key, String(value));
     });
-    const encoded = qs.toString();
-    if (encoded) url += `?${encoded}`;
+    const suffix = qs.toString();
+    return `${base.replace(/\/$/, "")}/${name}${suffix ? `?${suffix}` : ""}`;
+  };
 
-    const res = await fetch(url, {
+  const api = async (name, options = {}) => {
+    const token = await getToken();
+    const method = options.method || "GET";
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    };
+    const requestInit = {
       method,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers,
       body: method === "GET" ? undefined : JSON.stringify(options.body || {}),
-    });
+    };
+    const localUrl = buildUrl(localBase, name, options.query || {});
+    const remoteUrl = buildUrl(remoteBase, name, options.query || {});
+
+    let res;
+    try {
+      res = await fetch(localUrl, requestInit);
+      if (res.status === 404 || res.status === 503 || res.status === 502) {
+        throw new Error("local-proxy-miss");
+      }
+    } catch (err) {
+      try {
+        res = await fetch(remoteUrl, requestInit);
+      } catch (remoteErr) {
+        if (isLikelyNetworkError(remoteErr) || isLikelyNetworkError(err)) {
+          throw new Error("Network/CORS error. Deploy both functions and hosting, then reload admin page.");
+        }
+        throw remoteErr;
+      }
+    }
 
     const text = await res.text();
     let data = null;
@@ -70,7 +96,7 @@
     } catch {
       data = null;
     }
-    if (!res.ok) throw new Error((data && data.message) || text || "Request failed");
+    if (!res.ok) throw new Error((data && data.message) || text || `Request failed (${res.status})`);
     return data;
   };
 
@@ -131,7 +157,7 @@
     el("dashboardCards").innerHTML = cards
       .map(
         ([label, value]) => `
-          <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <div class="rounded-2xl border border-sky-100 bg-gradient-to-br from-white to-sky-50 p-3 shadow-sm">
             <p class="text-xs text-slate-500">${escapeHtml(label)}</p>
             <p class="text-2xl font-extrabold">${Number(value) || 0}</p>
           </div>
@@ -159,28 +185,28 @@
           u.disabled ? "Disabled" : "Active"
         } | ${u.leagueName || "-"}`;
         return `
-          <article class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <article class="rounded-2xl border border-sky-100 bg-white p-3 shadow-sm">
             <p class="font-bold">${escapeHtml(u.username || u.displayName || u.fullName || "Unnamed")}</p>
             <p class="text-xs text-slate-500 break-all">${escapeHtml(u.email || "-")}</p>
             <p class="text-[11px] text-slate-500 mt-1">UID: ${escapeHtml(u.uid || "-")}</p>
             <p class="text-xs text-slate-500 mt-1">${escapeHtml(statusText)} | XP ${Number(u.xp) || 0}</p>
             <div class="mt-2 flex flex-wrap gap-2">
-              <button class="ua px-2 py-1 rounded border border-slate-300 text-xs font-semibold" data-action="${
+              <button class="ua px-2.5 py-1.5 rounded-xl border border-sky-200 text-xs font-semibold bg-white hover:bg-sky-50" data-action="${
                 u.disabled ? "enable" : "disable"
               }" data-uid="${escapeHtml(u.uid)}">${u.disabled ? "Enable" : "Disable"}</button>
-              <button class="ua px-2 py-1 rounded border border-slate-300 text-xs font-semibold" data-action="reset_password" data-uid="${escapeHtml(
+              <button class="ua px-2.5 py-1.5 rounded-xl border border-sky-200 text-xs font-semibold bg-white hover:bg-sky-50" data-action="reset_password" data-uid="${escapeHtml(
                 u.uid
               )}" data-email="${escapeHtml(u.email || "")}">Reset link</button>
-              <button class="ua px-2 py-1 rounded border border-slate-300 text-xs font-semibold" data-action="send_verification" data-uid="${escapeHtml(
+              <button class="ua px-2.5 py-1.5 rounded-xl border border-sky-200 text-xs font-semibold bg-white hover:bg-sky-50" data-action="send_verification" data-uid="${escapeHtml(
                 u.uid
               )}" data-email="${escapeHtml(u.email || "")}">Verify link</button>
-              <button class="ua px-2 py-1 rounded border border-slate-300 text-xs font-semibold" data-action="grant_admin" data-uid="${escapeHtml(
+              <button class="ua px-2.5 py-1.5 rounded-xl border border-sky-200 text-xs font-semibold bg-white hover:bg-sky-50" data-action="grant_admin" data-uid="${escapeHtml(
                 u.uid
               )}">Grant admin</button>
-              <button class="ua px-2 py-1 rounded border border-slate-300 text-xs font-semibold" data-action="revoke_admin" data-uid="${escapeHtml(
+              <button class="ua px-2.5 py-1.5 rounded-xl border border-sky-200 text-xs font-semibold bg-white hover:bg-sky-50" data-action="revoke_admin" data-uid="${escapeHtml(
                 u.uid
               )}">Revoke admin</button>
-              <button class="ua px-2 py-1 rounded bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold" data-action="delete" data-uid="${escapeHtml(
+              <button class="ua px-2.5 py-1.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold" data-action="delete" data-uid="${escapeHtml(
                 u.uid
               )}">Delete</button>
             </div>
@@ -213,10 +239,18 @@
     const execute = async () => {
       setMsg("usersMsg", "Applying action...");
       try {
-        const data = await api("adminUserAction", {
-          method: "POST",
-          body: { action, uid, email },
-        });
+        let data;
+        try {
+          data = await api("adminApplyUserAction", {
+            method: "POST",
+            body: { action, uid, email },
+          });
+        } catch {
+          data = await api("adminUserAction", {
+            method: "POST",
+            body: { action, uid, email },
+          });
+        }
         if (data && data.link) {
           el("actionLink").textContent = data.link;
           el("actionLinkWrap").classList.remove("hidden");
@@ -240,7 +274,7 @@
     el("deletionsList").innerHTML = state.deletions
       .map(
         (r) => `
-          <article class="rounded-xl border border-slate-200 p-3">
+          <article class="rounded-2xl border border-sky-100 bg-white p-3 shadow-sm">
             <p class="font-bold">${escapeHtml(r.email || "-")}</p>
             <p class="text-xs text-slate-500">UID: ${escapeHtml(r.uid || "-")} | ${escapeHtml(
           r.status || "pending"
@@ -248,13 +282,13 @@
             <p class="text-sm mt-1">Reason: <span class="text-slate-500">${escapeHtml(r.reason || "-")}</span></p>
             <p class="text-sm">Details: <span class="text-slate-500">${escapeHtml(r.details || "-")}</span></p>
             <div class="mt-2 flex flex-wrap gap-2">
-              <button class="dr px-2 py-1 rounded bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold" data-id="${escapeHtml(
+              <button class="dr px-2.5 py-1.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold" data-id="${escapeHtml(
                 r.id || ""
               )}" data-action="approve_delete">Approve & delete</button>
-              <button class="dr px-2 py-1 rounded border border-slate-300 text-xs font-semibold" data-id="${escapeHtml(
+              <button class="dr px-2.5 py-1.5 rounded-xl border border-sky-200 bg-white hover:bg-sky-50 text-xs font-semibold" data-id="${escapeHtml(
                 r.id || ""
               )}" data-action="deny">Deny</button>
-              <button class="dr px-2 py-1 rounded bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold" data-id="${escapeHtml(
+              <button class="dr px-2.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold" data-id="${escapeHtml(
                 r.id || ""
               )}" data-action="complete">Complete</button>
             </div>
@@ -304,7 +338,7 @@
     el("reportsList").innerHTML = state.reports
       .map(
         (r) => `
-          <article class="rounded-xl border border-slate-200 p-3">
+          <article class="rounded-2xl border border-sky-100 bg-white p-3 shadow-sm">
             <p class="font-bold">${escapeHtml(r.issueType || "Issue")} <span class="text-xs text-slate-500">(${escapeHtml(
           r.status || "pending"
         )})</span></p>
@@ -312,20 +346,20 @@
           r.createdAt
         ))} | ${escapeHtml(r.page || "-")}</p>
             <p class="text-sm mt-1 whitespace-pre-wrap">${escapeHtml(r.message || "-")}</p>
-            <textarea class="report-note mt-2 w-full rounded border border-slate-300 px-2 py-1.5 text-sm" data-id="${escapeHtml(
+            <textarea class="report-note mt-2 w-full rounded-xl border border-slate-300 bg-white px-2 py-1.5 text-sm" data-id="${escapeHtml(
               r.id || ""
             )}" rows="2" placeholder="Admin note">${escapeHtml(r.adminNote || "")}</textarea>
             <div class="mt-2 flex flex-wrap gap-2">
-              <button class="report-action px-2 py-1 rounded border border-slate-300 text-xs font-semibold" data-id="${escapeHtml(
+              <button class="report-action px-2.5 py-1.5 rounded-xl border border-sky-200 bg-white hover:bg-sky-50 text-xs font-semibold" data-id="${escapeHtml(
                 r.id || ""
               )}" data-status="pending">Pending</button>
-              <button class="report-action px-2 py-1 rounded border border-slate-300 text-xs font-semibold" data-id="${escapeHtml(
+              <button class="report-action px-2.5 py-1.5 rounded-xl border border-sky-200 bg-white hover:bg-sky-50 text-xs font-semibold" data-id="${escapeHtml(
                 r.id || ""
               )}" data-status="in_review">In review</button>
-              <button class="report-action px-2 py-1 rounded bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold" data-id="${escapeHtml(
+              <button class="report-action px-2.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold" data-id="${escapeHtml(
                 r.id || ""
               )}" data-status="resolved">Resolved</button>
-              <button class="report-action px-2 py-1 rounded bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold" data-id="${escapeHtml(
+              <button class="report-action px-2.5 py-1.5 rounded-xl bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold" data-id="${escapeHtml(
                 r.id || ""
               )}" data-status="closed">Closed</button>
             </div>
@@ -375,7 +409,7 @@
     el("notifyList").innerHTML = state.notifications
       .map(
         (n) => `
-          <article class="rounded-xl border border-slate-200 p-3">
+          <article class="rounded-2xl border border-sky-100 bg-white p-3 shadow-sm">
             <p class="font-bold">${escapeHtml(n.title || "-")} <span class="text-xs text-slate-500">(${
           n.active ? "active" : "inactive"
         })</span></p>
@@ -384,13 +418,13 @@
           n.targetUid || ""
         )} | ${escapeHtml(n.url || "path.html")} | ${escapeHtml(fmt(n.createdAt))}</p>
             <div class="mt-2 flex flex-wrap gap-2">
-              <button class="notification-action px-2 py-1 rounded border border-slate-300 text-xs font-semibold" data-id="${escapeHtml(
+              <button class="notification-action px-2.5 py-1.5 rounded-xl border border-sky-200 bg-white hover:bg-sky-50 text-xs font-semibold" data-id="${escapeHtml(
                 n.id || ""
               )}" data-action="activate">Activate</button>
-              <button class="notification-action px-2 py-1 rounded border border-slate-300 text-xs font-semibold" data-id="${escapeHtml(
+              <button class="notification-action px-2.5 py-1.5 rounded-xl border border-sky-200 bg-white hover:bg-sky-50 text-xs font-semibold" data-id="${escapeHtml(
                 n.id || ""
               )}" data-action="deactivate">Deactivate</button>
-              <button class="notification-action px-2 py-1 rounded bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold" data-id="${escapeHtml(
+              <button class="notification-action px-2.5 py-1.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold" data-id="${escapeHtml(
                 n.id || ""
               )}" data-action="delete">Delete</button>
             </div>

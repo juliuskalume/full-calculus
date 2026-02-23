@@ -6,133 +6,160 @@
     <meta name="robots" content="noindex,nofollow" />
     <meta name="theme-color" content="#1cb0f6" />
     <title>Full Calculus Admin</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
     <link
       href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300..700&display=swap"
+      rel="stylesheet"
+    />
     <style>
-      body { font-family: "Lexend", sans-serif; }
+      body {
+        font-family: "Lexend", sans-serif;
+        background:
+          radial-gradient(circle at 15% 15%, rgba(28, 176, 246, 0.16), transparent 38%),
+          radial-gradient(circle at 85% 85%, rgba(6, 182, 212, 0.14), transparent 36%),
+          linear-gradient(180deg, #f0f9ff 0%, #f8fafc 55%, #eef2ff 100%);
+      }
       .panel { display: none; }
       .panel.active { display: block; }
+      .card {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+      }
+      .material-symbols-outlined {
+        font-variation-settings: "FILL" 1, "wght" 560, "GRAD" 0, "opsz" 20;
+      }
     </style>
   </head>
-  <body class="bg-slate-100 text-slate-900 min-h-screen">
-    <header class="sticky top-0 z-20 bg-white border-b border-slate-200">
-      <div class="max-w-[1800px] mx-auto px-4 py-3 flex items-center justify-between">
-        <div>
-          <h1 class="text-lg md:text-xl font-extrabold">Full Calculus Admin</h1>
-          <p class="text-xs text-slate-500">Users, support, reports, notifications</p>
+  <body class="text-slate-900 min-h-screen">
+    <header class="sticky top-0 z-20 border-b border-sky-200/60 bg-gradient-to-r from-sky-50/95 to-cyan-50/95 backdrop-blur-md">
+      <div class="max-w-[1880px] mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-sky-500 text-white flex items-center justify-center shadow-lg shadow-sky-300/60">
+            <span class="material-symbols-outlined">admin_panel_settings</span>
+          </div>
+          <div>
+            <h1 class="text-lg md:text-xl font-extrabold tracking-tight">Full Calculus Admin</h1>
+            <p class="text-xs text-slate-600">Users, support, moderation, notifications</p>
+          </div>
         </div>
         <div class="flex items-center gap-2">
-          <span id="adminEmail" class="hidden text-xs text-slate-500"></span>
-          <button id="signOutBtn" class="hidden px-3 py-2 rounded-lg border border-slate-300 text-sm font-semibold">Sign out</button>
+          <span id="adminEmail" class="hidden text-xs md:text-sm text-slate-600 font-semibold"></span>
+          <button id="signOutBtn" class="hidden px-3 py-2 rounded-xl bg-white/90 border border-sky-200 text-sm font-semibold hover:bg-sky-50 transition-colors">Sign out</button>
         </div>
       </div>
     </header>
 
-    <main class="max-w-[1800px] mx-auto p-4">
-      <section id="authCard" class="max-w-md mx-auto rounded-2xl border border-slate-200 bg-white p-5">
-        <h2 class="text-lg font-extrabold mb-2">Admin sign in</h2>
-        <input id="loginEmail" type="email" placeholder="admin@example.com" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm mb-2" />
-        <input id="loginPass" type="password" placeholder="Password" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm mb-2" />
-        <button id="signInBtn" class="w-full rounded-lg bg-sky-500 hover:bg-sky-600 text-white font-bold py-2.5">Sign in</button>
-        <p id="authMsg" class="text-sm text-slate-500 min-h-[1.25rem] mt-2"></p>
+    <main class="max-w-[1880px] mx-auto p-4 md:p-6">
+      <section id="authCard" class="card max-w-md mx-auto rounded-3xl border border-sky-100 p-6 shadow-xl shadow-sky-100/70">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="material-symbols-outlined text-sky-600">lock_person</span>
+          <h2 class="text-xl font-extrabold">Admin sign in</h2>
+        </div>
+        <p class="text-sm text-slate-600 mb-4">Use an authorized admin email to open the control center.</p>
+        <input id="loginEmail" type="email" placeholder="admin@example.com" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm mb-2 focus:border-sky-400 focus:ring-sky-400" />
+        <input id="loginPass" type="password" placeholder="Password" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm mb-2 focus:border-sky-400 focus:ring-sky-400" />
+        <button id="signInBtn" class="w-full rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-bold py-2.5 transition-colors">Sign in</button>
+        <p id="authMsg" class="text-sm text-slate-500 min-h-[1.25rem] mt-2 font-semibold"></p>
       </section>
 
       <section id="app" class="hidden">
-        <div class="grid xl:grid-cols-[220px_minmax(0,1fr)] gap-4">
-          <aside class="rounded-2xl border border-slate-200 bg-white p-3 h-fit sticky top-20">
+        <div class="grid xl:grid-cols-[250px_minmax(0,1fr)] gap-4 md:gap-5">
+          <aside class="card rounded-3xl border border-sky-100 p-3 h-fit sticky top-24 shadow-lg shadow-sky-100/60">
+            <p class="px-2 pt-1 pb-2 text-xs uppercase tracking-wide font-bold text-slate-500">Sections</p>
             <nav class="space-y-2">
-              <button class="tab w-full text-left px-3 py-2 rounded-lg bg-sky-100 text-sky-700 font-bold" data-tab="dashboard">Dashboard</button>
-              <button class="tab w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 font-semibold" data-tab="users">Users</button>
-              <button class="tab w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 font-semibold" data-tab="deletions">Deletion Requests</button>
-              <button class="tab w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 font-semibold" data-tab="reports">Problem Reports</button>
-              <button class="tab w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 font-semibold" data-tab="notifications">Notifications</button>
+              <button class="tab w-full text-left px-3 py-2.5 rounded-xl bg-sky-100 text-sky-700 font-bold flex items-center gap-2" data-tab="dashboard"><span class="material-symbols-outlined text-base">dashboard</span>Dashboard</button>
+              <button class="tab w-full text-left px-3 py-2.5 rounded-xl hover:bg-slate-100 font-semibold flex items-center gap-2" data-tab="users"><span class="material-symbols-outlined text-base">group</span>Users</button>
+              <button class="tab w-full text-left px-3 py-2.5 rounded-xl hover:bg-slate-100 font-semibold flex items-center gap-2" data-tab="deletions"><span class="material-symbols-outlined text-base">delete</span>Deletion Requests</button>
+              <button class="tab w-full text-left px-3 py-2.5 rounded-xl hover:bg-slate-100 font-semibold flex items-center gap-2" data-tab="reports"><span class="material-symbols-outlined text-base">report</span>Problem Reports</button>
+              <button class="tab w-full text-left px-3 py-2.5 rounded-xl hover:bg-slate-100 font-semibold flex items-center gap-2" data-tab="notifications"><span class="material-symbols-outlined text-base">campaign</span>Notifications</button>
             </nav>
           </aside>
 
           <div class="space-y-4">
-            <section id="dashboard" class="panel active rounded-2xl border border-slate-200 bg-white p-4">
+            <section id="dashboard" class="panel active card rounded-3xl border border-sky-100 p-4 md:p-5 shadow-lg shadow-sky-100/60">
               <div class="flex items-center justify-between mb-3">
                 <h2 class="text-lg font-extrabold">Dashboard</h2>
-                <button id="refreshDashboard" class="px-3 py-2 rounded-lg border border-slate-300 text-sm font-semibold">Refresh</button>
+                <button id="refreshDashboard" class="px-3 py-2 rounded-xl border border-sky-200 bg-white text-sm font-semibold hover:bg-sky-50 transition-colors">Refresh</button>
               </div>
               <div id="dashboardCards" class="grid sm:grid-cols-2 xl:grid-cols-3 gap-3"></div>
-              <p id="dashboardMsg" class="text-sm text-slate-500 mt-3"></p>
+              <p id="dashboardMsg" class="text-sm text-slate-500 mt-3 font-semibold"></p>
             </section>
 
-            <section id="users" class="panel rounded-2xl border border-slate-200 bg-white p-4">
+            <section id="users" class="panel card rounded-3xl border border-sky-100 p-4 md:p-5 shadow-lg shadow-sky-100/60">
               <div class="flex flex-wrap gap-2 mb-3">
-                <input id="userQuery" type="text" placeholder="Search email, username, uid..." class="flex-1 min-w-[220px] rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                <button id="usersLoad" class="px-3 py-2 rounded-lg bg-sky-500 hover:bg-sky-600 text-white text-sm font-bold">Load</button>
-                <button id="usersNext" class="px-3 py-2 rounded-lg border border-slate-300 text-sm font-semibold">Next</button>
-                <button id="usersExport" class="px-3 py-2 rounded-lg border border-slate-300 text-sm font-semibold">Export CSV</button>
+                <input id="userQuery" type="text" placeholder="Search email, username, uid..." class="flex-1 min-w-[220px] rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-sky-400 focus:ring-sky-400" />
+                <button id="usersLoad" class="px-3 py-2 rounded-xl bg-sky-500 hover:bg-sky-600 text-white text-sm font-bold transition-colors">Load</button>
+                <button id="usersNext" class="px-3 py-2 rounded-xl border border-sky-200 bg-white text-sm font-semibold hover:bg-sky-50">Next</button>
+                <button id="usersExport" class="px-3 py-2 rounded-xl border border-sky-200 bg-white text-sm font-semibold hover:bg-sky-50">Export CSV</button>
               </div>
-              <p id="usersMsg" class="text-sm text-slate-500 mb-3"></p>
+              <p id="usersMsg" class="text-sm text-slate-500 mb-3 font-semibold"></p>
               <div id="usersList" class="space-y-3"></div>
-              <div id="actionLinkWrap" class="hidden rounded-lg border border-sky-300 bg-sky-50 p-3 mt-3">
+              <div id="actionLinkWrap" class="hidden rounded-xl border border-sky-300 bg-sky-50 p-3 mt-3">
                 <p class="text-xs font-semibold text-sky-700 mb-1">Generated link</p>
                 <p id="actionLink" class="text-xs break-all"></p>
               </div>
             </section>
 
-            <section id="deletions" class="panel rounded-2xl border border-slate-200 bg-white p-4">
+            <section id="deletions" class="panel card rounded-3xl border border-sky-100 p-4 md:p-5 shadow-lg shadow-sky-100/60">
               <div class="flex flex-wrap gap-2 mb-3">
-                <select id="deletionsFilter" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                <select id="deletionsFilter" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-sky-400 focus:ring-sky-400">
                   <option value="">All</option>
                   <option value="pending">Pending</option>
                   <option value="denied">Denied</option>
                   <option value="deleted">Deleted</option>
                   <option value="completed">Completed</option>
                 </select>
-                <button id="deletionsLoad" class="px-3 py-2 rounded-lg border border-slate-300 text-sm font-semibold">Refresh</button>
-                <button id="deletionsExport" class="px-3 py-2 rounded-lg border border-slate-300 text-sm font-semibold">Export CSV</button>
+                <button id="deletionsLoad" class="px-3 py-2 rounded-xl border border-sky-200 bg-white text-sm font-semibold hover:bg-sky-50">Refresh</button>
+                <button id="deletionsExport" class="px-3 py-2 rounded-xl border border-sky-200 bg-white text-sm font-semibold hover:bg-sky-50">Export CSV</button>
               </div>
-              <p id="deletionsMsg" class="text-sm text-slate-500 mb-3"></p>
+              <p id="deletionsMsg" class="text-sm text-slate-500 mb-3 font-semibold"></p>
               <div id="deletionsList" class="space-y-3"></div>
             </section>
 
-            <section id="reports" class="panel rounded-2xl border border-slate-200 bg-white p-4">
+            <section id="reports" class="panel card rounded-3xl border border-sky-100 p-4 md:p-5 shadow-lg shadow-sky-100/60">
               <div class="flex flex-wrap gap-2 mb-3">
-                <select id="reportsFilter" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                <select id="reportsFilter" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-sky-400 focus:ring-sky-400">
                   <option value="">All</option>
                   <option value="pending">Pending</option>
                   <option value="in_review">In review</option>
                   <option value="resolved">Resolved</option>
                   <option value="closed">Closed</option>
                 </select>
-                <button id="reportsLoad" class="px-3 py-2 rounded-lg border border-slate-300 text-sm font-semibold">Refresh</button>
-                <button id="reportsExport" class="px-3 py-2 rounded-lg border border-slate-300 text-sm font-semibold">Export CSV</button>
+                <button id="reportsLoad" class="px-3 py-2 rounded-xl border border-sky-200 bg-white text-sm font-semibold hover:bg-sky-50">Refresh</button>
+                <button id="reportsExport" class="px-3 py-2 rounded-xl border border-sky-200 bg-white text-sm font-semibold hover:bg-sky-50">Export CSV</button>
               </div>
-              <p id="reportsMsg" class="text-sm text-slate-500 mb-3"></p>
+              <p id="reportsMsg" class="text-sm text-slate-500 mb-3 font-semibold"></p>
               <div id="reportsList" class="space-y-3"></div>
             </section>
 
-            <section id="notifications" class="panel rounded-2xl border border-slate-200 bg-white p-4">
-              <div class="rounded-xl border border-slate-200 p-3 mb-4">
+            <section id="notifications" class="panel card rounded-3xl border border-sky-100 p-4 md:p-5 shadow-lg shadow-sky-100/60">
+              <div class="rounded-2xl border border-slate-200 bg-white p-3 mb-4">
                 <h3 class="font-bold mb-2">Send notification</h3>
                 <div class="grid md:grid-cols-2 gap-2">
-                  <select id="notifyTargetType" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                  <select id="notifyTargetType" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-sky-400 focus:ring-sky-400">
                     <option value="all">All users</option>
                     <option value="user">One user (UID)</option>
                   </select>
-                  <input id="notifyTargetUid" type="text" placeholder="UID for one user target" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                  <input id="notifyTitle" type="text" maxlength="80" placeholder="Title" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                  <input id="notifyUrl" type="text" placeholder="path.html" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                  <input id="notifyTargetUid" type="text" placeholder="UID for one user target" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-sky-400 focus:ring-sky-400" />
+                  <input id="notifyTitle" type="text" maxlength="80" placeholder="Title" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-sky-400 focus:ring-sky-400" />
+                  <input id="notifyUrl" type="text" placeholder="path.html" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-sky-400 focus:ring-sky-400" />
                 </div>
-                <textarea id="notifyBody" rows="3" maxlength="240" placeholder="Message body" class="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"></textarea>
+                <textarea id="notifyBody" rows="3" maxlength="240" placeholder="Message body" class="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-sky-400 focus:ring-sky-400"></textarea>
                 <div class="mt-2 flex flex-wrap items-center gap-4">
                   <label class="inline-flex items-center gap-2 text-sm"><input id="notifyInApp" type="checkbox" checked />In-app</label>
                   <label class="inline-flex items-center gap-2 text-sm"><input id="notifyOffApp" type="checkbox" checked />Off-app push</label>
-                  <button id="notifySend" class="px-4 py-2 rounded-lg bg-sky-500 hover:bg-sky-600 text-white text-sm font-bold">Send</button>
+                  <button id="notifySend" class="px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-600 text-white text-sm font-bold transition-colors">Send</button>
                 </div>
               </div>
               <div class="flex flex-wrap gap-2 mb-2">
-                <button id="notifyLoad" class="px-3 py-2 rounded-lg border border-slate-300 text-sm font-semibold">Refresh history</button>
-                <button id="notifyExport" class="px-3 py-2 rounded-lg border border-slate-300 text-sm font-semibold">Export CSV</button>
+                <button id="notifyLoad" class="px-3 py-2 rounded-xl border border-sky-200 bg-white text-sm font-semibold hover:bg-sky-50">Refresh history</button>
+                <button id="notifyExport" class="px-3 py-2 rounded-xl border border-sky-200 bg-white text-sm font-semibold hover:bg-sky-50">Export CSV</button>
               </div>
-              <p id="notifyMsg" class="text-sm text-slate-500 mb-3"></p>
+              <p id="notifyMsg" class="text-sm text-slate-500 mb-3 font-semibold"></p>
               <div id="notifyList" class="space-y-3"></div>
             </section>
           </div>
@@ -140,13 +167,13 @@
       </section>
     </main>
 
-    <div id="confirmBox" class="fixed inset-0 hidden items-center justify-center bg-black/60 p-4">
-      <div class="w-full max-w-md rounded-xl bg-white p-4">
+    <div id="confirmBox" class="fixed inset-0 hidden items-center justify-center bg-slate-950/60 p-4">
+      <div class="w-full max-w-md rounded-2xl bg-white border border-sky-100 p-4 shadow-xl shadow-slate-900/20">
         <h3 id="confirmTitle" class="font-extrabold mb-1">Confirm</h3>
         <p id="confirmText" class="text-sm text-slate-600 mb-4"></p>
         <div class="flex justify-end gap-2">
-          <button id="confirmCancel" class="px-3 py-2 rounded-lg border border-slate-300 text-sm font-semibold">Cancel</button>
-          <button id="confirmOk" class="px-3 py-2 rounded-lg bg-rose-500 hover:bg-rose-600 text-white text-sm font-bold">Proceed</button>
+          <button id="confirmCancel" class="px-3 py-2 rounded-xl border border-slate-300 text-sm font-semibold">Cancel</button>
+          <button id="confirmOk" class="px-3 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-sm font-bold">Proceed</button>
         </div>
       </div>
     </div>

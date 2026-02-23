@@ -874,7 +874,7 @@ exports.adminListUsers = functions.https.onRequest(async (req, res) => {
   }
 });
 
-exports.adminUserAction = functions.https.onRequest(async (req, res) => {
+const handleAdminUserAction = async (req, res, functionName = "adminUserAction") => {
   setAdminCors(res, "POST, OPTIONS");
   if (req.method === "OPTIONS") return res.status(204).send("");
   if (req.method !== "POST") return res.status(405).send("Method not allowed");
@@ -929,10 +929,19 @@ exports.adminUserAction = functions.https.onRequest(async (req, res) => {
 
     return res.status(400).send("Unknown action");
   } catch (err) {
-    console.error("adminUserAction error", err);
+    console.error(`${functionName} error`, err);
     res.status(500).send("Server error");
   }
-});
+};
+
+exports.adminUserAction = functions.https.onRequest(async (req, res) =>
+  handleAdminUserAction(req, res, "adminUserAction")
+);
+
+// Mirror endpoint for browsers hitting CORS or IAM edge-cases on the legacy route.
+exports.adminApplyUserAction = functions.https.onRequest(async (req, res) =>
+  handleAdminUserAction(req, res, "adminApplyUserAction")
+);
 
 exports.adminListProblemReports = functions.https.onRequest(async (req, res) => {
   setAdminCors(res, "GET, OPTIONS");

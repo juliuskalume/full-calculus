@@ -1486,11 +1486,23 @@
     if (!user) return;
     const token = await user.getIdToken(!!forceToken);
     const projectId = String(config.projectId || "full-calculus");
-    const endpoint = `https://us-central1-${projectId}.cloudfunctions.net/getInAppNotifications`;
-    const res = await fetch(endpoint, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const localEndpoint = "/api/getInAppNotifications";
+    const remoteEndpoint = `https://us-central1-${projectId}.cloudfunctions.net/getInAppNotifications`;
+    let res;
+    try {
+      res = await fetch(localEndpoint, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.status === 404 || res.status === 503 || res.status === 502) {
+        throw new Error("local-proxy-miss");
+      }
+    } catch {
+      res = await fetch(remoteEndpoint, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    }
     if (!res.ok) return;
     const data = await res.json().catch(() => null);
     const items = Array.isArray(data?.items) ? data.items : [];

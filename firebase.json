@@ -12,6 +12,20 @@
       "**/.*",
       "**/node_modules/**",
       "functions/**"
+    ],
+    "rewrites": [
+      { "source": "/api/adminDashboard", "function": "adminDashboard" },
+      { "source": "/api/adminListUsers", "function": "adminListUsers" },
+      { "source": "/api/adminApplyUserAction", "function": "adminApplyUserAction" },
+      { "source": "/api/adminUserAction", "function": "adminUserAction" },
+      { "source": "/api/listAccountDeletionRequests", "function": "listAccountDeletionRequests" },
+      { "source": "/api/processAccountDeletion", "function": "processAccountDeletion" },
+      { "source": "/api/adminListProblemReports", "function": "adminListProblemReports" },
+      { "source": "/api/adminUpdateProblemReport", "function": "adminUpdateProblemReport" },
+      { "source": "/api/adminSendNotification", "function": "adminSendNotification" },
+      { "source": "/api/adminListNotifications", "function": "adminListNotifications" },
+      { "source": "/api/adminUpdateNotification", "function": "adminUpdateNotification" },
+      { "source": "/api/getInAppNotifications", "function": "getInAppNotifications" }
     ]
   }
 }
