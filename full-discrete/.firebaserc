@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "default": "full-discrete",
+    "staging": "full-discrete"
+  },
+  "targets": {},
+  "etags": {}
+}

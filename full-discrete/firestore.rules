@@ -1,0 +1,113 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    match /users/{uid} {
+      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow write: if isVerified() && request.auth.uid == uid;
+    }
+
+    match /leaderboard/{uid} {
+      allow read: if isSignedIn();
+      allow write: if isVerified() && request.auth.uid == uid;
+    }
+
+    match /public_profiles/{uid} {
+      allow read: if isSignedIn();
+      allow write: if isVerified() && request.auth.uid == uid;
+    }
+
+    match /name_registry/{nameId} {
+      allow read: if isSignedIn() && request.auth.uid == resource.data.uid;
+      allow create: if isVerified() &&
+        request.resource.data.uid == request.auth.uid &&
+        (
+          (request.resource.data.usernameLower is string &&
+            request.resource.data.usernameLower == nameId &&
+            request.resource.data.username is string &&
+            request.resource.data.username.size() >= 3 &&
+            request.resource.data.username.size() <= 20)
+          ||
+          (request.resource.data.nameLower is string &&
+            request.resource.data.nameLower == nameId &&
+            request.resource.data.name is string &&
+            request.resource.data.name.size() >= 3 &&
+            request.resource.data.name.size() <= 20)
+        ) &&
+        !exists(/databases/$(database)/documents/name_registry/$(nameId));
+      allow update: if isVerified() &&
+        request.auth.uid == resource.data.uid &&
+        request.resource.data.uid == resource.data.uid &&
+        (
+          (request.resource.data.usernameLower is string &&
+            request.resource.data.usernameLower == nameId)
+          ||
+          (request.resource.data.nameLower is string &&
+            request.resource.data.nameLower == nameId)
+        );
+      allow delete: if isVerified() && request.auth.uid == resource.data.uid;
+    }
+
+    match /push_subscriptions/{docId} {
+      allow read: if isSignedIn();
+      allow create, update: if isVerified() &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.endpoint is string;
+      allow delete: if isVerified() &&
+        request.auth.uid == resource.data.uid;
+    }
+
+    match /fcm_tokens/{docId} {
+      allow read: if isSignedIn();
+      allow create, update: if isVerified() &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.token is string;
+      allow delete: if isVerified() &&
+        request.auth.uid == resource.data.uid;
+    }
+
+    match /problem_reports/{reportId} {
+      allow create: if isVerified() &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.message is string &&
+        request.resource.data.message.size() >= 10 &&
+        request.resource.data.message.size() <= 1500;
+      allow read: if isVerified() && request.auth.uid == resource.data.uid;
+      allow update, delete: if false;
+    }
+
+    match /friendships/{friendId} {
+      allow read: if isSignedIn() &&
+        (request.auth.uid == resource.data.from || request.auth.uid == resource.data.to);
+
+      allow create: if isVerified() &&
+        request.auth.uid == request.resource.data.from &&
+        request.resource.data.status == "pending" &&
+        request.resource.data.from is string &&
+        request.resource.data.to is string &&
+        request.resource.data.from != request.resource.data.to &&
+        !exists(/databases/$(database)/documents/friendships/$(friendId));
+
+      allow update: if isVerified() &&
+        request.auth.uid == resource.data.to &&
+        request.resource.data.status == "accepted" &&
+        request.resource.data.from == resource.data.from &&
+        request.resource.data.to == resource.data.to;
+
+      allow delete: if isVerified() &&
+        (request.auth.uid == resource.data.from || request.auth.uid == resource.data.to);
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

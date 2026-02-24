@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex,nofollow" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <meta name="theme-color" content="#1cb0f6" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <link rel="icon" type="image/png" href="icons/icon-192.png" />
+    <title>Full Discrete — League</title>
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&family=Noto+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+      rel="stylesheet"
+    />
+
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#1cb0f6",
+              secondary: "#58cc02",
+              danger: "#ff4b4b",
+              gold: "#ffc800",
+              silver: "#dce6ea",
+              bronze: "#f4a259",
+
+              "background-light": "#f5f6f8",
+              "background-dark": "#101622",
+              "surface-light": "#ffffff",
+              "surface-dark": "#1e2532",
+            },
+            fontFamily: {
+              display: ["Lexend", "sans-serif"],
+              body: ["Noto Sans", "sans-serif"],
+            },
+            borderRadius: {
+              DEFAULT: "1rem",
+              lg: "1.5rem",
+              xl: "2rem",
+              full: "9999px",
+            },
+            boxShadow: {
+              soft: "0 4px 20px -2px rgba(0,0,0,0.06)",
+              gold: "0 4px 0 0 #e5b400",
+              silver: "0 4px 0 0 #c4ced2",
+              bronze: "0 4px 0 0 #d98e4d",
+            },
+          },
+        },
+      };
+    </script>
+
+    <style>
+      body {
+        font-family: "Lexend", sans-serif;
+        min-height: max(884px, 100dvh);
+      }
+      .material-symbols-outlined {
+        font-variation-settings: "FILL" 1, "wght" 650, "GRAD" 0, "opsz" 24;
+      }
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      .press:active {
+        transform: translateY(4px);
+        box-shadow: none !important;
+      }
+    </style>
+    <script src="theme.js"></script>
+  </head>
+
+  <body
+    data-step="leaderboard"
+    class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white min-h-screen flex justify-center antialiased"
+  >
+    <!-- Mobile shell -->
+    <div
+      class="w-full max-w-none h-[100dvh] sm:min-h-screen bg-background-light dark:bg-background-dark shadow-2xl flex flex-col overflow-hidden"
+    >
+      <!-- Sticky Header -->
+      <header
+        class="bg-surface-light/95 dark:bg-background-dark/95 backdrop-blur-md sticky top-0 z-30 px-4 pt-4 pb-3 border-b border-slate-200 dark:border-slate-800"
+      >
+        <!-- Top row -->
+        <div class="flex items-center justify-between mb-2">
+          <button
+            id="backBtn"
+            type="button"
+            class="press text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors rounded-xl p-2 hover:bg-slate-50 dark:hover:bg-slate-800"
+            aria-label="Back"
+          >
+            <span class="material-symbols-outlined">arrow_back</span>
+          </button>
+
+          <div class="flex items-center gap-2">
+            <div class="bg-primary/10 dark:bg-primary/20 px-3 py-1 rounded-full flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-primary text-[18px]">schedule</span>
+              <p class="text-primary text-xs font-extrabold tracking-wide uppercase">
+                <span id="timeLeft">2d 4h left</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Title + meta -->
+        <div class="flex flex-col items-center">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="material-symbols-outlined text-primary text-3xl" id="leagueIcon">diamond</span>
+            <h1 id="leagueName" class="text-xl font-extrabold tracking-tight">League</h1>
+          </div>
+          <p id="leagueSubtitle" class="text-slate-500 dark:text-slate-400 text-sm font-medium">
+            Top 5 promote · 16-20 demotion zone
+          </p>
+
+          <!-- User meta chips -->
+          <div class="mt-3 flex items-center gap-2">
+            <div class="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-surface-dark rounded-full border border-slate-200 dark:border-slate-700 shadow-sm">
+              <span class="material-symbols-outlined text-yellow-500 text-[18px]">bolt</span>
+              <span class="text-sm font-extrabold text-yellow-600 dark:text-yellow-400" id="xpVal">—</span>
+              <span class="text-xs font-bold text-slate-400">XP</span>
+            </div>
+
+            <div class="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-surface-dark rounded-full border border-slate-200 dark:border-slate-700 shadow-sm">
+              <span class="material-symbols-outlined text-orange-500 text-[18px]">local_fire_department</span>
+              <span class="text-sm font-extrabold text-orange-500" id="streakVal">—</span>
+              <span class="text-xs font-bold text-slate-400">streak</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Scroll -->
+      <main class="flex-1 overflow-y-auto no-scrollbar pb-10">
+        <!-- Podium -->
+        <section class="px-4 pt-6 pb-8">
+          <div id="podium" class="flex items-end justify-center gap-2"></div>
+        </section>
+
+        <!-- Promotion Zone -->
+        <div class="flex items-center gap-2 px-6 py-2">
+          <div class="h-[1px] bg-secondary/30 flex-1"></div>
+          <p class="text-secondary text-xs font-bold uppercase tracking-wider">Promotion Zone</p>
+          <div class="h-[1px] bg-secondary/30 flex-1"></div>
+        </div>
+
+        <!-- List -->
+        <section class="flex flex-col px-4 gap-3 pb-8" id="list"></section>
+      </main>
+    </div>
+
+    <!-- Shared state -->
+    <script src="state.js"></script>
+    <script src="progress.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="auth.js"></script>
+
+    <script>
+      // Back
+      document.getElementById("backBtn")?.addEventListener("click", () => {
+        window.location.href = "path.html";
+      });
+
+      const DEFAULT_AVATAR =
+        "icons/icon-192.png";
+
+      const toNumber = (value) => (typeof value === "number" ? value : Number(value) || 0);
+
+      const LEAGUES = [
+        { id: "bronze", name: "Bronze League", icon: "military_tech" },
+        { id: "silver", name: "Silver League", icon: "military_tech" },
+        { id: "gold", name: "Gold League", icon: "military_tech" },
+        { id: "sapphire", name: "Sapphire League", icon: "diamond" },
+        { id: "ruby", name: "Ruby League", icon: "diamond" },
+        { id: "emerald", name: "Emerald League", icon: "diamond" },
+        { id: "amethyst", name: "Amethyst League", icon: "diamond" },
+        { id: "master", name: "Master League", icon: "trophy" },
+        { id: "champion", name: "Champion League", icon: "trophy" },
+        { id: "obsidian", name: "Obsidian League", icon: "workspace_premium" },
+      ];
+
+      const getLeague = (index) => {
+        const i = Math.max(0, Math.min(LEAGUES.length - 1, Number(index) || 0));
+        return { ...LEAGUES[i], index: i, next: LEAGUES[i + 1] || null, prev: LEAGUES[i - 1] || null };
+      };
+
+      const escapeHtml = (value) =>
+        String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+
+      const getDisplayName = (data) => {
+        const fallback = "Learner";
+        return String(data?.displayName || data?.username || data?.name || fallback).trim() || fallback;
+      };
+
+      const getAvatar = (data) => data?.photoURL || DEFAULT_AVATAR;
+      const getXp = (data) => toNumber(data?.xp ?? data?.meta?.xp);
+      const getStreak = (data) => toNumber(data?.streak ?? data?.meta?.streak);
+
+      const renderPodium = (users) => {
+        const podium = document.getElementById("podium");
+        if (!podium) return;
+        podium.innerHTML = "";
+
+        const top1 = users[0];
+        const top2 = users[1];
+        const top3 = users[2];
+
+        const createPodiumCard = (user, rank, options) => {
+          if (!user) return null;
+          const card = document.createElement("div");
+          const name = escapeHtml(getDisplayName(user));
+          const xp = getXp(user);
+          const avatar = escapeHtml(getAvatar(user));
+          card.className = `flex flex-col items-center ${options.wrapperClass || ""}`.trim();
+          card.innerHTML = `
+            ${
+              options.crown
+                ? `<div class="mb-2 flex items-center gap-1 text-gold animate-bounce"><span class="material-symbols-outlined">crown</span></div>`
+                : ""
+            }
+            <p class="${options.nameClass} mb-1">${name}</p>
+            <div class="relative">
+              <div class="${options.avatarClass} overflow-hidden">
+                <img alt="User Avatar" class="w-full h-full object-cover" src="${avatar}" />
+              </div>
+              <div class="${options.rankBadgeClass}">${rank}</div>
+            </div>
+            <p class="${options.xpClass}">${xp} XP</p>
+          `;
+          return card;
+        };
+
+        const second = createPodiumCard(top2, 2, {
+          wrapperClass: "z-10 -mr-4 mb-4",
+          nameClass: "text-slate-500 dark:text-slate-400 font-bold",
+          avatarClass: "w-20 h-20 rounded-full border-4 border-silver bg-slate-200 shadow-silver",
+          rankBadgeClass:
+            "absolute -bottom-3 left-1/2 -translate-x-1/2 bg-silver text-slate-700 text-xs font-black px-2 py-0.5 rounded-full shadow-sm",
+          xpClass: "text-slate-900 dark:text-white font-bold mt-4 text-sm",
+          crown: false,
+        });
+
+        const first = createPodiumCard(top1, 1, {
+          wrapperClass: "z-20",
+          nameClass: "text-primary font-extrabold mt-5 text-lg",
+          avatarClass: "w-28 h-28 rounded-full border-4 border-gold bg-slate-200 shadow-gold",
+          rankBadgeClass:
+            "absolute -bottom-3 left-1/2 -translate-x-1/2 bg-gold text-slate-900 text-sm font-black px-3 py-1 rounded-full shadow-sm",
+          xpClass: "text-slate-900 dark:text-white font-black text-xl",
+          crown: true,
+        });
+
+        const third = createPodiumCard(top3, 3, {
+          wrapperClass: "z-10 -ml-4 mb-4",
+          nameClass: "text-slate-500 dark:text-slate-400 font-bold",
+          avatarClass: "w-20 h-20 rounded-full border-4 border-bronze bg-slate-200 shadow-bronze",
+          rankBadgeClass:
+            "absolute -bottom-3 left-1/2 -translate-x-1/2 bg-bronze text-white text-xs font-black px-2 py-0.5 rounded-full shadow-sm",
+          xpClass: "text-slate-900 dark:text-white font-bold mt-4 text-sm",
+          crown: false,
+        });
+
+        [second, first, third].forEach((el) => {
+          if (el) podium.appendChild(el);
+        });
+      };
+
+      const renderList = (users, currentUid) => {
+        const list = document.getElementById("list");
+        if (!list) return;
+        list.innerHTML = "";
+
+        const makeRow = (user, rank, isCurrent) => {
+          const row = document.createElement("div");
+          row.className = isCurrent
+            ? "flex items-center gap-4 p-3 bg-primary/5 dark:bg-primary/20 rounded-2xl shadow-sm border-2 border-primary/20 dark:border-primary/40 relative overflow-hidden"
+            : "flex items-center gap-4 p-3 bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800";
+
+          const name = escapeHtml(getDisplayName(user));
+          const xp = getXp(user);
+          const streak = getStreak(user);
+          const avatar = escapeHtml(getAvatar(user));
+
+          row.innerHTML = `
+            ${isCurrent ? '<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>' : ""}
+            <p class="${isCurrent ? "text-primary" : "text-slate-400"} font-bold w-6 text-center">${rank}</p>
+            <div class="w-10 h-10 rounded-full bg-slate-100 overflow-hidden shrink-0 ${isCurrent ? "border-2 border-primary" : ""}">
+              <img alt="User" class="w-full h-full object-cover" src="${avatar}" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="${isCurrent ? "text-primary" : ""} font-bold text-sm truncate">${name}${
+            isCurrent ? " (You)" : ""
+          }</h3>
+              <div class="flex items-center gap-1">
+                <span class="material-symbols-outlined text-orange-500 text-[14px]">local_fire_department</span>
+                <span class="${
+                  isCurrent ? "text-primary/70 dark:text-primary/80" : "text-slate-500 dark:text-slate-400"
+                } text-xs font-medium">${streak} day streak</span>
+              </div>
+            </div>
+            <p class="${isCurrent ? "text-primary font-black" : "font-bold"}">${xp} XP</p>
+          `;
+          return row;
+        };
+
+        users.forEach((user, index) => {
+          const rank = index + 1;
+          if (rank <= 3) return;
+          const uid = user?.uid || user?.id || "";
+          if (rank === 16) {
+            const zone = document.createElement("div");
+            zone.className = "flex items-center gap-2 px-2 py-1";
+            zone.innerHTML = `
+              <div class="h-[1px] bg-red-200 dark:bg-red-900/50 flex-1"></div>
+              <p class="text-red-500 text-xs font-bold uppercase tracking-wider">Demotion Zone</p>
+              <div class="h-[1px] bg-red-200 dark:bg-red-900/50 flex-1"></div>
+            `;
+            list.appendChild(zone);
+          }
+          list.appendChild(makeRow(user, rank, uid && uid === currentUid));
+        });
+      };
+
+      const renderHeader = (userData) => {
+        const xp = userData ? getXp(userData) : toNumber(window.FC?.get?.().xp || 0);
+        const streak = userData ? getStreak(userData) : toNumber(window.FC?.get?.().streak || 0);
+        document.getElementById("xpVal").textContent = String(xp);
+        document.getElementById("streakVal").textContent = String(streak);
+      };
+
+      const fetchLeaderboard = async (leagueIndex) => {
+        if (!window.FCAuth?.db) return [];
+        const targetIndex = Number(leagueIndex) || 0;
+        try {
+          const snap = await FCAuth.db
+            .collection("leaderboard")
+            .where("leagueIndex", "==", targetIndex)
+            .orderBy("xp", "desc")
+            .limit(20)
+            .get();
+          return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        } catch (err) {
+          // Fallback when composite index isn't ready or query fails.
+          const snap = await FCAuth.db
+            .collection("leaderboard")
+            .where("leagueIndex", "==", targetIndex)
+            .limit(200)
+            .get();
+          const users = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+          users.sort((a, b) => {
+            const xpDiff = getXp(b) - getXp(a);
+            if (xpDiff !== 0) return xpDiff;
+            const aUpdated = Date.parse(a.updatedAt || "") || 0;
+            const bUpdated = Date.parse(b.updatedAt || "") || 0;
+            return bUpdated - aUpdated;
+          });
+          return users.slice(0, 20);
+        }
+      };
+
+      const renderFallback = () => {
+        const meta = window.FC?.get ? FC.get() : {};
+        let localState = {};
+        try {
+          localState = JSON.parse(localStorage.getItem("fc_state") || "{}");
+        } catch {
+          localState = {};
+        }
+        const fallbackUser = {
+          uid: "local",
+          displayName: localState.username || localState.name || "—",
+          photoURL: localState.avatarUrl || meta.avatarUrl || DEFAULT_AVATAR,
+          xp: Number(meta.xp || 0),
+          streak: Number(meta.streak || 0),
+          weeklyXp: Number(meta.weeklyXp || 0),
+          leagueIndex: Number(localState.leagueIndex || 0),
+        };
+        renderHeader(fallbackUser);
+        renderPodium([fallbackUser]);
+        renderList([fallbackUser], "local");
+      };
+
+      const renderPrompt = (message) => {
+        const list = document.getElementById("list");
+        const podium = document.getElementById("podium");
+        if (podium) podium.innerHTML = "";
+        if (!list) return;
+        const note = message || "Sign in to see leaderboard";
+        list.innerHTML = `
+          <div class="bg-white dark:bg-surface-dark border border-slate-100 dark:border-slate-800 rounded-2xl p-5 text-center shadow-sm">
+            <p class="text-slate-700 dark:text-slate-200 font-bold text-lg mb-2">${note}</p>
+            <p class="text-slate-500 dark:text-slate-400 text-sm mb-4">Create an account or log in to view the global league rankings.</p>
+            <button
+              id="leaderboardLoginBtn"
+              type="button"
+              class="press inline-flex items-center justify-center rounded-xl h-12 px-5 bg-primary text-white font-extrabold uppercase tracking-wide shadow-md hover:bg-primary/90"
+            >
+              Sign in
+            </button>
+          </div>
+        `;
+        document.getElementById("leaderboardLoginBtn")?.addEventListener("click", () => {
+          window.location.href = "login.html";
+        });
+      };
+
+
+
+      const updateLeagueHeader = (leagueIndex) => {
+        const league = getLeague(leagueIndex);
+        const iconEl = document.getElementById("leagueIcon");
+        const nameEl = document.getElementById("leagueName");
+        const subtitleEl = document.getElementById("leagueSubtitle");
+        if (iconEl) iconEl.textContent = league.icon || "diamond";
+        if (nameEl) nameEl.textContent = league.name;
+        if (subtitleEl) {
+          subtitleEl.textContent = league.next
+            ? `Top 5 promote to ${league.next.name} - 16-20 demotion zone`
+            : "Top 5 stay - 16-20 demotion zone";
+        }
+      };
+
+      const timeLeftInWeek = () => {
+        const now = new Date();
+        const day = now.getDay();
+        const daysToSunday = (7 - day) % 7;
+        const end = new Date(now);
+        end.setDate(now.getDate() + daysToSunday);
+        end.setHours(23, 59, 59, 999);
+        const diffMs = end - now;
+        const totalHours = Math.max(0, Math.floor(diffMs / 3600000));
+        const days = Math.floor(totalHours / 24);
+        const hours = totalHours % 24;
+        return `${days}d ${hours}h left`;
+      };
+      const loadLeaderboard = async (currentUid) => {
+        try {
+          let userDoc = null;
+          if (currentUid) {
+            try {
+              const doc = await FCAuth.db.collection("leaderboard").doc(currentUid).get();
+              if (doc.exists) userDoc = { id: doc.id, ...doc.data() };
+            } catch {
+              userDoc = null;
+            }
+          }
+          const leagueIndex = Number(userDoc?.leagueIndex ?? 0);
+          if (!Number.isFinite(leagueIndex) || leagueIndex < 0) {
+            renderPrompt("Complete a 1-day streak to join the leaderboard");
+            return;
+          }
+          updateLeagueHeader(leagueIndex);
+          const timeLeftEl = document.getElementById("timeLeft");
+          if (timeLeftEl) timeLeftEl.textContent = timeLeftInWeek();
+
+          const users = await fetchLeaderboard(leagueIndex);
+          if (!users.length) {
+            renderFallback();
+            return;
+          }
+          const current = users.find((u) => (u.uid || u.id) === currentUid) || userDoc || users[0];
+          renderHeader(current);
+          renderPodium(users);
+          renderList(users, currentUid);
+        } catch {
+          if (currentUid) {
+            renderPrompt("Leaderboard is loading. Please try again in a moment.");
+          } else {
+            renderPrompt("Sign in to see leaderboard");
+          }
+        }
+      };
+
+      if (window.FCAuth?.enabled && FCAuth.onAuthStateChanged) {
+        FCAuth.onAuthStateChanged((user) => {
+          const uid = user?.uid || "";
+          loadLeaderboard(uid);
+        });
+      } else {
+        renderFallback();
+      }
+    </script>
+  </body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

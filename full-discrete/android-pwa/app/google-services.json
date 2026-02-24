@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1049050388534",
+    "project_id": "full-discrete",
+    "storage_bucket": "full-discrete.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1049050388534:android:e211b7d2ac082c40c8a097",
+        "android_client_info": {
+          "package_name": "com.sentirax.discrete"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD5z47-qIT1MaV6WY0IDZ8lav2gaVhk-FI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

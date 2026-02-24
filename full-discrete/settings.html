@@ -1,0 +1,1523 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex,nofollow" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <meta name="theme-color" content="#1cb0f6" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <link rel="icon" type="image/png" href="icons/icon-192.png" />
+    <title>Full Discrete — Settings</title>
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700&display=swap"
+      rel="stylesheet"
+    />
+
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#1cb0f6",
+              "primary-hover": "#1599d4",
+              "background-light": "#f5f6f8",
+              "background-dark": "#101622",
+              "surface-light": "#ffffff",
+              "surface-dark": "#1a2332",
+              "text-main": "#0d121c",
+            },
+            fontFamily: {
+              display: ["Lexend", "sans-serif"],
+            },
+            borderRadius: {
+              DEFAULT: "1rem",
+              lg: "1.5rem",
+              xl: "2rem",
+              full: "9999px",
+            },
+            boxShadow: {
+              soft: "0 4px 20px -2px rgba(0,0,0,0.06)",
+              "press-blue": "0 4px 0 0 #1599d4",
+            },
+          },
+        },
+      };
+    </script>
+
+    <style>
+      body {
+        font-family: "Lexend", sans-serif;
+        min-height: max(884px, 100dvh);
+      }
+      .material-symbols-outlined {
+        font-variation-settings: "FILL" 1, "wght" 550, "GRAD" 0, "opsz" 24;
+      }
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      .press:active {
+        transform: translateY(4px);
+        box-shadow: none !important;
+      }
+
+      /* iOS-like switch */
+      .ios-switch {
+        position: relative;
+        display: inline-block;
+        width: 46px;
+        height: 26px;
+      }
+      .ios-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        inset: 0;
+        background-color: #cbd5e1;
+        transition: 0.25s;
+        border-radius: 999px;
+      }
+      .slider:before {
+        position: absolute;
+        content: "";
+        height: 22px;
+        width: 22px;
+        left: 2px;
+        bottom: 2px;
+        background-color: white;
+        transition: 0.25s;
+        border-radius: 999px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+      }
+      input:checked + .slider {
+        background-color: #1cb0f6;
+      }
+      input:checked + .slider:before {
+        transform: translateX(20px);
+      }
+    </style>
+    <script src="theme.js"></script>
+  </head>
+
+  <body
+    data-step="settings"
+    class="bg-background-light dark:bg-background-dark text-text-main dark:text-white transition-colors duration-200 antialiased"
+  >
+    <!-- Mobile shell (Full Discrete structure) -->
+    <div
+      class="w-full max-w-none h-[100dvh] sm:min-h-screen bg-background-light dark:bg-background-dark shadow-2xl flex flex-col overflow-hidden"
+    >
+      <!-- Sticky Header -->
+      <header
+        class="sticky top-0 z-30 bg-background-light/90 dark:bg-background-dark/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800"
+      >
+        <div class="flex items-center p-4 justify-between">
+          <div class="flex items-center gap-2">
+            <button
+  type="button"
+  onclick="(history.length > 1) ? history.back() : location.href='path.html'"
+  class="press flex items-center justify-center w-10 h-10 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+  aria-label="Back"
+>
+  <span class="material-symbols-outlined text-primary">arrow_back</span>
+</button>
+
+            <h2 class="text-lg font-extrabold leading-tight tracking-tight">Settings</h2>
+          </div>
+
+          <button
+            id="saveBtn"
+            type="button"
+            class="press text-primary text-sm font-extrabold px-4 py-2 rounded-xl bg-primary/10 hover:bg-primary/15 transition-colors"
+          >
+            Save
+          </button>
+        </div>
+      </header>
+
+      <!-- Scrollable content -->
+      <main class="flex-1 overflow-y-auto no-scrollbar px-4 pb-10">
+        <!-- Profile Header -->
+        <div class="flex items-center gap-4 py-6">
+          <div class="relative">
+            <div
+              class="size-16 rounded-full bg-primary/10 flex items-center justify-center border-2 border-primary overflow-hidden bg-cover bg-center"
+              id="avatar"
+              style="background-image:url('icons/icon-192.png');"
+              aria-label="User avatar"
+            ></div>
+            <div
+              class="absolute -bottom-1 -right-1 bg-yellow-400 size-6 rounded-full flex items-center justify-center border-2 border-white dark:border-background-dark"
+              aria-hidden="true"
+            >
+              <span class="material-symbols-outlined text-[14px] text-white">bolt</span>
+            </div>
+          </div>
+
+          <div class="min-w-0">
+            <h3 id="nameText" class="text-xl font-extrabold truncate">—</h3>
+            <p class="text-primary text-sm font-semibold">
+              <span id="courseText">Discrete Math I</span> • <span id="leagueText">Diamond League</span>
+            </p>
+            <button
+              id="changeAvatarBtn"
+              type="button"
+              class="mt-2 inline-flex items-center gap-1 text-xs font-bold text-primary hover:text-primary-hover transition-colors"
+            >
+              <span class="material-symbols-outlined text-[16px]">photo_camera</span>
+              Change avatar
+            </button>
+          </div>
+        </div>
+        <div id="avatarPickerWrap" class="hidden mb-6">
+          <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 px-1">Choose an avatar</p>
+          <div id="avatarPicker" class="grid grid-cols-4 gap-3">
+            <button
+              type="button"
+              class="avatar-option press p-0 rounded-xl transition-transform duration-200 hover:scale-[1.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+              data-avatar="icons/avatar-fox-green.png"
+              aria-label="Green fox"
+            >
+              <div
+                class="w-12 h-12 rounded-xl bg-cover bg-center"
+                style="background-image:url('icons/avatar-fox-green.png');"
+              ></div>
+            </button>
+            <button
+              type="button"
+              class="avatar-option press p-0 rounded-xl transition-transform duration-200 hover:scale-[1.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+              data-avatar="icons/avatar-fox-red.png"
+              aria-label="Red fox"
+            >
+              <div
+                class="w-12 h-12 rounded-xl bg-cover bg-center"
+                style="background-image:url('icons/avatar-fox-red.png');"
+              ></div>
+            </button>
+            <button
+              type="button"
+              class="avatar-option press p-0 rounded-xl transition-transform duration-200 hover:scale-[1.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+              data-avatar="icons/avatar-fox-yellow.png"
+              aria-label="Yellow fox"
+            >
+              <div
+                class="w-12 h-12 rounded-xl bg-cover bg-center"
+                style="background-image:url('icons/avatar-fox-yellow.png');"
+              ></div>
+            </button>
+            <button
+              type="button"
+              class="avatar-option press p-0 rounded-xl transition-transform duration-200 hover:scale-[1.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+              data-avatar="icons/avatar-fox-blue.png"
+              aria-label="Blue fox"
+            >
+              <div
+                class="w-12 h-12 rounded-xl bg-cover bg-center"
+                style="background-image:url('icons/avatar-fox-blue.png');"
+              ></div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Account -->
+        <section class="mb-6">
+          <h3 class="text-sm font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 px-1 pb-2">
+            Account
+          </h3>
+
+          <div class="bg-white dark:bg-surface-dark rounded-2xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800">
+            <div class="flex items-center gap-4 px-4 min-h-[72px] py-2 justify-between border-b border-slate-100/60 dark:border-slate-800">
+              <div class="flex flex-col justify-center min-w-0 flex-1">
+                <p class="text-base font-semibold leading-normal">Username</p>
+                <input
+                  id="nameInput"
+                  type="text"
+                  class="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-surface-dark px-3 py-2 text-sm font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  placeholder="Cal123"
+                  autocomplete="username"
+                />
+              </div>
+            </div>
+
+            <div class="flex items-center gap-4 px-4 min-h-[72px] py-2 justify-between border-b border-slate-100/60 dark:border-slate-800">
+              <div class="flex flex-col justify-center min-w-0 flex-1">
+                <p class="text-base font-semibold leading-normal">Full Name</p>
+                <input
+                  id="fullNameInput"
+                  type="text"
+                  class="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-surface-dark px-3 py-2 text-sm font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  placeholder="Your full name"
+                  autocomplete="name"
+                />
+              </div>
+            </div>
+
+            <div class="flex items-center gap-4 px-4 min-h-[72px] py-2 justify-between border-b border-slate-100/60 dark:border-slate-800">
+              <div class="flex flex-col justify-center min-w-0 flex-1">
+                <p class="text-base font-semibold leading-normal">Date of birth</p>
+                <input
+                  id="dobInput"
+                  type="date"
+                  class="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-surface-dark px-3 py-2 text-sm font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  autocomplete="bday"
+                />
+              </div>
+            </div>
+
+            <div class="flex items-center gap-4 px-4 min-h-[72px] py-2 justify-between border-b border-slate-100/60 dark:border-slate-800">
+              <div class="flex flex-col justify-center min-w-0 flex-1">
+                <p class="text-base font-semibold leading-normal">Country</p>
+                <input
+                  id="countryInput"
+                  type="text"
+                  class="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-surface-dark px-3 py-2 text-sm font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  placeholder="Start typing your country"
+                  autocomplete="country-name"
+                  list="settingsCountryList"
+                />
+                <datalist id="settingsCountryList"></datalist>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-4 px-4 min-h-[96px] py-2 justify-between border-b border-slate-100/60 dark:border-slate-800">
+              <div class="flex flex-col justify-center min-w-0 flex-1">
+                <p class="text-base font-semibold leading-normal">Email</p>
+                <input
+                  id="emailInput"
+                  type="email"
+                  class="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-surface-dark px-3 py-2 text-sm font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  placeholder="you@example.com"
+                  autocomplete="email"
+                />
+                <button
+                  id="verifyEmailBtn"
+                  type="button"
+                  class="mt-2 inline-flex items-center gap-1 text-xs font-bold text-primary hover:text-primary-hover transition-colors hidden"
+                >
+                  <span class="material-symbols-outlined text-[16px]">mark_email_unread</span>
+                  Verify email
+                </button>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-4 px-4 min-h-[56px] justify-between">
+              <p class="text-base font-semibold leading-normal flex-1">Password</p>
+              <button
+                id="changePwBtn"
+                class="press flex min-w-[90px] items-center justify-center rounded-xl h-9 px-4 bg-primary/10 text-primary text-sm font-extrabold hover:bg-primary/20 transition-colors"
+                type="button"
+              >
+                Change
+              </button>
+            </div>
+
+            <div id="passwordPanel" class="hidden px-4 pb-4">
+              <div class="mt-3 grid gap-3">
+                <div class="relative">
+                  <input
+                    id="currentPw"
+                    type="password"
+                    class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-surface-dark px-3 py-2 pr-10 text-sm font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    placeholder="Current password"
+                    autocomplete="current-password"
+                  />
+                  <button
+                    id="toggleCurrentPw"
+                    type="button"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors"
+                    aria-label="Toggle password visibility"
+                  >
+                    <span class="material-symbols-outlined text-[20px]">visibility_off</span>
+                  </button>
+                </div>
+                <div class="relative">
+                  <input
+                    id="newPw"
+                    type="password"
+                    class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-surface-dark px-3 py-2 pr-10 text-sm font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    placeholder="New password"
+                    autocomplete="new-password"
+                  />
+                  <button
+                    id="toggleNewPw"
+                    type="button"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors"
+                    aria-label="Toggle password visibility"
+                  >
+                    <span class="material-symbols-outlined text-[20px]">visibility_off</span>
+                  </button>
+                </div>
+                <div class="relative">
+                  <input
+                    id="confirmPw"
+                    type="password"
+                    class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-surface-dark px-3 py-2 pr-10 text-sm font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    placeholder="Confirm new password"
+                    autocomplete="new-password"
+                  />
+                  <button
+                    id="toggleConfirmPw"
+                    type="button"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors"
+                    aria-label="Toggle password visibility"
+                  >
+                    <span class="material-symbols-outlined text-[20px]">visibility_off</span>
+                  </button>
+                </div>
+                <button
+                  id="updatePwBtn"
+                  type="button"
+                  class="press w-full h-11 rounded-xl bg-primary text-white font-extrabold uppercase tracking-wide shadow-[0_4px_0_0_#1599d4] hover:bg-primary-hover"
+                >
+                  Update Password
+                </button>
+              </div>
+            </div>
+          </div>
+          <p id="accountStatus" class="mt-3 text-xs font-semibold text-emerald-600 hidden"></p>
+          <p id="accountError" class="mt-1 text-xs font-semibold text-red-500 hidden"></p>
+        </section>
+
+        <!-- Daily Goal -->
+        <section class="mb-6">
+          <h3 class="text-sm font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 px-1 pb-2">
+            Daily Goal
+          </h3>
+
+          <div class="bg-white dark:bg-surface-dark rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-800">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <p class="text-base font-extrabold" id="goalName">Regular</p>
+                <p class="text-sm text-slate-500 dark:text-slate-400 font-medium" id="goalDesc">15 minutes / day</p>
+              </div>
+              <span class="material-symbols-outlined text-primary">schedule</span>
+            </div>
+
+            <div class="grid grid-cols-4 gap-2" id="goalGrid">
+              <button data-goal="casual" class="press flex flex-col items-center justify-center p-2 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-extrabold hover:bg-primary/5" type="button">
+                Casual
+              </button>
+              <button data-goal="regular" class="press flex flex-col items-center justify-center p-2 rounded-xl border-2 border-primary bg-primary/5 text-xs font-extrabold text-primary" type="button">
+                Regular
+              </button>
+              <button data-goal="serious" class="press flex flex-col items-center justify-center p-2 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-extrabold hover:bg-primary/5" type="button">
+                Serious
+              </button>
+              <button data-goal="intense" class="press flex flex-col items-center justify-center p-2 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-extrabold hover:bg-primary/5" type="button">
+                Intense
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Preferences -->
+        <section class="mb-6">
+          <h3 class="text-sm font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 px-1 pb-2">
+            Preferences (might need Restart)
+          </h3>
+
+          <div class="bg-white dark:bg-surface-dark rounded-2xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800">
+            <div class="flex items-center gap-4 px-4 min-h-[56px] justify-between border-b border-slate-100/60 dark:border-slate-800">
+              <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-slate-500">dark_mode</span>
+                <p class="text-base font-semibold">Dark Mode</p>
+              </div>
+              <label class="ios-switch" aria-label="Dark Mode toggle">
+                <input id="darkModeSwitch" type="checkbox" />
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="flex items-center gap-4 px-4 min-h-[56px] justify-between border-b border-slate-100/60 dark:border-slate-800">
+              <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-slate-500">volume_up</span>
+                <p class="text-base font-semibold">Sound Effects</p>
+              </div>
+              <label class="ios-switch" aria-label="Sound Effects toggle">
+                <input id="soundSwitch" type="checkbox" checked />
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="flex items-center gap-4 px-4 min-h-[56px] justify-between">
+              <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-slate-500">auto_awesome</span>
+                <p class="text-base font-semibold">Motivations</p>
+              </div>
+              <label class="ios-switch" aria-label="Motivations toggle">
+                <input id="motivationSwitch" type="checkbox" checked />
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div id="hapticRow" class="flex items-center gap-4 px-4 min-h-[56px] justify-between border-t border-slate-100/60 dark:border-slate-800">
+              <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-slate-500">vibration</span>
+                <p class="text-base font-semibold">Vibration</p>
+              </div>
+              <label class="ios-switch" aria-label="Vibration toggle">
+                <input id="hapticSwitch" type="checkbox" checked />
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="flex items-center gap-4 px-4 min-h-[56px] justify-between border-t border-slate-100/60 dark:border-slate-800">
+              <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-slate-500">help</span>
+                <p class="text-base font-semibold">Display Help Button</p>
+              </div>
+              <label class="ios-switch" aria-label="Display Help Button toggle">
+                <input id="helpFabSwitch" type="checkbox" />
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="flex items-center gap-4 px-4 min-h-[56px] justify-between border-t border-slate-100/60 dark:border-slate-800">
+              <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-slate-500">notifications</span>
+                <p class="text-base font-semibold">Learning Reminders</p>
+              </div>
+              <label class="ios-switch" aria-label="Learning Reminders toggle">
+                <input id="notifySwitch" type="checkbox" />
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="px-4 pb-3 text-xs text-slate-500 dark:text-slate-400 hidden" id="notifyStatus"></div>
+          </div>
+        </section>
+
+        <!-- Other / Danger -->
+          <section class="mb-10 space-y-3">
+            <button
+              id="termsBtn"
+            class="press w-full flex items-center justify-between px-4 py-3 bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-200 font-semibold"
+            type="button"
+          >
+            Terms of Service
+            <span class="material-symbols-outlined text-slate-400">chevron_right</span>
+          </button>
+
+            <button
+              id="privacyBtn"
+            class="press w-full flex items-center justify-between px-4 py-3 bg-white dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-200 font-semibold"
+            type="button"
+            >
+              Privacy Policy
+              <span class="material-symbols-outlined text-slate-400">chevron_right</span>
+            </button>
+
+            <button
+              id="deleteAccountBtn"
+              class="press w-full flex items-center justify-between px-4 py-3 bg-white dark:bg-surface-dark rounded-2xl
+border border-slate-100 dark:border-slate-800 text-red-500 font-semibold"
+              type="button"
+            >
+              Request Account Deletion
+              <span class="material-symbols-outlined text-red-300">chevron_right</span>
+            </button>
+
+            <button
+              id="logoutBtn"
+            class="press w-full flex items-center justify-center px-4 py-3 text-red-500 font-extrabold border border-red-100 dark:border-red-900/30 rounded-2xl bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20 transition-colors"
+            type="button"
+          >
+            Log Out
+          </button>
+        </section>
+      </main>
+    </div>
+
+    <!-- Shared state -->
+    <script src="state.js"></script>
+    <script src="progress.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="auth.js"></script>
+    <script src="countries.js"></script>
+    <script src="./app.js"></script>
+
+    <script>
+      // ---- helpers ----
+      function loadFcState() {
+        try {
+          return JSON.parse(localStorage.getItem("fc_state") || "{}");
+        } catch {
+          return {};
+        }
+      }
+      function saveFcState(state) {
+        try {
+          localStorage.setItem("fc_state", JSON.stringify(state));
+        } catch {
+          // ignore
+        }
+      }
+      function savePrefs(p) {
+        localStorage.setItem("fc_prefs", JSON.stringify(p));
+      }
+      function loadPrefs() {
+        try {
+          return JSON.parse(localStorage.getItem("fc_prefs") || "{}");
+        } catch {
+          return {};
+        }
+      }
+      function clearLocalData() {
+        try {
+          const keys = [];
+          for (let i = 0; i < localStorage.length; i += 1) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith("fc_")) keys.push(key);
+          }
+          keys.forEach((key) => localStorage.removeItem(key));
+        } catch {
+          try {
+            localStorage.clear();
+          } catch {
+            // ignore
+          }
+        }
+
+        try {
+          sessionStorage.clear();
+        } catch {
+          // ignore
+        }
+      }
+
+      function setMessage(el, msg) {
+        if (!el) return;
+        if (!msg) {
+          el.classList.add("hidden");
+          el.textContent = "";
+          return;
+        }
+        el.textContent = msg;
+        el.classList.remove("hidden");
+      }
+
+      function logDevError(context, err) {
+        const entry = {
+          time: new Date().toISOString(),
+          context,
+          code: err?.code || "",
+          message: err?.message || String(err || ""),
+          stack: err?.stack || "",
+        };
+        try {
+          const raw = localStorage.getItem("fc_dev_errors");
+          const list = raw ? JSON.parse(raw) : [];
+          list.push(entry);
+          localStorage.setItem("fc_dev_errors", JSON.stringify(list.slice(-50)));
+        } catch {
+          // ignore
+        }
+        try {
+          console.error("[Dev]", entry);
+        } catch {
+          // ignore
+        }
+      }
+
+      function friendlyAuthMessage(err, fallback) {
+        const code = err?.code || "";
+        if (code === "auth/invalid-email") return "Enter a valid email address.";
+        if (code === "auth/user-not-found" || code === "auth/wrong-password") {
+          return "Incorrect email or password.";
+        }
+        if (code === "auth/too-many-requests") {
+          return "Too many attempts. Please try again later.";
+        }
+        if (code === "auth/network-request-failed") {
+          return "Network error. Check your connection and try again.";
+        }
+        if (code === "auth/email-already-in-use") {
+          return "That email is already in use.";
+        }
+        if (code === "auth/requires-recent-login") {
+          return "Please sign in again, then retry this action.";
+        }
+        if (code === "auth/weak-password") {
+          return "Use a stronger password (at least 6 characters).";
+        }
+        return fallback;
+      }
+
+      const DEFAULT_AVATAR =
+        "icons/icon-192.png";
+
+      // Hydrate header info from onboarding state
+      (function hydrateProfileHeader() {
+        const s = loadFcState();
+        const meta = window.FC?.get ? FC.get() : { xp: 0, streak: 0, lives: 0 };
+        const authUser = window.FCAuth?.getCurrentUser ? FCAuth.getCurrentUser() : null;
+        const rawUser = window.FCAuth?.getRawUser
+          ? FCAuth.getRawUser()
+          : window.FCAuth?.auth?.currentUser || null;
+
+        if (!s.username && s.name) {
+          s.username = s.name;
+          saveFcState(s);
+        }
+        const username = (s.username && String(s.username).trim()) || authUser?.displayName || "—";
+        const avatarUrl = s.avatarUrl || authUser?.photoURL || DEFAULT_AVATAR;
+
+        document.getElementById("nameText").textContent = username;
+        document.getElementById("avatar").style.backgroundImage = `url('${avatarUrl}')`;
+        window.__fc_avatar_current = avatarUrl;
+        const nameInput = document.getElementById("nameInput");
+        const fullNameInput = document.getElementById("fullNameInput");
+        const dobInput = document.getElementById("dobInput");
+        const countryInput = document.getElementById("countryInput");
+        if (nameInput) nameInput.value = username;
+
+        if (fullNameInput) {
+          fullNameInput.value = s.fullName || "";
+          fullNameInput.disabled = false;
+          fullNameInput.classList.remove("opacity-70");
+        }
+
+        if (dobInput) {
+          dobInput.value = s.dob || "";
+          dobInput.disabled = false;
+          dobInput.classList.remove("opacity-70");
+        }
+
+        if (countryInput) {
+          countryInput.value = s.nationality || "";
+        }
+
+        const resolveLeagueName = (state) => {
+          if (!state) return "";
+          if (state.leagueName) return state.leagueName;
+          if (Number.isFinite(state.leagueIndex)) {
+            const leagues = [
+              { id: "bronze", name: "Bronze League" },
+              { id: "silver", name: "Silver League" },
+              { id: "gold", name: "Gold League" },
+              { id: "sapphire", name: "Sapphire League" },
+              { id: "ruby", name: "Ruby League" },
+              { id: "emerald", name: "Emerald League" },
+              { id: "amethyst", name: "Amethyst League" },
+              { id: "master", name: "Master League" },
+              { id: "champion", name: "Champion League" },
+              { id: "obsidian", name: "Obsidian League" },
+            ];
+            const idx = Math.max(0, Math.min(leagues.length - 1, Number(state.leagueIndex)));
+            return leagues[idx]?.name || "";
+          }
+          return "";
+        };
+
+        document.getElementById("courseText").textContent = s.course || "Discrete Math I";
+        const leagueFromLocal = resolveLeagueName(s);
+        const leagueFromExport = resolveLeagueName(window.FCAuth?.exportLocalState?.().onboarding);
+        document.getElementById("leagueText").textContent = leagueFromLocal || leagueFromExport || "Unranked";
+
+        const emailValue = rawUser?.email || s.email || "";
+        const emailInput = document.getElementById("emailInput");
+        if (emailInput) emailInput.value = String(emailValue || "");
+        const verifyBtn = document.getElementById("verifyEmailBtn");
+        if (verifyBtn) {
+          verifyBtn.classList.toggle("hidden", !rawUser || rawUser.emailVerified);
+        }
+      })();
+
+      // Dark mode preference (keeps it consistent across screens)
+      (function initPrefs() {
+        const prefs = loadPrefs();
+
+        const darkSwitch = document.getElementById("darkModeSwitch");
+        const soundSwitch = document.getElementById("soundSwitch");
+        const motivationSwitch = document.getElementById("motivationSwitch");
+        const hapticSwitch = document.getElementById("hapticSwitch");
+        const hapticRow = document.getElementById("hapticRow");
+        const helpFabSwitch = document.getElementById("helpFabSwitch");
+        const notifySwitch = document.getElementById("notifySwitch");
+        const notifyStatus = document.getElementById("notifyStatus");
+
+        const refreshNotifyStatus = async () => {
+          if (!notifyStatus || !notifySwitch) return;
+          if (!notifySwitch.checked) {
+            notifyStatus.textContent = "";
+            notifyStatus.classList.add("hidden");
+            return;
+          }
+
+          notifyStatus.classList.remove("hidden");
+
+          const hasAndroidFcm =
+            typeof window !== "undefined" &&
+            window.AndroidFcm &&
+            typeof window.AndroidFcm.getToken === "function";
+
+          if (hasAndroidFcm) {
+            let token = "";
+            try {
+              token = window.AndroidFcm.getToken() || "";
+            } catch {
+              token = "";
+            }
+            if (token) {
+              notifyStatus.textContent = "Notifications enabled on this device.";
+              return;
+            }
+            notifyStatus.textContent = "Waiting for notification permission.";
+            return;
+          }
+
+          if (!("Notification" in window)) {
+            notifyStatus.textContent = "Notifications are not supported on this device.";
+            return;
+          }
+
+          if (Notification.permission === "denied") {
+            notifyStatus.textContent = "Notifications are blocked in your browser settings.";
+            return;
+          }
+
+          if (Notification.permission !== "granted") {
+            notifyStatus.textContent = "Tap Allow to enable notifications.";
+            return;
+          }
+
+          try {
+            const reg = await navigator.serviceWorker.ready;
+            const sub = await reg.pushManager.getSubscription();
+            if (sub) {
+              notifyStatus.textContent = "Notifications enabled on this device.";
+            } else {
+              notifyStatus.textContent = "Notifications enabled, but subscription missing. Toggle off/on.";
+            }
+          } catch {
+            notifyStatus.textContent = "Notifications enabled on this device.";
+          }
+        };
+
+        // hydrate switches
+        const isDark = document.documentElement.classList.contains("dark");
+        darkSwitch.checked = prefs.darkMode ?? isDark;
+        soundSwitch.checked = prefs.sound ?? true;
+        motivationSwitch.checked = prefs.motivation ?? true;
+        hapticSwitch.checked = prefs.vibration ?? true;
+        if (helpFabSwitch) helpFabSwitch.checked = prefs.displayFab !== false;
+        const notifyState = loadFcState();
+        notifySwitch.checked = !!notifyState.notifications;
+        refreshNotifyStatus();
+
+        const supportsVibration = typeof navigator !== "undefined" && typeof navigator.vibrate === "function";
+        if (!supportsVibration && hapticRow) {
+          hapticRow.classList.add("hidden");
+        }
+
+        // apply dark mode immediately
+        if (darkSwitch.checked) {
+          document.documentElement.classList.add("dark");
+          document.documentElement.classList.remove("light");
+        } else {
+          document.documentElement.classList.remove("dark");
+          document.documentElement.classList.add("light");
+        }
+
+        function persist() {
+          const current = loadPrefs();
+          savePrefs({
+            ...current,
+            darkMode: darkSwitch.checked,
+            sound: soundSwitch.checked,
+            motivation: motivationSwitch.checked,
+            vibration: hapticSwitch.checked,
+            dailyGoal: current.dailyGoal || "regular",
+          });
+        }
+
+
+        darkSwitch.addEventListener("change", () => {
+          if (darkSwitch.checked) {
+            document.documentElement.classList.add("dark");
+            document.documentElement.classList.remove("light");
+          } else {
+            document.documentElement.classList.remove("dark");
+            document.documentElement.classList.add("light");
+          }
+          persist();
+        });
+        soundSwitch.addEventListener("change", persist);
+        motivationSwitch.addEventListener("change", persist);
+        hapticSwitch.addEventListener("change", persist);
+        helpFabSwitch?.addEventListener("change", () => {
+          const current = loadPrefs();
+          current.displayFab = helpFabSwitch.checked;
+          savePrefs(current);
+          if (helpFabSwitch.checked) {
+            location.reload();
+            return;
+          }
+          document.getElementById("fc-help-fab-wrap")?.remove();
+          document.getElementById("fcHelpFab")?.remove();
+          document.getElementById("fcHelpOverlay")?.remove();
+          document.getElementById("fc-help-confirm")?.remove();
+        });
+        notifySwitch.addEventListener("change", async () => {
+          const s = loadFcState();
+          s.notifications = notifySwitch.checked;
+          saveFcState(s);
+          if (notifySwitch.checked) {
+              if (window.FCFcm?.requestPermission) {
+                try {
+                  window.FCFcm.requestPermission();
+                } catch {
+                  // ignore
+                }
+              }
+              if (window.FCPush?.requestPermissionAndSubscribe) {
+                try {
+                  await window.FCPush.requestPermissionAndSubscribe();
+                } catch {
+                  // ignore
+                }
+              }
+              if (window.FCFcm?.ensure) {
+                try {
+                  await window.FCFcm.ensure(FCAuth?.getRawUser?.());
+                } catch {
+                  // ignore
+                }
+              }
+            } else {
+              if (window.FCPush?.disable) {
+                try {
+                  await window.FCPush.disable();
+                } catch {
+                  // ignore
+                }
+              }
+              if (window.FCFcm?.disable) {
+                try {
+                  await window.FCFcm.disable();
+                } catch {
+                  // ignore
+                }
+              }
+            }
+            refreshNotifyStatus();
+          });
+
+        document.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "visible") {
+            refreshNotifyStatus();
+          }
+        });
+      })();
+
+      // Daily goal selector UI
+      (function initDailyGoal() {
+        const goalMap = {
+          casual: { name: "Casual", desc: "10 minutes / day" },
+          regular: { name: "Regular", desc: "15 minutes / day" },
+          serious: { name: "Serious", desc: "20 minutes / day" },
+          intense: { name: "Intense", desc: "30 minutes / day" },
+        };
+
+        const prefs = loadPrefs();
+        let goal = prefs.dailyGoal || "regular";
+
+        const goalName = document.getElementById("goalName");
+        const goalDesc = document.getElementById("goalDesc");
+        const grid = document.getElementById("goalGrid");
+
+        function render() {
+          goalName.textContent = goalMap[goal].name;
+          goalDesc.textContent = goalMap[goal].desc;
+
+          [...grid.querySelectorAll("button[data-goal]")].forEach((btn) => {
+            const active = btn.dataset.goal === goal;
+            btn.classList.toggle("border-2", active);
+            btn.classList.toggle("border-primary", active);
+            btn.classList.toggle("bg-primary/5", active);
+            btn.classList.toggle("text-primary", active);
+
+            btn.classList.toggle("border", !active);
+            btn.classList.toggle("border-slate-200", !active);
+            btn.classList.toggle("dark:border-slate-800", !active);
+          });
+
+          const p = loadPrefs();
+          savePrefs({ ...p, dailyGoal: goal });
+        }
+
+        grid.addEventListener("click", (e) => {
+          const btn = e.target.closest("button[data-goal]");
+          if (!btn) return;
+          goal = btn.dataset.goal;
+          render();
+        });
+
+        render();
+      })();
+
+      const accountStatus = document.getElementById("accountStatus");
+      const accountError = document.getElementById("accountError");
+      const nameInput = document.getElementById("nameInput");
+      const fullNameInput = document.getElementById("fullNameInput");
+      const dobInput = document.getElementById("dobInput");
+      const countryInput = document.getElementById("countryInput");
+      const emailInput = document.getElementById("emailInput");
+      const verifyEmailBtn = document.getElementById("verifyEmailBtn");
+      const avatarEl = document.getElementById("avatar");
+      const changeAvatarBtn = document.getElementById("changeAvatarBtn");
+      const avatarPickerWrap = document.getElementById("avatarPickerWrap");
+      const avatarOptions = Array.from(document.querySelectorAll(".avatar-option"));
+
+      let pendingAvatarUrl = null;
+
+      const applyAvatar = (url) => {
+        if (avatarEl && url) avatarEl.style.backgroundImage = `url('${url}')`;
+      };
+
+      const updateAvatarSelection = (url) => {
+        avatarOptions.forEach((btn) => {
+          const isActive = btn.dataset.avatar === url;
+          btn.classList.toggle("ring-2", isActive);
+          btn.classList.toggle("ring-primary/70", isActive);
+        });
+      };
+
+      changeAvatarBtn?.addEventListener("click", () => {
+        avatarPickerWrap?.classList.toggle("hidden");
+        const current = pendingAvatarUrl || window.__fc_avatar_current || DEFAULT_AVATAR;
+        updateAvatarSelection(current);
+      });
+
+      avatarOptions.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          setMessage(accountError, "");
+          const url = btn.dataset.avatar;
+          if (!url) return;
+          pendingAvatarUrl = url;
+          applyAvatar(url);
+          updateAvatarSelection(url);
+        });
+      });
+
+      updateAvatarSelection(window.__fc_avatar_current);
+
+      const normalizeUsername = (value) =>
+        String(value || "")
+          .trim()
+          .replace(/\s+/g, "")
+          .replace(/[^\w]/g, "");
+      const normalizeCountry =
+        window.FCNormalizeCountry ||
+        ((value) =>
+          String(value || "")
+            .replace(/[\u{1F1E6}-\u{1F1FF}]/gu, "")
+            .replace(/\s+/g, " ")
+            .trim());
+      const getCountryFlag =
+        window.FCGetCountryFlag ||
+        ((value) => {
+          if (!Array.isArray(window.FCCountries)) return "";
+          const norm = normalizeCountry(value).toLowerCase();
+          const match = window.FCCountries.find(
+            (c) => normalizeCountry(c.name).toLowerCase() === norm
+          );
+          return match ? match.flag : "";
+        });
+      const allowedCountries = Array.isArray(window.FCCountries)
+        ? window.FCCountries.map((c) => normalizeCountry(c.name).toLowerCase())
+        : [];
+      const isAllowedCountry = (value) => {
+        if (!value) return true;
+        const norm = normalizeCountry(value).toLowerCase();
+        return allowedCountries.includes(norm);
+      };
+
+      if (window.FCBuildCountryOptions) {
+        window.FCBuildCountryOptions("settingsCountryList");
+      }
+      if (dobInput) {
+        try {
+          dobInput.max = new Date().toISOString().split("T")[0];
+        } catch {
+          // ignore
+        }
+      }
+
+      const getRawUser = () =>
+        window.FCAuth?.getRawUser ? FCAuth.getRawUser() : window.FCAuth?.auth?.currentUser || null;
+
+      const VERIFY_RATE_KEY = "fc_verify_email_sends";
+      const VERIFY_RATE_WINDOW_MS = 30 * 60 * 1000;
+      const VERIFY_RATE_MIN_MS = 60 * 1000;
+      const VERIFY_RATE_MAX = 5;
+
+      const loadVerifyLog = () => {
+        try {
+          const raw = localStorage.getItem(VERIFY_RATE_KEY);
+          const list = raw ? JSON.parse(raw) : [];
+          return Array.isArray(list) ? list.filter((t) => Number.isFinite(t)) : [];
+        } catch {
+          return [];
+        }
+      };
+
+      const saveVerifyLog = (list) => {
+        try {
+          localStorage.setItem(VERIFY_RATE_KEY, JSON.stringify(list));
+        } catch {
+          // ignore
+        }
+      };
+
+      const formatWait = (ms) => {
+        const secs = Math.max(1, Math.ceil(ms / 1000));
+        if (secs >= 60) return `${Math.ceil(secs / 60)} min`;
+        return `${secs} sec`;
+      };
+
+      const getVerifySendStatus = () => {
+        const now = Date.now();
+        const recent = loadVerifyLog().filter((t) => now - t < VERIFY_RATE_WINDOW_MS);
+        const last = recent[recent.length - 1] || 0;
+        if (recent.length && now - last < VERIFY_RATE_MIN_MS) {
+          return {
+            ok: false,
+            waitMs: VERIFY_RATE_MIN_MS - (now - last),
+            reason: "minute",
+            recent,
+          };
+        }
+        if (recent.length >= VERIFY_RATE_MAX) {
+          return {
+            ok: false,
+            waitMs: VERIFY_RATE_WINDOW_MS - (now - recent[0]),
+            reason: "window",
+            recent,
+          };
+        }
+        return { ok: true, recent };
+      };
+
+      const recordVerifySend = (recent) => {
+        const now = Date.now();
+        const next = (recent || []).concat(now).filter((t) => now - t < VERIFY_RATE_WINDOW_MS);
+        saveVerifyLog(next);
+      };
+
+      const refreshVerifyButton = (user) => {
+        if (!verifyEmailBtn) return;
+        const raw = user || getRawUser();
+        const nextEmail = (emailInput?.value || "").trim().toLowerCase();
+        const differs = raw && nextEmail && nextEmail !== (raw.email || "").toLowerCase();
+        verifyEmailBtn.classList.toggle("hidden", !raw || (raw.emailVerified && !differs));
+      };
+
+      refreshVerifyButton();
+      if (window.FCAuth?.onAuthStateChanged) {
+        FCAuth.onAuthStateChanged((user) => {
+          refreshVerifyButton(user);
+        });
+      }
+
+      emailInput?.addEventListener("input", () => {
+        refreshVerifyButton();
+      });
+
+      const syncEmailVerificationState = async () => {
+        const user = getRawUser();
+        if (!user) return;
+        try {
+          await user.reload();
+        } catch {
+          // ignore
+        }
+        refreshVerifyButton(user);
+        if (user.emailVerified) {
+          const s = loadFcState();
+          const pending = (s.pendingEmail || "").toLowerCase();
+          const current = (user.email || "").toLowerCase();
+          if (pending && pending === current) {
+            s.email = current;
+            delete s.pendingEmail;
+            saveFcState(s);
+            if (emailInput) emailInput.value = current;
+          }
+        }
+      };
+
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          syncEmailVerificationState();
+        }
+      });
+      window.addEventListener("focus", () => {
+        syncEmailVerificationState();
+      });
+
+      verifyEmailBtn?.addEventListener("click", async () => {
+        setMessage(accountError, "");
+        setMessage(accountStatus, "");
+        const user = getRawUser();
+        if (!user) {
+          setMessage(accountError, "Please sign in to verify your email.");
+          return;
+        }
+        const nextEmail = (emailInput?.value || "").trim().toLowerCase();
+        const currentEmail = (user.email || "").toLowerCase();
+        const wantsChange = !!nextEmail && nextEmail !== currentEmail;
+        if (wantsChange) {
+          const status = getVerifySendStatus();
+          if (!status.ok) {
+            setMessage(
+              accountError,
+              `Please wait ${formatWait(status.waitMs)} before requesting another verification email.`
+            );
+            return;
+          }
+          try {
+            if (typeof user.verifyBeforeUpdateEmail === "function") {
+              await user.verifyBeforeUpdateEmail(nextEmail);
+            } else {
+              await user.updateEmail(nextEmail);
+              await user.sendEmailVerification();
+            }
+            const s = loadFcState();
+            s.pendingEmail = nextEmail;
+            saveFcState(s);
+            verifyEmailBtn.classList.remove("hidden");
+            recordVerifySend(status.recent);
+            setMessage(accountStatus, "Verification link sent to your new email.");
+            return;
+          } catch (err) {
+            if (err?.code === "auth/operation-not-allowed") {
+              verifyEmailBtn.classList.remove("hidden");
+              setMessage(accountStatus, "Please verify your current email before changing it.");
+              logDevError("settings-email-verify-required", err);
+              return;
+            }
+            if (err?.code === "auth/requires-recent-login") {
+              setMessage(accountError, "Please sign in again to change your email.");
+              logDevError("settings-email-requires-login", err);
+              return;
+            }
+            setMessage(accountError, friendlyAuthMessage(err, "Unable to update email right now."));
+            logDevError("settings-email-update", err);
+            return;
+          }
+        } else if (user.emailVerified) {
+          verifyEmailBtn.classList.add("hidden");
+          setMessage(accountStatus, "Your email is already verified.");
+          return;
+        }
+        const status = getVerifySendStatus();
+        if (!status.ok) {
+          setMessage(
+            accountError,
+            `Please wait ${formatWait(status.waitMs)} before requesting another verification email.`
+          );
+          return;
+        }
+        setMessage(accountStatus, "Sending verification email...");
+        try {
+          const freshUser = getRawUser() || user;
+          await freshUser.sendEmailVerification();
+          recordVerifySend(status.recent);
+          setMessage(accountStatus, "Verification email sent. Please check your inbox.");
+        } catch (err) {
+          setMessage(accountError, friendlyAuthMessage(err, "Unable to send verification email."));
+          logDevError("settings-verify-email", err);
+        }
+      });
+
+      // Save profile updates
+      document.getElementById("saveBtn")?.addEventListener("click", async () => {
+        setMessage(accountError, "");
+        setMessage(accountStatus, "Saving...");
+
+        const s = loadFcState();
+        const rawUser = getRawUser();
+        const verifiedUser = window.FCAuth?.getCurrentUser ? FCAuth.getCurrentUser() : null;
+        const prevUsername = s.username || s.name || "";
+        const prevUsernameUpdatedAt = s.usernameUpdatedAt || "";
+        let nextUsername = normalizeUsername(nameInput?.value || "");
+        if (!nextUsername) {
+          nextUsername = `Cal${String(Math.floor(Math.random() * 1000)).padStart(3, "0")}`;
+        }
+        const nowIso = new Date().toISOString();
+        if (nextUsername !== prevUsername) {
+          const lastUpdate = Date.parse(prevUsernameUpdatedAt || "");
+          if (!Number.isNaN(lastUpdate)) {
+            const days = (Date.now() - lastUpdate) / (1000 * 60 * 60 * 24);
+            if (days < 14) {
+              const remaining = Math.ceil(14 - days);
+              if (nameInput) nameInput.value = prevUsername;
+              setMessage(
+                accountError,
+                `You can change your username in ${remaining} day${remaining === 1 ? "" : "s"}.`
+              );
+              setMessage(accountStatus, "");
+              return;
+            }
+          }
+          s.usernameUpdatedAt = nowIso;
+        }
+        s.username = nextUsername;
+        const nextFullName = (fullNameInput?.value || "").trim();
+        const nextDob = dobInput?.value || "";
+        const nextCountry = normalizeCountry(countryInput?.value || "");
+        const nextEmail = (emailInput?.value || "").trim().toLowerCase();
+        const currentEmail = (rawUser?.email || "").toLowerCase();
+        const wantsEmailChange = !!rawUser && !!nextEmail && nextEmail !== currentEmail;
+        if (nextCountry && !isAllowedCountry(nextCountry)) {
+          setMessage(accountError, "Select a country from the list.");
+          setMessage(accountStatus, "");
+          return;
+        }
+        if (nextFullName) s.fullName = nextFullName;
+        if (nextDob) s.dob = nextDob;
+        if (nextCountry) {
+          s.nationality = nextCountry;
+          s.nationalityFlag = getCountryFlag(nextCountry);
+        }
+        if (nextEmail && !wantsEmailChange) {
+          s.email = nextEmail;
+        }
+        if (wantsEmailChange) {
+          s.pendingEmail = nextEmail;
+          verifyEmailBtn?.classList.remove("hidden");
+          setMessage(accountStatus, "Tap Verify email to confirm your new address.");
+        } else {
+          delete s.pendingEmail;
+        }
+        if (pendingAvatarUrl) s.avatarUrl = pendingAvatarUrl;
+        saveFcState(s);
+
+        document.getElementById("nameText").textContent = s.username || "—";
+        applyAvatar(s.avatarUrl);
+
+        if (rawUser && !rawUser.emailVerified && (!nextEmail || nextEmail === (rawUser.email || ""))) {
+          const status = getVerifySendStatus();
+          if (!status.ok) {
+            setMessage(
+              accountStatus,
+              `Verification email recently sent. Try again in ${formatWait(status.waitMs)}.`
+            );
+          } else {
+          try {
+            await rawUser.sendEmailVerification();
+            verifyEmailBtn?.classList.remove("hidden");
+            recordVerifySend(status.recent);
+            setMessage(accountStatus, "Verification email sent. Please check your inbox.");
+          } catch (err) {
+            setMessage(accountError, friendlyAuthMessage(err, "Unable to send verification email."));
+            logDevError("settings-verify-email", err);
+          }
+          }
+        }
+
+        // Email changes are handled via the Verify email button.
+
+        if (window.FCAuth?.enabled && verifiedUser) {
+          try {
+            const user = verifiedUser;
+            const nameResult = await FCAuth.reserveUsername(s.username || user.displayName || "");
+            if (!nameResult?.ok) {
+              s.username = prevUsername;
+              s.usernameUpdatedAt = prevUsernameUpdatedAt || s.usernameUpdatedAt;
+              saveFcState(s);
+              document.getElementById("nameText").textContent = s.username || "—";
+              if (nameInput) nameInput.value = s.username || "";
+              setMessage(accountError, nameResult?.message || "Username unavailable.");
+              setMessage(accountStatus, "");
+              return;
+            }
+            if (nameResult.username) {
+              s.username = nameResult.username;
+              saveFcState(s);
+              if (nameInput) nameInput.value = s.username || "";
+            }
+            s.usernameReserved = true;
+            if (user?.updateProfile) {
+              await user.updateProfile({
+                displayName: s.username || user.displayName || "",
+                photoURL: s.avatarUrl || user.photoURL || "",
+              });
+            }
+            await FCAuth.syncToRemote({
+              username: s.username,
+              usernameUpdatedAt: s.usernameUpdatedAt || nowIso,
+              usernameReserved: true,
+              fullName: s.fullName || "",
+              nationality: s.nationality || "",
+              nationalityFlag: s.nationalityFlag || "",
+              dob: s.dob || "",
+              avatarUrl: s.avatarUrl,
+              email: s.email,
+            });
+            setMessage(accountStatus, "Saved.");
+          } catch (err) {
+            setMessage(accountError, friendlyAuthMessage(err, "Unable to save right now."));
+            logDevError("settings-save", err);
+          }
+        } else {
+          if (window.FCAuth?.queueProfileSync) {
+            FCAuth.queueProfileSync({
+              username: s.username,
+              usernameUpdatedAt: s.usernameUpdatedAt || nowIso,
+              usernameReserved: s.usernameReserved === true,
+              fullName: s.fullName || "",
+              nationality: s.nationality || "",
+              nationalityFlag: s.nationalityFlag || "",
+              dob: s.dob || "",
+              avatarUrl: s.avatarUrl,
+              email: s.email,
+            });
+          }
+          setMessage(accountStatus, "Saved locally. Verify your email to sync.");
+        }
+      });
+
+      // Password change
+      const changePwBtn = document.getElementById("changePwBtn");
+      const passwordPanel = document.getElementById("passwordPanel");
+      const updatePwBtn = document.getElementById("updatePwBtn");
+      const currentPw = document.getElementById("currentPw");
+      const newPw = document.getElementById("newPw");
+      const confirmPw = document.getElementById("confirmPw");
+
+      function bindPasswordToggle(buttonId, inputEl) {
+        const btn = document.getElementById(buttonId);
+        if (!btn || !inputEl) return;
+        btn.addEventListener("click", () => {
+          const isPw = inputEl.type === "password";
+          inputEl.type = isPw ? "text" : "password";
+          const icon = btn.querySelector(".material-symbols-outlined");
+          if (icon) icon.textContent = isPw ? "visibility" : "visibility_off";
+        });
+      }
+
+      function resetPasswordVisibility() {
+        const pairs = [
+          { input: currentPw, btnId: "toggleCurrentPw" },
+          { input: newPw, btnId: "toggleNewPw" },
+          { input: confirmPw, btnId: "toggleConfirmPw" },
+        ];
+        pairs.forEach(({ input, btnId }) => {
+          if (!input) return;
+          input.type = "password";
+          const icon = document.querySelector(`#${btnId} .material-symbols-outlined`);
+          if (icon) icon.textContent = "visibility_off";
+        });
+      }
+
+      bindPasswordToggle("toggleCurrentPw", currentPw);
+      bindPasswordToggle("toggleNewPw", newPw);
+      bindPasswordToggle("toggleConfirmPw", confirmPw);
+
+      changePwBtn?.addEventListener("click", () => {
+        passwordPanel?.classList.toggle("hidden");
+      });
+
+      updatePwBtn?.addEventListener("click", async () => {
+        setMessage(accountError, "");
+        setMessage(accountStatus, "");
+
+        if (!window.FCAuth?.enabled || !FCAuth.getCurrentUser) {
+          setMessage(accountError, "Password updates are unavailable right now.");
+          return;
+        }
+
+        const user = FCAuth.getCurrentUser();
+        if (!user) {
+          setMessage(accountError, "Please sign in to change your password.");
+          return;
+        }
+
+        const providers = Array.isArray(user.providerData) ? user.providerData : [];
+        const hasPassword = providers.some((p) => p.providerId === "password");
+        if (!hasPassword) {
+          setMessage(accountError, "This account uses Google sign-in. Add a password in your browser first.");
+          return;
+        }
+
+        const current = currentPw?.value || "";
+        const next = newPw?.value || "";
+        const confirm = confirmPw?.value || "";
+        if (!current || !next) {
+          setMessage(accountError, "Enter your current and new password.");
+          return;
+        }
+        if (next.length < 6) {
+          setMessage(accountError, "Use a stronger password (at least 6 characters).");
+          return;
+        }
+        if (next !== confirm) {
+          setMessage(accountError, "Passwords do not match.");
+          return;
+        }
+
+        setMessage(accountStatus, "Updating password...");
+        try {
+          const credential = firebase.auth.EmailAuthProvider.credential(user.email || "", current);
+          await user.reauthenticateWithCredential(credential);
+          await user.updatePassword(next);
+          if (currentPw) currentPw.value = "";
+          if (newPw) newPw.value = "";
+          if (confirmPw) confirmPw.value = "";
+          resetPasswordVisibility();
+          passwordPanel?.classList.add("hidden");
+          setMessage(accountStatus, "Password updated.");
+        } catch (err) {
+          setMessage(accountError, friendlyAuthMessage(err, "Unable to update password."));
+          logDevError("settings-password", err);
+        }
+      });
+
+      // Privacy + Logout
+      document.getElementById("privacyBtn")?.addEventListener("click", () => {
+        window.location.href = "privacy.html";
+      });
+      document.getElementById("termsBtn")?.addEventListener("click", () => {
+        window.location.href = "terms.html";
+      });
+      document.getElementById("deleteAccountBtn")?.addEventListener("click", () => {
+        window.location.href = "delete-account.html";
+      });
+
+      document.getElementById("logoutBtn")?.addEventListener("click", async () => {
+        if (window.FCAuth?.enabled) {
+          try {
+            await FCAuth.signOut();
+          } catch {
+            // ignore
+          }
+        }
+        clearLocalData();
+        window.location.href = "login.html";
+      });
+    </script>
+  </body>
+</html>
+
+
+
+

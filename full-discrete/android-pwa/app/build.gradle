@@ -1,0 +1,69 @@
+plugins {
+  id "com.android.application"
+  id "com.google.gms.google-services"
+}
+
+android {
+  namespace "com.sentirax.discrete"
+  compileSdk 35
+
+  def useTestAds = (project.findProperty("FULLDISCRETE_USE_TEST_ADS") ?: "true").toBoolean()
+
+  defaultConfig {
+    applicationId "com.sentirax.discrete"
+    minSdk 21
+    targetSdk 35
+    versionCode 7
+    versionName "1.0.6"
+
+    if (useTestAds) {
+      resValue "string", "admob_app_id", "ca-app-pub-3940256099942544~3347511713"
+      resValue "string", "admob_interstitial_id", "ca-app-pub-3940256099942544/1033173712"
+      resValue "string", "admob_rewarded_id", "ca-app-pub-3940256099942544/5224354917"
+    }
+  }
+
+  signingConfigs {
+    release {
+      storeFile file(
+        project.findProperty("FULLDISCRETE_STORE_FILE")
+          ?: ""
+      )
+      storePassword (
+        project.findProperty("FULLDISCRETE_STORE_PASSWORD")
+          ?: ""
+      )
+      keyAlias (
+        project.findProperty("FULLDISCRETE_KEY_ALIAS")
+          ?: ""
+      )
+      keyPassword (
+        project.findProperty("FULLDISCRETE_KEY_PASSWORD")
+          ?: ""
+      )
+    }
+  }
+
+  buildTypes {
+    release {
+      minifyEnabled false
+      signingConfig signingConfigs.release
+      proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+    }
+  }
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_17
+    targetCompatibility JavaVersion.VERSION_17
+  }
+}
+
+dependencies {
+  implementation "androidx.appcompat:appcompat:1.6.1"
+  implementation "com.google.android.material:material:1.11.0"
+  implementation platform("com.google.firebase:firebase-bom:32.7.4")
+  implementation "com.google.firebase:firebase-auth"
+  implementation "com.google.firebase:firebase-messaging"
+  implementation "com.google.android.gms:play-services-ads:23.0.0"
+  implementation "com.google.android.gms:play-services-auth:21.2.0"
+}

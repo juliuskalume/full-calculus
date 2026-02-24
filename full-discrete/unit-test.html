@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+  <meta charset="utf-8" />
+    <meta name="robots" content="noindex,nofollow" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#1cb0f6" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="icon" type="image/png" href="icons/icon-192.png" />
+  <title>Full Discrete - Unit Test</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+
+  <!-- MathJax -->
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#1cb0f6",
+            backgroundLight: "#f5f6f8",
+            surfaceLight: "#ffffff",
+            borderLight: "#e2e8f0",
+            backgroundDark: "#101622",
+            surfaceDark: "#182234",
+            borderDark: "#314368"
+          },
+          fontFamily: {
+            display: ["Lexend", "sans-serif"]
+          },
+          borderRadius: {
+            xl: "1rem",
+            full: "9999px"
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: "Lexend", sans-serif;
+      min-height: max(884px, 100dvh);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .math {
+      font-family: serif;
+      font-style: italic;
+    }
+  </style>
+  <script src="theme.js"></script>
+  <script src="sound.js"></script>
+  </head>
+
+<body class="bg-backgroundLight dark:bg-backgroundDark text-slate-900 dark:text-white flex flex-col overflow-x-hidden">
+
+  <!-- APP SHELL -->
+  <div class="w-full max-w-none min-h-screen flex flex-col">
+
+    <!-- HEADER -->
+    <header class="sticky top-0 z-50 bg-white/95 dark:bg-backgroundDark/95 backdrop-blur border-b border-borderLight dark:border-borderDark px-4 py-3">
+      <div class="flex items-center gap-3">
+
+        <!-- Exit -->
+        <button id="exitTestBtn" class="p-2 rounded-lg hover:bg-white/10 transition">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+
+        <!-- Progress -->
+        <div class="flex-1">
+          <div class="flex justify-between text-xs mb-1">
+            <span id="testTitle" class="font-bold text-primary uppercase">Unit Test</span>
+            <span class="opacity-70">Question <span id="qIndex">1</span> / <span id="qTotal">1</span></span>
+          </div>
+          <div class="h-2 rounded-full bg-borderLight dark:bg-borderDark overflow-hidden">
+            <div id="progressBar" class="h-full bg-primary w-[5%] transition-all"></div>
+          </div>
+        </div>
+
+        <!-- Hearts -->
+        <div class="flex items-center gap-1 px-2 py-1 rounded-lg bg-red-500/10 border border-red-500/20">
+          <span class="material-symbols-outlined text-red-500 text-sm">favorite</span>
+          <span id="hearts" class="text-red-500 font-bold text-sm">0</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- CONTENT -->
+    <main class="flex-1 overflow-y-auto px-6 py-8">
+
+      <!-- Topic -->
+      <div class="text-center mb-8">
+        <span
+          id="topicTag"
+          class="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase border border-primary/20 mb-4"
+        >
+          Topic
+        </span>
+        <h1 id="questionText" class="text-2xl font-bold leading-tight">
+          Loading question...
+        </h1>
+      </div>
+
+      <!-- Answer -->
+      <div id="choicesContainer" class="hidden space-y-3 mb-6"></div>
+
+      <div id="inputContainer" class="space-y-2 mb-6">
+        <label class="text-sm opacity-70">Your Answer</label>
+        <input
+          id="answerInput"
+          type="text"
+          inputmode="text"
+          placeholder="Enter an answer"
+          class="w-full rounded-xl bg-white dark:bg-surfaceDark border-2 border-borderLight dark:border-borderDark px-4 py-4 text-xl text-gray-900 dark:text-white focus:border-primary focus:ring-0"
+        />
+        <textarea
+          id="answerTextArea"
+          rows="3"
+          placeholder="Write a short response"
+          class="hidden w-full rounded-xl bg-white dark:bg-surfaceDark border-2 border-borderLight dark:border-borderDark px-4 py-3 text-base text-gray-900 dark:text-white focus:border-primary focus:ring-0"
+        ></textarea>
+        <p id="answerHint" class="text-xs opacity-50 italic text-center">Use * for multiplication.</p>
+      </div>
+
+      <div id="feedbackText" class="text-sm font-semibold text-center mb-4"></div>
+
+    </main>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-borderLight dark:border-borderDark bg-white dark:bg-backgroundDark px-4 py-4 pb-8">
+    <button
+      id="submitBtn"
+        class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/20 transition active:scale-95 uppercase tracking-wider text-sm"
+      >
+        Submit Answer
+    </button>
+  </footer>
+
+  </div>
+
+  <!-- Quit Confirmation Overlay -->
+  <div id="quitOverlay" class="fixed inset-0 z-[60] hidden">
+    <div class="absolute inset-0 bg-[#141414]/60 backdrop-blur-sm"></div>
+    <div class="absolute inset-0 flex flex-col justify-end sm:justify-center items-center px-0 sm:px-4">
+      <div class="w-full max-w-[480px] bg-white dark:bg-[#1a2235] rounded-t-3xl sm:rounded-3xl flex flex-col items-center">
+        <div class="flex h-6 w-full items-center justify-center sm:hidden">
+          <div class="h-1.5 w-12 rounded-full bg-gray-300 dark:bg-gray-700"></div>
+        </div>
+        <div class="w-full px-8 pt-8 pb-4 flex justify-center">
+          <div class="relative w-48 h-48">
+            <div
+              class="w-full h-full bg-center bg-no-repeat bg-contain rounded-full flex items-center justify-center"
+              style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDUX5qRCXEDZIG-NewYv4fpj4tgCRnnygcRZR_7NCL_dG1ySR3YlMrxkgdcHXFBnP_U3fcrDtt1cZy6ZppdKyyv8n6e5OCsuBleFk2iSK5lxcqNrEjQhUCLeLONAFOhLaD9eXwLetrktC4VSPfrCtHbJTkecZoc6_pCuf2UYTbasjxugmOtka6ZoqdxjChBdSHcvJiyFBs4phAga_WmZdNEhYXhLyj5uAsmcc8EBibsKZUgNgU25dALznUWG9u34hJzFYSUoo6JXNk");'
+              aria-label="Sad blue discrete math mascot looking worried"
+            ></div>
+            <div class="absolute top-2 right-2 bg-white dark:bg-backgroundDark p-2 rounded-full shadow-lg border border-gray-100 dark:border-gray-800">
+              <span class="material-symbols-outlined text-orange-500">warning</span>
+            </div>
+          </div>
+        </div>
+        <div class="w-full px-6">
+          <h1 class="text-[#0d121c] dark:text-white tracking-tight text-3xl font-bold leading-tight text-center pb-2">
+            Wait, don't go!
+          </h1>
+          <p class="text-[#4b5563] dark:text-gray-400 text-lg font-normal leading-relaxed text-center pb-8 pt-1">
+            If you quit now, you'll lose your <span class="font-semibold text-primary">progress</span> in this test and your
+            <span class="font-semibold text-orange-500">streak</span> might be at risk.
+          </p>
+        </div>
+        <div class="flex flex-col w-full gap-3 px-6 pb-10 sm:pb-8">
+          <button
+            id="keepTestBtn"
+            class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-14 px-5 bg-primary hover:bg-primary/90 text-white text-lg font-bold leading-normal tracking-wide transition-colors shadow-md"
+          >
+            <span class="truncate uppercase">Keep Going</span>
+          </button>
+          <button
+            id="quitTestBtn"
+            class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-14 px-5 bg-[#f3f4f6] dark:bg-gray-800 text-[#6b7280] dark:text-gray-400 text-lg font-bold leading-normal tracking-wide transition-colors border border-transparent hover:border-gray-300"
+          >
+            <span class="truncate">QUIT TEST</span>
+          </button>
+        </div>
+        <div class="h-2 sm:hidden"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPTS -->
+  <script src="https://cdn.jsdelivr.net/npm/mathjs@11.8.0/lib/browser/math.min.js"></script>
+  <script src="state.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="auth.js"></script>
+  <script src="progress.js"></script>
+  <script src="content-structure.js"></script>
+  <script src="content-sections.js"></script>
+  <script src="content-examples.js"></script>
+  <script src="content-items.js"></script>
+  <script src="content-tests.js"></script>
+  <script src="content.js"></script>
+  <script src="engine.js"></script>
+
+  <script>
+    const qIndex = document.getElementById("qIndex");
+    const qTotal = document.getElementById("qTotal");
+    const progressBar = document.getElementById("progressBar");
+    const heartsEl = document.getElementById("hearts");
+    const topicTag = document.getElementById("topicTag");
+    const questionText = document.getElementById("questionText");
+    const choicesContainer = document.getElementById("choicesContainer");
+    const inputContainer = document.getElementById("inputContainer");
+    const answerInput = document.getElementById("answerInput");
+    const answerTextArea = document.getElementById("answerTextArea");
+    const answerHint = document.getElementById("answerHint");
+    const feedbackText = document.getElementById("feedbackText");
+    const submitBtn = document.getElementById("submitBtn");
+    const testTitle = document.getElementById("testTitle");
+    const quitOverlay = document.getElementById("quitOverlay");
+    const keepTestBtn = document.getElementById("keepTestBtn");
+    const quitTestBtn = document.getElementById("quitTestBtn");
+
+    let testSession = null;
+    let currentItem = null;
+    let currentResponse = "";
+    let awaitingAnswer = true;
+    let mathTypesetTries = 0;
+
+    if (window.FC?.get) {
+      const meta = FC.get();
+      if ((meta.lives ?? 0) <= 0) {
+        try {
+          localStorage.setItem("fc_show_hearts_modal", "1");
+        } catch {
+          // ignore
+        }
+        window.location.href = "path.html";
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function formatMathText(value) {
+      return escapeHtml(value).replace(/\n/g, "<br>");
+    }
+
+    function typesetMath(targets) {
+      if (window.MathJax?.typesetPromise) {
+        window.MathJax.typesetPromise(targets || undefined).catch(() => {});
+        return;
+      }
+      if (mathTypesetTries < 10) {
+        mathTypesetTries += 1;
+        setTimeout(() => typesetMath(targets), 200);
+      }
+    }
+
+    function loadTest() {
+      testSession = FCEngine.getTestSession();
+      if (!testSession) {
+        let placementId = "";
+        try {
+          const state = JSON.parse(localStorage.getItem("fc_state") || "{}");
+          placementId = state.placementTestId || "";
+        } catch {
+          placementId = "";
+        }
+        const fallbackId = placementId || FCContent.testBlueprints[0]?.id || "";
+        testSession = FCEngine.createTestSession(fallbackId);
+        if (testSession) FCEngine.saveTestSession(testSession);
+      }
+    }
+
+    function getBlueprint() {
+      return FCContent.getTestBlueprint(testSession.blueprintId);
+    }
+
+    function updateHeader() {
+      const blueprint = getBlueprint();
+      if (testTitle && blueprint) testTitle.textContent = blueprint.title;
+      if (heartsEl && window.FC?.get) heartsEl.textContent = String(FC.get().lives ?? 0);
+    }
+
+    function updateProgress() {
+      const total = testSession.itemIds.length || 1;
+      const current = Math.min(testSession.index + 1, total);
+      qIndex.textContent = String(current);
+      qTotal.textContent = String(total);
+      progressBar.style.width = `${Math.round((current / total) * 100)}%`;
+    }
+
+    function formatAnswer(item) {
+      const answer = item.answer?.value ?? "";
+      if (item.type === "mcq") return answer;
+      if (item.type === "numeric") return String(answer);
+      if (item.type === "expression") return String(answer);
+      if (item.type === "free-response") return "Saved for review";
+      return String(answer);
+    }
+
+    function resetInputs() {
+      currentResponse = "";
+      feedbackText.textContent = "";
+      feedbackText.className = "text-sm font-semibold text-center mb-4";
+      answerInput.value = "";
+      answerTextArea.value = "";
+      answerInput.classList.add("hidden");
+      answerTextArea.classList.add("hidden");
+      choicesContainer.classList.add("hidden");
+      inputContainer.classList.remove("hidden");
+      awaitingAnswer = true;
+      submitBtn.textContent = "Submit Answer";
+    }
+
+    function renderChoices(item) {
+      choicesContainer.innerHTML = "";
+      choicesContainer.classList.remove("hidden");
+      inputContainer.classList.add("hidden");
+      const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      item.choices.forEach((choice, idx) => {
+        const letter = letters[idx] || String(idx + 1);
+        const label = document.createElement("label");
+        label.className = "group relative cursor-pointer";
+        label.innerHTML = `
+          <input class="peer sr-only" name="test_answer" type="radio" />
+          <div
+            class="choiceCard w-full p-4 rounded-xl bg-white dark:bg-surfaceDark border-2 border-borderLight dark:border-borderDark flex items-center peer-checked:border-primary peer-checked:bg-primary/5 transition-all"
+          >
+            <div class="flex items-center justify-center size-9 rounded-lg border-2 border-borderLight dark:border-borderDark text-gray-400 mr-4 peer-checked:border-primary peer-checked:bg-primary peer-checked:text-white">
+              <span class="text-sm font-bold">${letter}</span>
+            </div>
+            <span class="text-lg font-medium">${formatMathText(choice)}</span>
+          </div>
+        `;
+        const input = label.querySelector("input");
+        input.value = choice;
+        input.addEventListener("change", () => {
+          currentResponse = choice;
+        });
+        choicesContainer.appendChild(label);
+      });
+    }
+
+    function renderInput(item) {
+      inputContainer.classList.remove("hidden");
+      choicesContainer.classList.add("hidden");
+      answerInput.classList.add("hidden");
+      answerTextArea.classList.add("hidden");
+
+      if (item.type === "free-response") {
+        answerTextArea.classList.remove("hidden");
+        answerHint.textContent = "Write a short response.";
+        answerTextArea.oninput = () => {
+          currentResponse = answerTextArea.value;
+        };
+      } else {
+        answerInput.classList.remove("hidden");
+        answerHint.textContent = item.type === "expression" ? "Use * for multiplication." : "Enter a value.";
+        answerInput.oninput = () => {
+          currentResponse = answerInput.value;
+        };
+      }
+    }
+
+    function renderItem() {
+      if (!testSession?.itemIds?.length) return;
+      const itemId = testSession.itemIds[testSession.index];
+      currentItem = FCContent.getItem(itemId);
+      if (!currentItem) return;
+
+      const section = FCContent.getSection(currentItem.sectionId);
+      topicTag.textContent = section ? section.title : (currentItem.tags?.[0] || "Topic");
+      questionText.innerHTML = formatMathText(currentItem.prompt || "Question");
+
+      resetInputs();
+      if (currentItem.type === "mcq") {
+        renderChoices(currentItem);
+      } else {
+        renderInput(currentItem);
+      }
+
+      updateProgress();
+      updateHeader();
+      typesetMath([questionText, choicesContainer]);
+    }
+
+    function recordResult(result) {
+      const correct = result.correct === true;
+      if (result.correct === null) {
+        feedbackText.textContent = "Saved for review.";
+        feedbackText.classList.add("text-yellow-300");
+      } else if (correct) {
+        if (window.FCSound?.play) FCSound.play("correct");
+        feedbackText.textContent = "Correct";
+        feedbackText.classList.add("text-emerald-300");
+      } else {
+        if (window.FCSound?.play) FCSound.play("wrong");
+        feedbackText.innerHTML = `Incorrect. Correct answer: <span class="underline">${formatMathText(
+          formatAnswer(currentItem)
+        )}</span>`;
+        feedbackText.classList.add("text-rose-300");
+        if (window.FC?.loseLife) {
+          const beforeLives = FC.get()?.lives ?? 0;
+          FC.loseLife();
+          const afterLives = FC.get()?.lives ?? 0;
+          if (afterLives === 0 && beforeLives > 0 && window.FCSound?.play) {
+            FCSound.play("lives", { volume: 0.5 });
+          }
+        }
+      }
+      typesetMath([feedbackText]);
+
+      if (window.FC?.get && heartsEl) heartsEl.textContent = String(FC.get().lives ?? 0);
+      FCProgress.recordItemResult(currentItem.id, result.correct);
+      testSession.responses.push({ itemId: currentItem.id, response: currentResponse, correct: result.correct });
+      if (correct) testSession.correct += 1;
+      FCEngine.saveTestSession(testSession);
+    }
+
+    function finishTest() {
+      const blueprint = getBlueprint();
+      const total = testSession.itemIds.length || 1;
+      const correctCount = testSession.responses.filter((r) => r.correct === true).length;
+      const score = Math.round((correctCount / total) * 100);
+      const threshold = Math.round((blueprint?.passThreshold || 0.9) * 100);
+      const passed = score >= threshold;
+      const xpReward = passed ? Number(blueprint?.rewards?.xp || 0) : 0;
+
+      if (xpReward && window.FC?.addXP) FC.addXP(xpReward);
+      if (xpReward && window.FCProgress?.addDailyXp) FCProgress.addDailyXp(xpReward);
+
+      const tagBreakdown = FCEngine.buildTagBreakdown(testSession.responses);
+      FCEngine.saveLastTest({
+        id: testSession.id,
+        testBlueprintId: blueprint?.id || testSession.blueprintId,
+        score,
+        passed,
+        tagBreakdown,
+        xp: xpReward,
+        submittedAt: new Date().toISOString(),
+      });
+
+      FCProgress.recordTestResult(blueprint?.id || testSession.blueprintId, {
+        score,
+        passed,
+        unlockSectionIds: blueprint?.rewards?.unlockSectionIds || [],
+      });
+
+      if (window.FC?.recordDailyActivity) {
+        FC.recordDailyActivity();
+      }
+
+      FCEngine.clearTestSession();
+      window.location.href = passed ? "unit-test-pass.html" : "unit-test-fail.html";
+    }
+
+    submitBtn.addEventListener("click", () => {
+      if (awaitingAnswer) {
+        if (!currentResponse || !String(currentResponse).trim()) {
+          feedbackText.textContent = "Enter an answer first.";
+          feedbackText.className = "text-sm font-semibold text-center mb-4 text-amber-300";
+          return;
+        }
+        const result = FCEngine.gradeItem(currentItem, currentResponse);
+        recordResult(result);
+        awaitingAnswer = false;
+        submitBtn.textContent = "Next Question";
+        return;
+      }
+
+      testSession.index += 1;
+      if (testSession.index >= testSession.itemIds.length) {
+        finishTest();
+      } else {
+        renderItem();
+      }
+    });
+
+    const openQuitOverlay = () => {
+      if (!quitOverlay) return;
+      quitOverlay.classList.remove("hidden");
+      document.body.classList.add("overflow-hidden");
+      if (window.FCSound?.play) FCSound.play("closeConfirm", { volume: 0.55 });
+    };
+
+    const closeQuitOverlay = () => {
+      if (!quitOverlay) return;
+      quitOverlay.classList.add("hidden");
+      document.body.classList.remove("overflow-hidden");
+    };
+
+    document.getElementById("exitTestBtn").addEventListener("click", () => {
+      openQuitOverlay();
+    });
+
+    keepTestBtn?.addEventListener("click", () => {
+      closeQuitOverlay();
+    });
+
+    // Intercept back button to show quit confirmation
+    (function () {
+      let allowExit = false;
+      const onPopState = () => {
+        if (allowExit) return;
+        openQuitOverlay();
+        history.pushState({ testQuitPrompt: true }, "");
+      };
+
+      history.pushState({ testQuitPrompt: true }, "");
+      window.addEventListener("popstate", onPopState);
+
+      const goBackOrPath = () => {
+        const ref = document.referrer || "";
+        if (ref) {
+          try {
+            const refUrl = new URL(ref, window.location.href);
+            if (refUrl.origin === window.location.origin) {
+              window.location.href = refUrl.href;
+              return;
+            }
+          } catch {
+            // ignore
+          }
+        }
+        if (history.length > 1) {
+          history.back();
+          return;
+        }
+        window.location.href = "path.html";
+      };
+
+      const handleQuit = () => {
+        allowExit = true;
+        window.removeEventListener("popstate", onPopState);
+        if (window.FCEngine?.clearTestSession) FCEngine.clearTestSession();
+        goBackOrPath();
+      };
+
+      quitTestBtn?.addEventListener("click", handleQuit);
+    })();
+
+    loadTest();
+    if (!testSession || !testSession.itemIds.length) {
+      if (window.FCUI?.showComingSoon) {
+        window.FCUI.showComingSoon({
+          title: "No test items yet",
+          message: "This test does not have any items available right now.",
+          primaryLabel: "Back to Path",
+          primaryIcon: "arrow_back",
+          enableNotifications: false,
+          onPrimary: () => {
+            window.location.href = "path.html";
+          },
+        });
+      } else {
+        window.location.href = "path.html";
+      }
+    } else {
+      renderItem();
+    }
+  </script>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+

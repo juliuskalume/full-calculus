@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex,nofollow" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <meta name="theme-color" content="#1cb0f6" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <link rel="icon" type="image/png" href="icons/icon-192.png" />
+    <title>Full Discrete ? Active Lesson</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap"
+    />
+
+    <!-- Material Symbols -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+    />
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    
+    <!-- MathJax -->
+    <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <!-- Blue Theme -->
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#1cb0f6",
+              "primary-dark": "#1599d4",
+              "accent-gold": "#ffc800",
+              "background-light": "#f6f6f8",
+              "background-dark": "#101622",
+              "surface-light": "#ffffff",
+              "surface-dark": "#1a2234",
+              "text-primary-light": "#0d121b",
+              "text-primary-dark": "#f8f9fc",
+              "text-secondary-light": "#4c669a",
+              "text-secondary-dark": "#94a3b8",
+            },
+            fontFamily: {
+              display: ["Lexend", "sans-serif"],
+            },
+            borderRadius: {
+              DEFAULT: "1rem",
+              lg: "1.5rem",
+              xl: "2rem",
+              full: "9999px",
+            },
+            boxShadow: {
+              card: "0 2px 0 0 #e5e7eb",
+              "card-dark": "0 2px 0 0 #374151",
+              "card-active": "0 2px 0 0 #1cb0f6",
+              btn: "0 4px 0 0 #1599d4",
+            },
+          },
+        },
+      };
+    </script>
+
+    <style>
+      body {
+        font-family: "Lexend", sans-serif;
+        min-height: max(884px, 100dvh);
+      }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+      /* Tactile press */
+      .press:active { transform: translateY(4px); box-shadow: none !important; }
+
+      /* Bottom-sheet animation */
+      .sheetHidden { transform: translateY(110%); }
+      .sheetShown { transform: translateY(0); }
+      .sheetAnim { transition: transform 260ms ease; }
+    </style>
+    <script src="theme.js"></script>
+    <script src="sound.js"></script>
+  </head>
+
+  <body
+    class="bg-background-light dark:bg-background-dark text-text-primary-light dark:text-text-primary-dark flex justify-center min-h-screen antialiased selection:bg-primary/20 selection:text-primary"
+  >
+    <!-- Mobile shell -->
+    <div
+      class="w-full max-w-none bg-background-light dark:bg-background-dark h-screen sm:h-auto sm:min-h-screen flex flex-col relative overflow-hidden shadow-2xl sm:rounded-[2rem] sm:my-4 sm:border sm:border-gray-200 dark:sm:border-gray-800"
+    >
+      <!-- Header -->
+      <header class="flex items-center gap-4 p-4 pt-6 bg-background-light/95 dark:bg-background-dark/95 sticky top-0 z-20 backdrop-blur">
+        <!-- Close -->
+        <button
+          id="closeLesson"
+          type="button"
+          class="press text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors rounded-xl p-2 hover:bg-gray-100 dark:hover:bg-gray-800"
+          aria-label="Close lesson"
+        >
+          <span class="material-symbols-outlined" style="font-size: 28px">close</span>
+        </button>
+
+        <!-- Progress -->
+        <div class="flex-1 h-4 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden relative">
+          <div class="absolute top-0 left-0 w-full h-1/3 bg-white/20 z-10"></div>
+          <div
+            id="progressFill"
+            class="h-full bg-primary rounded-full transition-all duration-500 ease-out relative"
+            style="width: 0%"
+          >
+            <div class="absolute top-1 right-2 w-2/3 h-1 bg-white/30 rounded-full"></div>
+          </div>
+        </div>
+
+        <!-- Lives -->
+        <div class="flex items-center gap-1.5 shrink-0">
+          <span class="material-symbols-outlined text-red-500" style="font-variation-settings:'FILL' 1; font-size: 26px"
+            >favorite</span
+          >
+          <span class="text-red-500 font-bold text-lg" id="lives">5</span>
+        </div>
+      </header>
+
+      <!-- Main -->
+      <main id="main" class="flex-1 overflow-y-auto px-5 pt-4 pb-40 no-scrollbar">
+        <!-- Question -->
+        <div class="mt-2 mb-6">
+          <h1 id="questionTitle" class="text-2xl md:text-3xl font-bold leading-tight mb-2">
+            Loading question...
+          </h1>
+          <p id="questionHint" class="text-text-secondary-light dark:text-text-secondary-dark font-medium">
+            Pick the best answer.
+          </p>
+        </div>
+
+        <!-- Illustration card -->
+        <div
+          id="visualCard"
+          class="w-full aspect-[4/3] bg-surface-light dark:bg-surface-dark rounded-2xl border-2 border-gray-100 dark:border-gray-800 p-6 flex items-center justify-center mb-6 shadow-sm relative overflow-hidden"
+        >
+          <div
+            class="absolute inset-0 opacity-10 dark:opacity-5"
+            style="background-image: radial-gradient(#000 1px, transparent 1px); background-size: 20px 20px;"
+          ></div>
+
+          <div class="w-full h-full relative">
+            <div class="absolute left-4 bottom-4 w-[2px] h-[90%] bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+            <div class="absolute left-4 bottom-4 w-[90%] h-[2px] bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+
+            <svg class="absolute inset-0 w-full h-full overflow-visible" preserveAspectRatio="none">
+              <path
+                d="M 30 200 Q 100 50 200 50 T 350 150"
+                fill="none"
+                stroke="#1cb0f6"
+                stroke-linecap="round"
+                stroke-width="4"
+              ></path>
+
+              <circle cx="200" cy="50" r="6" fill="#f6f6f8" stroke="#1cb0f6" stroke-width="3"></circle>
+
+              <line x1="200" y1="50" x2="200" y2="240" stroke="#9ca3af" stroke-width="2" stroke-dasharray="4 4"></line>
+              <line x1="40" y1="50" x2="200" y2="50" stroke="#9ca3af" stroke-width="2" stroke-dasharray="4 4"></line>
+            </svg>
+
+            <div class="absolute bottom-[-5px] left-[195px] text-sm font-bold text-gray-500">2</div>
+            <div class="absolute top-[40px] left-[20px] text-sm font-bold text-gray-500">4</div>
+
+            <div class="absolute bottom-[20px] left-[140px] text-primary animate-pulse">
+              <span class="material-symbols-outlined rotate-180">arrow_right_alt</span>
+            </div>
+            <div class="absolute bottom-[20px] left-[230px] text-primary animate-pulse">
+              <span class="material-symbols-outlined">arrow_right_alt</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Options -->
+        <div id="choicesContainer" class="flex flex-col gap-4" role="radiogroup" aria-label="Answer options"></div>
+
+        <div id="inputContainer" class="hidden space-y-2">
+          <label class="text-sm opacity-70">Your Answer</label>
+          <input
+            id="textAnswer"
+            type="text"
+            inputmode="text"
+            placeholder="Type your answer"
+            class="w-full rounded-xl bg-white dark:bg-surface-dark border-2 border-gray-200 dark:border-gray-700 px-4 py-3 text-lg text-gray-900 dark:text-white focus:border-primary focus:ring-0"
+          />
+          <textarea
+            id="textAreaAnswer"
+            rows="3"
+            placeholder="Write a short response"
+            class="hidden w-full rounded-xl bg-white dark:bg-surface-dark border-2 border-gray-200 dark:border-gray-700 px-4 py-3 text-base text-gray-900 dark:text-white focus:border-primary focus:ring-0"
+          ></textarea>
+          <p id="inputHint" class="text-xs opacity-50 italic text-center">Use * for multiplication.</p>
+        </div>
+      </main>
+
+      <!-- Footer Action -->
+      <footer class="absolute bottom-0 w-full bg-background-light dark:bg-background-dark border-t border-gray-200 dark:border-gray-800 p-4 pb-6 z-30">
+        <div class="w-full max-w-none">
+          <button
+            id="checkBtn"
+            type="button"
+            class="press w-full flex items-center justify-center bg-primary hover:bg-primary-dark text-white text-lg font-bold py-3.5 px-6 rounded-2xl shadow-btn transition-all uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled
+          >
+            Check Answer
+          </button>
+        </div>
+      </footer>
+
+      <!-- Dim overlay (shown on result) -->
+      <div id="overlay" class="hidden absolute inset-0 bg-black/10 dark:bg-black/30 z-40"></div>
+
+      <!-- RESULT SHEET (Duolingo-style) -->
+      <section
+        id="resultSheet"
+        class="sheetHidden sheetAnim absolute left-0 right-0 bottom-0 z-50"
+        aria-live="polite"
+      >
+        <!-- Correct sheet -->
+        <div id="sheetCorrect" class="hidden bg-primary rounded-t-[2rem] px-5 pt-5 pb-6">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center overflow-hidden">
+                <img
+                  alt="Cal"
+                  class="w-10 h-10 object-contain"
+                  src="icons/icon-512.png"
+                />
+              </div>
+              <div>
+                <div id="correctTitle" class="text-white text-2xl font-extrabold leading-tight">Great job!</div>
+                <div id="correctMessage" class="text-white/85 text-sm font-medium">Keep the streak going.</div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 bg-white/20 text-white font-bold px-3 py-2 rounded-full">
+              <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">bolt</span>
+              <span id="correctXp">+0 XP</span>
+            </div>
+          </div>
+
+          <button
+            id="continueCorrect"
+            type="button"
+            class="w-full bg-white text-primary font-extrabold text-lg py-3.5 rounded-full press"
+            style="box-shadow: 0 4px 0 0 rgba(0,0,0,0.15)"
+          >
+            Continue <span class="material-symbols-outlined align-[-6px] ml-1">arrow_forward</span>
+          </button>
+        </div>
+
+        <!-- Incorrect sheet -->
+        <div id="sheetWrong" class="hidden bg-rose-400 rounded-t-[2rem] px-5 pt-5 pb-6">
+          <div class="flex items-start gap-3 mb-4">
+            <div class="w-12 h-12 rounded-2xl bg-white/25 flex items-center justify-center overflow-hidden">
+              <img
+                alt="Cal"
+                class="w-10 h-10 object-contain"
+                src="icons/icon-512.png"
+              />
+            </div>
+
+            <div class="flex-1">
+              <div id="wrongTitle" class="text-white text-2xl font-extrabold leading-tight">Not quite.</div>
+              <div id="wrongAnswer" class="text-white/90 text-sm font-semibold mt-1">
+                The correct answer is <span class="underline">See explanation.</span>
+              </div>
+              <div id="wrongExplanation" class="text-white/90 text-sm font-medium mt-2">
+                Review the steps and try the next one.
+              </div>
+            </div>
+          </div>
+
+          <button
+            id="gotItWrong"
+            type="button"
+            class="w-full bg-white text-rose-500 font-extrabold text-lg py-3.5 rounded-full press"
+            style="box-shadow: 0 4px 0 0 rgba(0,0,0,0.15)"
+          >
+            GOT IT
+          </button>
+
+          <button
+            id="reportBtn"
+            type="button"
+            class="mt-3 w-full text-white/90 text-xs font-bold tracking-widest uppercase flex items-center justify-center gap-2"
+          >
+            <span class="material-symbols-outlined text-base">flag</span>
+            Report a problem
+          </button>
+        </div>
+      </section>
+
+      <!-- Quit Confirmation Overlay -->
+      <div id="quitOverlay" class="fixed inset-0 z-[60] hidden">
+        <div class="absolute inset-0 bg-[#141414]/60 backdrop-blur-sm"></div>
+        <div class="absolute inset-0 flex flex-col justify-end sm:justify-center items-center px-0 sm:px-4">
+          <div class="w-full max-w-[480px] bg-white dark:bg-[#1a2235] rounded-t-3xl sm:rounded-3xl flex flex-col items-center">
+            <div class="flex h-6 w-full items-center justify-center sm:hidden">
+              <div class="h-1.5 w-12 rounded-full bg-gray-300 dark:bg-gray-700"></div>
+            </div>
+            <div class="w-full px-8 pt-8 pb-4 flex justify-center">
+              <div class="relative w-48 h-48">
+                <div
+                  class="w-full h-full bg-center bg-no-repeat bg-contain rounded-full flex items-center justify-center"
+                  style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDUX5qRCXEDZIG-NewYv4fpj4tgCRnnygcRZR_7NCL_dG1ySR3YlMrxkgdcHXFBnP_U3fcrDtt1cZy6ZppdKyyv8n6e5OCsuBleFk2iSK5lxcqNrEjQhUCLeLONAFOhLaD9eXwLetrktC4VSPfrCtHbJTkecZoc6_pCuf2UYTbasjxugmOtka6ZoqdxjChBdSHcvJiyFBs4phAga_WmZdNEhYXhLyj5uAsmcc8EBibsKZUgNgU25dALznUWG9u34hJzFYSUoo6JXNk");'
+                  aria-label="Sad blue discrete math mascot looking worried"
+                ></div>
+                <div class="absolute top-2 right-2 bg-white dark:bg-background-dark p-2 rounded-full shadow-lg border border-gray-100 dark:border-gray-800">
+                  <span class="material-symbols-outlined text-orange-500">warning</span>
+                </div>
+              </div>
+            </div>
+            <div class="w-full px-6">
+              <h1 class="text-[#0d121c] dark:text-white tracking-tight text-3xl font-bold leading-tight text-center pb-2">
+                Wait, don't go!
+              </h1>
+              <p class="text-[#4b5563] dark:text-gray-400 text-lg font-normal leading-relaxed text-center pb-8 pt-1">
+                If you quit now, you'll lose your <span class="font-semibold text-primary">progress</span> in this lesson and your
+                <span class="font-semibold text-orange-500">streak</span> might be at risk.
+              </p>
+            </div>
+            <div class="flex flex-col w-full gap-3 px-6 pb-10 sm:pb-8">
+              <button
+                id="keepLearningBtn"
+                class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-14 px-5 bg-primary hover:bg-primary-dark text-white text-lg font-bold leading-normal tracking-wide transition-colors shadow-md"
+              >
+                <span class="truncate uppercase">Keep Learning</span>
+              </button>
+              <button
+                id="quitLessonBtn"
+                class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-14 px-5 bg-[#f3f4f6] dark:bg-gray-800 text-[#6b7280] dark:text-gray-400 text-lg font-bold leading-normal tracking-wide transition-colors border border-transparent hover:border-gray-300"
+              >
+                <span class="truncate">QUIT LESSON</span>
+              </button>
+            </div>
+            <div class="h-2 sm:hidden"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Report Problem Overlay -->
+      <div id="reportOverlay" class="fixed inset-0 z-[70] hidden">
+        <div class="absolute inset-0 bg-[#141414]/70 backdrop-blur-sm"></div>
+        <div class="absolute inset-0 flex items-end sm:items-center justify-center px-0 sm:px-4">
+          <div class="w-full max-w-[520px] bg-white dark:bg-[#1a2235] rounded-t-3xl sm:rounded-3xl p-6 sm:p-7">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-xl font-bold text-[#0d121c] dark:text-white">Report a problem</h2>
+              <button
+                id="closeReportBtn"
+                type="button"
+                class="rounded-lg p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                aria-label="Close report dialog"
+              >
+                <span class="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <label for="reportType" class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Issue type</label>
+            <select
+              id="reportType"
+              class="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 mb-4 text-slate-800 dark:text-white focus:border-primary focus:ring-0"
+            >
+              <option value="wrong-answer">Wrong answer key</option>
+              <option value="wrong-explanation">Wrong explanation</option>
+              <option value="content-issue">Content issue / typo</option>
+              <option value="ui-bug">UI bug</option>
+              <option value="performance">Performance issue</option>
+              <option value="other">Other</option>
+            </select>
+
+            <label for="reportDetails" class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Details</label>
+            <textarea
+              id="reportDetails"
+              rows="4"
+              maxlength="1500"
+              class="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-slate-800 dark:text-white focus:border-primary focus:ring-0"
+              placeholder="Describe what is wrong so we can fix it quickly."
+            ></textarea>
+            <p id="reportStatus" class="mt-3 min-h-[1.25rem] text-xs font-semibold text-slate-500 dark:text-slate-400"></p>
+
+            <div class="mt-5 flex flex-col sm:flex-row gap-3">
+              <button
+                id="submitReportBtn"
+                type="button"
+                class="flex-1 rounded-xl h-12 bg-primary hover:bg-primary-dark text-white font-bold transition-colors"
+              >
+                Send report
+              </button>
+              <button
+                id="cancelReportBtn"
+                type="button"
+                class="flex-1 rounded-xl h-12 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/mathjs@11.8.0/lib/browser/math.min.js"></script>
+    <script src="state.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="auth.js"></script>
+    <script src="progress.js"></script>
+    <script src="content-structure.js"></script>
+    <script src="content-sections.js"></script>
+    <script src="content-examples.js"></script>
+    <script src="content-items.js"></script>
+    <script src="content-tests.js"></script>
+    <script src="content.js"></script>
+    <script src="engine.js"></script>
+
+    <script>
+      const closeBtn = document.getElementById("closeLesson");
+      const checkBtn = document.getElementById("checkBtn");
+      const overlay = document.getElementById("overlay");
+      const sheet = document.getElementById("resultSheet");
+      const sheetCorrect = document.getElementById("sheetCorrect");
+      const sheetWrong = document.getElementById("sheetWrong");
+      const continueCorrect = document.getElementById("continueCorrect");
+      const gotItWrong = document.getElementById("gotItWrong");
+      const reportBtn = document.getElementById("reportBtn");
+      const quitOverlay = document.getElementById("quitOverlay");
+      const keepLearningBtn = document.getElementById("keepLearningBtn");
+      const quitLessonBtn = document.getElementById("quitLessonBtn");
+      const reportOverlay = document.getElementById("reportOverlay");
+      const closeReportBtn = document.getElementById("closeReportBtn");
+      const cancelReportBtn = document.getElementById("cancelReportBtn");
+      const submitReportBtn = document.getElementById("submitReportBtn");
+      const reportType = document.getElementById("reportType");
+      const reportDetails = document.getElementById("reportDetails");
+      const reportStatus = document.getElementById("reportStatus");
+
+      const questionTitle = document.getElementById("questionTitle");
+      const questionHint = document.getElementById("questionHint");
+      const choicesContainer = document.getElementById("choicesContainer");
+      const inputContainer = document.getElementById("inputContainer");
+      const textAnswer = document.getElementById("textAnswer");
+      const textAreaAnswer = document.getElementById("textAreaAnswer");
+      const inputHint = document.getElementById("inputHint");
+      const visualCard = document.getElementById("visualCard");
+      const progressFill = document.getElementById("progressFill");
+      const livesEl = document.getElementById("lives");
+
+      const correctTitle = document.getElementById("correctTitle");
+      const correctMessage = document.getElementById("correctMessage");
+      const correctXp = document.getElementById("correctXp");
+      const wrongTitle = document.getElementById("wrongTitle");
+      const wrongAnswer = document.getElementById("wrongAnswer");
+      const wrongExplanation = document.getElementById("wrongExplanation");
+
+      let session = null;
+      let currentItem = null;
+      let currentResponse = "";
+      let locked = false;
+      let mathTypesetTries = 0;
+      const REPORT_QUEUE_KEY = "fc_problem_reports_queue";
+
+      if (window.FC?.get) {
+        const meta = FC.get();
+        if ((meta.lives ?? 0) <= 0) {
+          try {
+            localStorage.setItem("fc_show_hearts_modal", "1");
+          } catch {
+            // ignore
+          }
+          window.location.href = "path.html";
+        }
+      }
+
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function formatMathText(value) {
+        return escapeHtml(value).replace(/\n/g, "<br>");
+      }
+
+      function readReportQueue() {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(REPORT_QUEUE_KEY) || "[]");
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          return [];
+        }
+      }
+
+      function saveReportQueue(queue) {
+        try {
+          localStorage.setItem(REPORT_QUEUE_KEY, JSON.stringify(queue));
+        } catch {
+          // ignore
+        }
+      }
+
+      function enqueueReport(payload) {
+        const queue = readReportQueue();
+        queue.push(payload);
+        saveReportQueue(queue);
+      }
+
+      function getReportAccessState() {
+        const auth = window.FCAuth;
+        if (!auth || !auth.enabled) {
+          return { allowed: false, message: "Sign in is required to send a report." };
+        }
+        const user = auth.getCurrentUser?.();
+        if (user) return { allowed: true, message: "" };
+        const raw = auth.getRawUser?.();
+        if (raw && !raw.emailVerified) {
+          return { allowed: false, message: "Verify your email in Settings before sending reports." };
+        }
+        return { allowed: false, message: "Sign in to send a report." };
+      }
+
+      function setReportStatus(message, tone) {
+        if (!reportStatus) return;
+        reportStatus.textContent = message || "";
+        reportStatus.className = "mt-3 min-h-[1.25rem] text-xs font-semibold";
+        if (tone === "error") {
+          reportStatus.classList.add("text-rose-500");
+        } else if (tone === "ok") {
+          reportStatus.classList.add("text-emerald-500");
+        } else {
+          reportStatus.classList.add("text-slate-500", "dark:text-slate-400");
+        }
+      }
+
+      function setReportSubmitting(isSubmitting) {
+        if (!submitReportBtn) return;
+        submitReportBtn.disabled = isSubmitting;
+        submitReportBtn.classList.toggle("opacity-60", isSubmitting);
+        submitReportBtn.textContent = isSubmitting ? "Sending..." : "Send report";
+      }
+
+      function buildReportPayload() {
+        const access = getReportAccessState();
+        if (!access.allowed) return null;
+        const user = window.FCAuth.getCurrentUser();
+        const answer = currentItem?.answer?.value;
+        const answerText = answer == null ? "" : String(answer);
+        return {
+          uid: user.uid,
+          email: user.email || "",
+          issueType: String(reportType?.value || "other"),
+          message: String(reportDetails?.value || "").trim(),
+          page: "active-lesson",
+          sessionId: session?.id || "",
+          sessionMode: session?.mode || "",
+          sectionId: session?.sectionId || currentItem?.sectionId || "",
+          itemId: currentItem?.id || "",
+          itemType: currentItem?.type || "",
+          prompt: String(currentItem?.prompt || "").slice(0, 500),
+          expectedAnswer: answerText.slice(0, 200),
+          userResponse: String(currentResponse || "").slice(0, 200),
+          questionIndex: Number(session?.index ?? 0),
+          questionCount: Number(session?.itemIds?.length ?? 0),
+          url: window.location.href,
+          userAgent: navigator.userAgent || "",
+          clientCreatedAt: new Date().toISOString(),
+        };
+      }
+
+      async function submitReportPayload(payload) {
+        const db = window.FCAuth?.db;
+        const serverTimestamp = window.firebase?.firestore?.FieldValue?.serverTimestamp?.();
+        if (!db) throw Object.assign(new Error("Firestore unavailable"), { code: "firestore/unavailable" });
+        await db.collection("problem_reports").add({
+          ...payload,
+          createdAt: serverTimestamp || payload.clientCreatedAt,
+        });
+      }
+
+      async function flushQueuedReports() {
+        const access = getReportAccessState();
+        if (!access.allowed || !navigator.onLine) return;
+        const queue = readReportQueue();
+        if (!queue.length) return;
+        const pending = [...queue];
+        const remaining = [];
+        for (let i = 0; i < pending.length; i += 1) {
+          try {
+            await submitReportPayload(pending[i]);
+          } catch {
+            remaining.push(pending[i]);
+          }
+        }
+        saveReportQueue(remaining);
+      }
+
+      function openReportOverlay() {
+        if (!reportOverlay) return;
+        reportOverlay.classList.remove("hidden");
+        document.body.classList.add("overflow-hidden");
+        if (reportDetails) reportDetails.value = "";
+        if (reportType) reportType.value = "wrong-answer";
+        const access = getReportAccessState();
+        setReportStatus(access.allowed ? "" : access.message, access.allowed ? "default" : "error");
+      }
+
+      function closeReportOverlay() {
+        if (!reportOverlay) return;
+        reportOverlay.classList.add("hidden");
+        if (quitOverlay?.classList.contains("hidden")) {
+          document.body.classList.remove("overflow-hidden");
+        }
+      }
+
+      function typesetMath(targets) {
+        if (window.MathJax?.typesetPromise) {
+          window.MathJax.typesetPromise(targets || undefined).catch(() => {});
+          return;
+        }
+        if (mathTypesetTries < 10) {
+          mathTypesetTries += 1;
+          setTimeout(() => typesetMath(targets), 200);
+        }
+      }
+
+      function getFallbackSectionId() {
+        if (window.FCProgress?.get) {
+          const p = FCProgress.get();
+          if (p.currentSectionId) return p.currentSectionId;
+        }
+        const course = FCContent.getCourse("calc-1");
+        if (!course) return null;
+        const module = FCContent.getCourseModules(course.id)[0];
+        const chapter = module ? FCContent.getModuleChapters(module.id)[0] : null;
+        const section = chapter ? FCContent.getChapterSections(chapter.id)[0] : null;
+        return section ? section.id : null;
+      }
+
+      function ensureSession() {
+        const desiredSectionId = FCProgress.get().currentSectionId || null;
+        session = FCEngine.getSession();
+        if (session && session.itemIds?.length) {
+          if (session.mode === "practice") return;
+          if (!desiredSectionId || session.sectionId === desiredSectionId) return;
+        }
+        const sectionId = desiredSectionId || getFallbackSectionId();
+        session = FCEngine.createSession({
+          mode: "lesson",
+          sectionId,
+          count: 3,
+          types: ["mcq", "numeric", "expression", "free-response"],
+          xpPerCorrect: 10,
+        });
+        FCEngine.saveSession(session);
+        if (sectionId) FCProgress.setCurrentSection(sectionId);
+      }
+
+      function updateProgress() {
+        const total = session.itemIds.length || 1;
+        const current = Math.min(session.index + 1, total);
+        if (progressFill) progressFill.style.width = `${Math.round((current / total) * 100)}%`;
+      }
+
+      function setLives() {
+        if (!window.FC?.get || !livesEl) return;
+        livesEl.textContent = String(FC.get().lives ?? 0);
+      }
+
+      function resetState() {
+        locked = false;
+        checkBtn.disabled = true;
+        overlay.classList.add("hidden");
+        sheet.classList.remove("sheetShown");
+        sheet.classList.add("sheetHidden");
+        sheetCorrect.classList.add("hidden");
+        sheetWrong.classList.add("hidden");
+      }
+
+      function renderChoices(item) {
+        choicesContainer.innerHTML = "";
+        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        item.choices.forEach((choice, idx) => {
+          const letter = letters[idx] || String(idx + 1);
+          const label = document.createElement("label");
+          label.className = "group relative cursor-pointer";
+          label.innerHTML = `
+            <input class="peer sr-only" name="answer" type="radio" />
+            <div
+              class="choiceCard press w-full p-4 rounded-xl bg-surface-light dark:bg-surface-dark border-2 border-gray-200 dark:border-gray-700 shadow-[0_2px_0_0_#e5e7eb] dark:shadow-[0_2px_0_0_#374151] flex items-center peer-checked:border-primary peer-checked:bg-primary/5 peer-checked:shadow-[0_2px_0_0_#1cb0f6] transition-all"
+            >
+              <div
+                class="flex items-center justify-center size-9 rounded-lg border-2 border-gray-200 dark:border-gray-600 text-gray-400 mr-4 peer-checked:border-primary peer-checked:bg-primary peer-checked:text-white"
+              >
+                <span class="text-sm font-bold">${letter}</span>
+              </div>
+              <span class="text-lg font-medium">${formatMathText(choice)}</span>
+            </div>
+          `;
+          const input = label.querySelector("input");
+          input.value = choice;
+          input.addEventListener("change", () => {
+            if (locked) return;
+            currentResponse = choice;
+            checkBtn.disabled = false;
+          });
+          choicesContainer.appendChild(label);
+        });
+      }
+
+      function renderInput(item) {
+        inputContainer.classList.remove("hidden");
+        choicesContainer.innerHTML = "";
+        choicesContainer.classList.add("hidden");
+        textAreaAnswer.classList.add("hidden");
+        textAnswer.classList.add("hidden");
+        textAnswer.value = "";
+        textAreaAnswer.value = "";
+        currentResponse = "";
+
+        if (item.type === "free-response") {
+          textAreaAnswer.classList.remove("hidden");
+          inputHint.textContent = "Write a short explanation.";
+          textAreaAnswer.oninput = () => {
+            currentResponse = textAreaAnswer.value;
+            checkBtn.disabled = !currentResponse.trim();
+          };
+        } else {
+          textAnswer.classList.remove("hidden");
+          inputHint.textContent = item.type === "expression" ? "Use * for multiplication." : "Enter a value.";
+          textAnswer.oninput = () => {
+            currentResponse = textAnswer.value;
+            checkBtn.disabled = !currentResponse.trim();
+          };
+        }
+      }
+
+      function renderItem() {
+        if (!session.itemIds.length) return;
+        const itemId = session.itemIds[session.index];
+        currentResponse = "";
+        currentItem = FCContent.getItem(itemId);
+        if (!currentItem) return;
+
+        const section = FCContent.getSection(currentItem.sectionId);
+        questionTitle.innerHTML = formatMathText(currentItem.prompt || "Question");
+        questionHint.innerHTML = formatMathText(
+          (currentItem.hints && currentItem.hints[0]) || (section ? section.title : "")
+        );
+
+        if (visualCard) visualCard.classList.add("hidden");
+
+        choicesContainer.classList.remove("hidden");
+        inputContainer.classList.add("hidden");
+
+        if (currentItem.type === "mcq") {
+          renderChoices(currentItem);
+        } else {
+          renderInput(currentItem);
+        }
+
+        resetState();
+        updateProgress();
+        typesetMath([questionTitle, questionHint, choicesContainer]);
+      }
+
+      function showSheet(isCorrect) {
+        overlay.classList.remove("hidden");
+        sheet.classList.remove("sheetHidden");
+        sheet.classList.add("sheetShown");
+        sheetCorrect.classList.toggle("hidden", !isCorrect);
+        sheetWrong.classList.toggle("hidden", isCorrect);
+      }
+
+      function formatAnswer(item) {
+        const answer = item.answer?.value ?? "";
+        if (item.type === "mcq") return answer;
+        if (item.type === "numeric") return String(answer);
+        if (item.type === "expression") return String(answer);
+        if (item.type === "free-response") return "Saved for review";
+        return String(answer);
+      }
+
+      function markWrongAnswer() {
+        const selected = document.querySelector('input[name="answer"]:checked');
+        if (!selected) return;
+        const card = selected.closest("label")?.querySelector(".choiceCard");
+        if (card) {
+          card.classList.remove("border-gray-200", "dark:border-gray-700");
+          card.classList.add("border-rose-400");
+          card.style.boxShadow = "0 2px 0 0 #fb7185";
+        }
+      }
+
+      function applyResult(result) {
+        const correct = result.correct === null ? true : result.correct;
+        const xpAward = result.correct === true ? session.xpPerCorrect : result.correct === null ? Math.round(session.xpPerCorrect / 2) : 0;
+
+        if (correct) {
+          if (window.FCSound?.play) FCSound.play("correct");
+          correctTitle.textContent = result.correct === null ? "Saved" : "Great job!";
+          correctMessage.textContent = result.correct === null ? "Your response is saved for review." : "Keep the momentum going.";
+          correctXp.textContent = `+${xpAward} XP`;
+          if (window.FC?.addXP) FC.addXP(xpAward);
+          if (window.FCProgress?.addDailyXp) FCProgress.addDailyXp(xpAward);
+        } else {
+          if (window.FCSound?.play) FCSound.play("wrong");
+          wrongTitle.textContent = "Not quite.";
+          wrongAnswer.innerHTML = `The correct answer is <span class="underline">${formatMathText(
+            formatAnswer(currentItem)
+          )}</span>`;
+          const firstStep = currentItem.solutionSteps?.[0] || "Review the steps and try the next one.";
+          wrongExplanation.innerHTML = formatMathText(firstStep);
+          markWrongAnswer();
+          if (window.FC?.loseLife) {
+            const beforeLives = FC.get()?.lives ?? 0;
+            FC.loseLife();
+            const afterLives = FC.get()?.lives ?? 0;
+            if (afterLives === 0 && beforeLives > 0 && window.FCSound?.play) {
+              FCSound.play("lives", { volume: 0.5 });
+            }
+          }
+          setLives();
+        }
+
+        FCProgress.recordItemResult(currentItem.id, result.correct);
+        session.responses.push({ itemId: currentItem.id, response: currentResponse, correct: result.correct });
+        if (result.correct === true) session.correct += 1;
+        FCEngine.saveSession(session);
+
+        showSheet(correct);
+        typesetMath([wrongAnswer, wrongExplanation]);
+      }
+
+      function advanceSession() {
+        session.index += 1;
+        FCEngine.saveSession(session);
+        if (session.index >= session.itemIds.length) {
+          finishSession();
+          return;
+        }
+        renderItem();
+      }
+
+      function finishSession() {
+        const total = session.itemIds.length || 1;
+        const correctCount = session.responses.filter((r) => r.correct === true).length;
+        const accuracy = Math.round((correctCount / total) * 100);
+        const xpTotal = session.responses.reduce((sum, r) => {
+          if (r.correct === true) return sum + session.xpPerCorrect;
+          if (r.correct === null) return sum + Math.round(session.xpPerCorrect / 2);
+          return sum;
+        }, 0);
+
+        if (session.mode === "lesson" && session.sectionId) {
+          FCProgress.completeSection(session.sectionId);
+          if (window.FCProgress?.recordDailyLessonComplete) FCProgress.recordDailyLessonComplete();
+          const section = FCContent.getSection(session.sectionId);
+          if (section) {
+            const sections = FCContent.getChapterSections(section.chapterId);
+            const idx = sections.findIndex((s) => s.id === section.id);
+            const next = sections[idx + 1];
+            if (next) FCProgress.setCurrentSection(next.id);
+          }
+        }
+
+        if (window.FC?.recordDailyActivity) {
+          FC.recordDailyActivity();
+        }
+
+        FCEngine.saveLastSession({
+          id: session.id,
+          sectionId: session.sectionId,
+          mode: session.mode,
+          correct: correctCount,
+          total,
+          accuracy,
+          xp: xpTotal,
+          submittedAt: new Date().toISOString(),
+        });
+
+        FCEngine.clearSession();
+        window.location.href = "lesson-complete.html";
+      }
+
+      const openQuitOverlay = () => {
+        if (!quitOverlay) return;
+        quitOverlay.classList.remove("hidden");
+        document.body.classList.add("overflow-hidden");
+        if (window.FCSound?.play) FCSound.play("closeConfirm", { volume: 0.55 });
+      };
+
+      const closeQuitOverlay = () => {
+        if (!quitOverlay) return;
+        quitOverlay.classList.add("hidden");
+        document.body.classList.remove("overflow-hidden");
+      };
+
+      closeBtn.addEventListener("click", () => {
+        openQuitOverlay();
+      });
+
+      checkBtn.addEventListener("click", () => {
+        if (locked) return;
+        if (!currentResponse || !String(currentResponse).trim()) return;
+        locked = true;
+        const result = FCEngine.gradeItem(currentItem, currentResponse);
+        applyResult(result);
+      });
+
+      continueCorrect.addEventListener("click", () => {
+        advanceSession();
+      });
+
+      gotItWrong.addEventListener("click", () => {
+        advanceSession();
+      });
+
+      reportBtn.addEventListener("click", () => {
+        openReportOverlay();
+      });
+
+      closeReportBtn?.addEventListener("click", closeReportOverlay);
+      cancelReportBtn?.addEventListener("click", closeReportOverlay);
+
+      submitReportBtn?.addEventListener("click", async () => {
+        const access = getReportAccessState();
+        if (!access.allowed) {
+          setReportStatus(access.message, "error");
+          return;
+        }
+        const details = String(reportDetails?.value || "").trim();
+        if (details.length < 10) {
+          setReportStatus("Please add at least 10 characters so we can investigate.", "error");
+          return;
+        }
+
+        const payload = buildReportPayload();
+        if (!payload) {
+          setReportStatus("Unable to prepare report data. Try again.", "error");
+          return;
+        }
+
+        setReportSubmitting(true);
+        try {
+          await submitReportPayload(payload);
+          setReportStatus("Report sent. Thank you.", "ok");
+          setTimeout(() => {
+            setReportSubmitting(false);
+            closeReportOverlay();
+          }, 550);
+        } catch (err) {
+          const code = String(err?.code || "");
+          const message = String(err?.message || "").toLowerCase();
+          const isOfflineError =
+            !navigator.onLine ||
+            code.includes("unavailable") ||
+            code.includes("deadline-exceeded") ||
+            message.includes("network");
+
+          if (isOfflineError) {
+            enqueueReport(payload);
+            setReportStatus("No internet. Report saved and will sync automatically.", "ok");
+            setTimeout(() => {
+              setReportSubmitting(false);
+              closeReportOverlay();
+            }, 900);
+          } else if (code.includes("permission-denied")) {
+            setReportStatus("Verify your email in Settings before sending reports.", "error");
+            setReportSubmitting(false);
+          } else {
+            setReportStatus("Could not send report right now. Please try again.", "error");
+            setReportSubmitting(false);
+          }
+        }
+      });
+
+      keepLearningBtn?.addEventListener("click", () => {
+        closeQuitOverlay();
+      });
+
+      // Intercept back button to show quit confirmation
+      (function () {
+        let allowExit = false;
+        const onPopState = () => {
+          if (allowExit) return;
+          openQuitOverlay();
+          history.pushState({ lessonQuitPrompt: true }, "");
+        };
+
+        history.pushState({ lessonQuitPrompt: true }, "");
+        window.addEventListener("popstate", onPopState);
+
+        const LESSON_RETURN_KEY = "fc_lesson_return";
+        const RESTORE_TTL_MS = 1000 * 60 * 60 * 6;
+
+        const readLessonReturn = () => {
+          try {
+            const raw = localStorage.getItem(LESSON_RETURN_KEY);
+            if (!raw) return null;
+            const data = JSON.parse(raw);
+            if (!data || typeof data !== "object") return null;
+            if (data.ts && Date.now() - data.ts > RESTORE_TTL_MS) return null;
+            return data;
+          } catch {
+            return null;
+          }
+        };
+
+        const goBackOrPath = () => {
+          const saved = readLessonReturn();
+          if (saved?.page) {
+            const separator = saved.page.includes("?") ? "&" : "?";
+            window.location.href = `${saved.page}${separator}return=lesson`;
+            return;
+          }
+          const ref = document.referrer || "";
+          if (ref) {
+            try {
+              const refUrl = new URL(ref, window.location.href);
+              if (refUrl.origin === window.location.origin) {
+                window.location.href = refUrl.href;
+                return;
+              }
+            } catch {
+              // ignore
+            }
+          }
+          if (history.length > 1) {
+            history.back();
+            return;
+          }
+          window.location.href = "path.html";
+        };
+
+        const handleQuit = () => {
+          allowExit = true;
+          window.removeEventListener("popstate", onPopState);
+          if (window.FCEngine?.clearSession) FCEngine.clearSession();
+          goBackOrPath();
+        };
+
+        quitLessonBtn?.addEventListener("click", handleQuit);
+
+      })();
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "Enter") return;
+        if (!checkBtn.disabled && !locked) checkBtn.click();
+      });
+
+      ensureSession();
+      if (!session || !session.itemIds.length) {
+        if (window.FCUI?.showComingSoon) {
+          window.FCUI.showComingSoon({
+            title: "No lesson items yet",
+            message: "This lesson does not have any items available right now.",
+            primaryLabel: "Back to Path",
+            primaryIcon: "arrow_back",
+            enableNotifications: false,
+            onPrimary: () => {
+              window.location.href = "path.html";
+            },
+          });
+        } else {
+          window.location.href = "path.html";
+        }
+      } else {
+        renderItem();
+        setLives();
+      }
+
+      flushQueuedReports().catch(() => {});
+      window.addEventListener("online", () => {
+        flushQueuedReports().catch(() => {});
+      });
+    </script>
+  </body>
+</html>
+
+
+
+
+
+
+
+
+
+
+

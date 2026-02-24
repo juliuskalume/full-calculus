@@ -1,0 +1,8 @@
+<resources>
+  <string name="app_name">Full Discrete</string>
+  <string name="launch_url">https://discrete.sentirax.com/</string>
+  <!-- AdMob (replace with your production IDs before release) -->
+  <string name="admob_app_id">ca-app-pub-9897314776503581~3674645684</string>
+  <string name="admob_interstitial_id">ca-app-pub-9897314776503581/1385202309</string>
+  <string name="admob_rewarded_id">ca-app-pub-9897314776503581/1440198738</string>
+</resources>
