@@ -333,11 +333,124 @@
     await execute();
   };
 
+  const parseEditorLines = (value, maxItems = 20, maxLen = 400) =>
+    String(value || "")
+      .split(/\r?\n/)
+      .map((line) => String(line || "").trim().slice(0, maxLen))
+      .filter(Boolean)
+      .slice(0, maxItems);
+
+  const setOverrideMsg = (reportId, message, tone) => {
+    const node = el("reportsList").querySelector(`.override-msg[data-id="${CSS.escape(reportId)}"]`);
+    if (!node) return;
+    node.textContent = message || "";
+    node.classList.remove("text-rose-600", "text-emerald-600", "text-slate-500");
+    if (tone === "error") node.classList.add("text-rose-600");
+    else if (tone === "ok") node.classList.add("text-emerald-600");
+    else node.classList.add("text-slate-500");
+  };
+
+  const fillOverrideEditor = (reportId, report, override) => {
+    const panel = el("reportsList").querySelector(`.report-override[data-id="${CSS.escape(reportId)}"]`);
+    if (!panel) return;
+    panel.querySelector(".ov-item-id").textContent = report.itemId || "-";
+    panel.querySelector(".ov-prompt").value = override?.prompt || report.prompt || "";
+    panel.querySelector(".ov-answer").value = override?.answerValue || report.expectedAnswer || "";
+    panel.querySelector(".ov-alts").value = Array.isArray(override?.alternateAnswers)
+      ? override.alternateAnswers.join("\n")
+      : "";
+    panel.querySelector(".ov-tolerance").value =
+      override?.tolerance == null || override?.tolerance === "" ? "" : String(override.tolerance);
+    panel.querySelector(".ov-wrong").value = override?.wrongResponse || "";
+    panel.querySelector(".ov-steps").value = Array.isArray(override?.solutionSteps)
+      ? override.solutionSteps.join("\n")
+      : "";
+    panel.querySelector(".ov-choices").value = Array.isArray(override?.choices) ? override.choices.join("\n") : "";
+    panel.querySelector(".ov-active").checked = override?.active !== false;
+  };
+
+  const loadOverrideEditor = async (reportId) => {
+    const report = state.reports.find((entry) => String(entry.id) === String(reportId));
+    if (!report) return;
+    if (!report.itemId) {
+      setOverrideMsg(reportId, "This report does not include a question id.", "error");
+      return;
+    }
+    const panel = el("reportsList").querySelector(`.report-override[data-id="${CSS.escape(reportId)}"]`);
+    if (!panel) return;
+    panel.classList.remove("hidden");
+    if (panel.dataset.loaded === "1") return;
+
+    setOverrideMsg(reportId, "Loading question settings...");
+    fillOverrideEditor(reportId, report, null);
+    try {
+      const data = await api("adminGetQuestionOverride", {
+        query: { itemId: report.itemId },
+      });
+      fillOverrideEditor(reportId, report, data?.found ? data.override : null);
+      panel.dataset.loaded = "1";
+      setOverrideMsg(reportId, "Edit fields and save.", "ok");
+    } catch (err) {
+      setOverrideMsg(reportId, err.message || "Could not load current question override.", "error");
+    }
+  };
+
+  const toggleOverrideEditor = async (reportId) => {
+    const panel = el("reportsList").querySelector(`.report-override[data-id="${CSS.escape(reportId)}"]`);
+    if (!panel) return;
+    if (panel.classList.contains("hidden")) {
+      await loadOverrideEditor(reportId);
+    } else {
+      panel.classList.add("hidden");
+    }
+  };
+
+  const saveQuestionOverride = async (reportId) => {
+    const report = state.reports.find((entry) => String(entry.id) === String(reportId));
+    if (!report || !report.itemId) {
+      setOverrideMsg(reportId, "Missing item id for this report.", "error");
+      return;
+    }
+    const panel = el("reportsList").querySelector(`.report-override[data-id="${CSS.escape(reportId)}"]`);
+    if (!panel) return;
+
+    const toleranceRaw = panel.querySelector(".ov-tolerance").value.trim();
+    const payload = {
+      reportId,
+      itemId: report.itemId,
+      prompt: panel.querySelector(".ov-prompt").value.trim(),
+      answerValue: panel.querySelector(".ov-answer").value.trim(),
+      alternateAnswers: parseEditorLines(panel.querySelector(".ov-alts").value, 24, 600),
+      tolerance: toleranceRaw || null,
+      wrongResponse: panel.querySelector(".ov-wrong").value.trim(),
+      solutionSteps: parseEditorLines(panel.querySelector(".ov-steps").value, 12, 800),
+      choices: parseEditorLines(panel.querySelector(".ov-choices").value, 8, 400),
+      active: !!panel.querySelector(".ov-active").checked,
+    };
+
+    const saveBtn = panel.querySelector(".report-override-save");
+    if (saveBtn) saveBtn.disabled = true;
+    setOverrideMsg(reportId, "Saving question override...");
+    try {
+      await api("adminUpsertQuestionOverride", {
+        method: "POST",
+        body: payload,
+      });
+      setOverrideMsg(reportId, "Question override saved.", "ok");
+      setMsg("reportsMsg", `Question update saved for ${report.itemId}.`, "ok");
+    } catch (err) {
+      setOverrideMsg(reportId, err.message || "Could not save question override.", "error");
+    } finally {
+      if (saveBtn) saveBtn.disabled = false;
+    }
+  };
+
   const renderReports = (items) => {
     state.reports = Array.isArray(items) ? items : [];
     el("reportsList").innerHTML = state.reports
-      .map(
-        (r) => `
+      .map((r) => {
+        const hasItem = !!String(r.itemId || "").trim();
+        return `
           <article class="rounded-2xl border border-sky-100 bg-white p-3 shadow-sm">
             <p class="font-bold">${escapeHtml(r.issueType || "Issue")} <span class="text-xs text-slate-500">(${escapeHtml(
           r.status || "pending"
@@ -346,6 +459,12 @@
           r.createdAt
         ))} | ${escapeHtml(r.page || "-")}</p>
             <p class="text-sm mt-1 whitespace-pre-wrap">${escapeHtml(r.message || "-")}</p>
+            <div class="mt-2 rounded-xl border border-slate-200 bg-slate-50 p-2 text-xs text-slate-600 space-y-1">
+              <p><span class="font-semibold">Question ID:</span> ${escapeHtml(r.itemId || "-")}</p>
+              <p><span class="font-semibold">Prompt:</span> ${escapeHtml(r.prompt || "-")}</p>
+              <p><span class="font-semibold">Expected:</span> ${escapeHtml(r.expectedAnswer || "-")}</p>
+              <p><span class="font-semibold">Student answer:</span> ${escapeHtml(r.userResponse || "-")}</p>
+            </div>
             <textarea class="report-note mt-2 w-full rounded-xl border border-slate-300 bg-white px-2 py-1.5 text-sm" data-id="${escapeHtml(
               r.id || ""
             )}" rows="2" placeholder="Admin note">${escapeHtml(r.adminNote || "")}</textarea>
@@ -362,10 +481,54 @@
               <button class="report-action px-2.5 py-1.5 rounded-xl bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold" data-id="${escapeHtml(
                 r.id || ""
               )}" data-status="closed">Closed</button>
+              <button class="report-edit px-2.5 py-1.5 rounded-xl border border-violet-200 bg-violet-50 hover:bg-violet-100 text-violet-700 text-xs font-semibold ${
+                hasItem ? "" : "opacity-60 cursor-not-allowed"
+              }" data-id="${escapeHtml(r.id || "")}" ${hasItem ? "" : "disabled"}>Edit question</button>
+            </div>
+            <div class="report-override hidden mt-3 rounded-xl border border-violet-200 bg-violet-50/60 p-3 space-y-2" data-id="${escapeHtml(
+              r.id || ""
+            )}" data-loaded="0">
+              <p class="text-xs font-semibold text-violet-700">Question ID: <span class="ov-item-id"></span></p>
+              <label class="block text-xs font-semibold text-slate-700">Prompt
+                <textarea class="ov-prompt mt-1 w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm" rows="2"></textarea>
+              </label>
+              <div class="grid md:grid-cols-2 gap-2">
+                <label class="block text-xs font-semibold text-slate-700">Correct answer
+                  <input class="ov-answer mt-1 w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm" type="text" />
+                </label>
+                <label class="block text-xs font-semibold text-slate-700">Tolerance (optional)
+                  <input class="ov-tolerance mt-1 w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm" type="number" min="0" step="0.0001" />
+                </label>
+              </div>
+              <label class="block text-xs font-semibold text-slate-700">Alternate answers (one per line)
+                <textarea class="ov-alts mt-1 w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm" rows="2"></textarea>
+              </label>
+              <label class="block text-xs font-semibold text-slate-700">Wrong answer response
+                <textarea class="ov-wrong mt-1 w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm" rows="2"></textarea>
+              </label>
+              <label class="block text-xs font-semibold text-slate-700">Solution steps (one per line)
+                <textarea class="ov-steps mt-1 w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm" rows="3"></textarea>
+              </label>
+              <label class="block text-xs font-semibold text-slate-700">MCQ choices (one per line)
+                <textarea class="ov-choices mt-1 w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm" rows="2"></textarea>
+              </label>
+              <label class="inline-flex items-center gap-2 text-xs font-semibold text-slate-700">
+                <input class="ov-active" type="checkbox" checked />
+                Override active
+              </label>
+              <div class="flex flex-wrap gap-2">
+                <button class="report-override-save px-3 py-1.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold" data-id="${escapeHtml(
+                  r.id || ""
+                )}">Save question update</button>
+                <button class="report-edit px-3 py-1.5 rounded-xl border border-slate-300 bg-white text-xs font-semibold" data-id="${escapeHtml(
+                  r.id || ""
+                )}">Close</button>
+              </div>
+              <p class="override-msg text-xs font-semibold text-slate-500 min-h-[1rem]" data-id="${escapeHtml(r.id || "")}"></p>
             </div>
           </article>
-        `
-      )
+        `;
+      })
       .join("");
   };
 
@@ -579,6 +742,11 @@
         "message",
         "status",
         "page",
+        "itemId",
+        "itemType",
+        "prompt",
+        "expectedAnswer",
+        "userResponse",
         "createdAt",
         "adminNote",
         "handledAt",
@@ -586,9 +754,20 @@
       ]);
     });
     el("reportsList").addEventListener("click", (evt) => {
-      const btn = evt.target.closest(".report-action");
-      if (!btn) return;
-      updateReport(btn.dataset.id, btn.dataset.status);
+      const statusBtn = evt.target.closest(".report-action");
+      if (statusBtn) {
+        updateReport(statusBtn.dataset.id, statusBtn.dataset.status);
+        return;
+      }
+      const editBtn = evt.target.closest(".report-edit");
+      if (editBtn) {
+        toggleOverrideEditor(editBtn.dataset.id);
+        return;
+      }
+      const saveBtn = evt.target.closest(".report-override-save");
+      if (saveBtn) {
+        saveQuestionOverride(saveBtn.dataset.id);
+      }
     });
 
     el("notifySend").addEventListener("click", sendNotification);

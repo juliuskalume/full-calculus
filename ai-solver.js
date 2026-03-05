@@ -27,16 +27,57 @@
     }
   };
 
+  const parseMaybeJson = (value) => {
+    const raw = String(value || "").trim();
+    if (!raw) return null;
+    const fromBlock = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    const candidate = fromBlock ? fromBlock[1].trim() : raw;
+    const parseDirect = (text) => {
+      try {
+        const parsed = JSON.parse(text);
+        return parsed && typeof parsed === "object" ? parsed : null;
+      } catch {
+        return null;
+      }
+    };
+    const direct = parseDirect(candidate);
+    if (direct) return direct;
+    const first = candidate.indexOf("{");
+    const last = candidate.lastIndexOf("}");
+    if (first < 0 || last <= first) return null;
+    return parseDirect(candidate.slice(first, last + 1));
+  };
+
+  const buildTextFromObject = (obj) => {
+    if (!obj || typeof obj !== "object") return "";
+    const summary = String(obj.summary || obj.intro || "").trim();
+    const steps = Array.isArray(obj.steps)
+      ? obj.steps.map((step) => String(step || "").trim()).filter(Boolean).slice(0, 10)
+      : [];
+    const finalAnswer = String(obj.finalAnswer || obj.answer || "").trim();
+    const tip = String(obj.tip || obj.commonMistake || "").trim();
+    const lines = [];
+    if (summary) lines.push(summary);
+    steps.forEach((step, idx) => lines.push(`${idx + 1}) ${step}`));
+    if (finalAnswer) lines.push(`Final answer: ${finalAnswer}`);
+    if (tip) lines.push(`Tip: ${tip}`);
+    return lines.join("\n").trim();
+  };
+
   const normalizeSolution = (payload) => {
-    const solution = String(payload?.solution || "").trim();
+    const rawSolution = String(payload?.solution || "").trim();
+    const parsedFromSolution = parseMaybeJson(rawSolution);
+    const looksJsonLike = /^[\s`]*\{/.test(rawSolution);
+    const parsedText = buildTextFromObject(parsedFromSolution);
+    const solution = parsedText || (looksJsonLike ? "" : rawSolution);
     const finalAnswer = String(payload?.finalAnswer || "").trim();
     const tip = String(payload?.tip || "").trim();
-    const steps = Array.isArray(payload?.steps)
+    const sourceSteps = Array.isArray(payload?.steps)
       ? payload.steps
-          .map((step) => String(step || "").trim())
-          .filter(Boolean)
-          .slice(0, 10)
+      : Array.isArray(parsedFromSolution?.steps)
+      ? parsedFromSolution.steps
       : [];
+    const steps = sourceSteps.map((step) => String(step || "").trim()).filter(Boolean).slice(0, 10);
 
     const text = solution || [
       ...steps.map((step, idx) => `${idx + 1}) ${step}`),
@@ -45,7 +86,7 @@
     ]
       .filter(Boolean)
       .join("\n")
-      .trim();
+      .trim() || "Check your arithmetic and signs, then try again step by step.";
 
     return {
       solution: text,

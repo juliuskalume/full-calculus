@@ -217,7 +217,8 @@ window.FCEngine = (function () {
     }
 
     if (item.type === "mcq") {
-      const correct = normalizeText(response) === normalizeText(answer);
+      const candidates = [answer, ...(item.answer?.equivalences || [])].map((v) => normalizeText(v)).filter(Boolean);
+      const correct = candidates.includes(normalizeText(response));
       return { correct, score: correct ? 1 : 0, mode: "mcq" };
     }
 
@@ -225,7 +226,11 @@ window.FCEngine = (function () {
       const val = Number(response);
       const target = Number(answer);
       const tol = item.answer?.tolerance ?? item.grading?.tolerance ?? 0;
-      const correct = Number.isFinite(val) && Math.abs(val - target) <= tol;
+      const alternatives = (item.answer?.equivalences || [])
+        .map((entry) => Number(entry))
+        .filter((entry) => Number.isFinite(entry));
+      const candidates = [target, ...alternatives].filter((entry) => Number.isFinite(entry));
+      const correct = Number.isFinite(val) && candidates.some((candidate) => Math.abs(val - candidate) <= tol);
       return { correct, score: correct ? 1 : 0, mode: "numeric" };
     }
 
@@ -236,7 +241,8 @@ window.FCEngine = (function () {
       return { correct, score: correct ? 1 : 0, mode: "expression" };
     }
 
-    const correct = normalizeText(response) === normalizeText(answer);
+    const candidates = [answer, ...(item.answer?.equivalences || [])].map((v) => normalizeText(v)).filter(Boolean);
+    const correct = candidates.includes(normalizeText(response));
     return { correct, score: correct ? 1 : 0, mode: "exact" };
   }
 

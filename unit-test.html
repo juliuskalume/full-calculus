@@ -204,6 +204,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="auth.js"></script>
   <script src="ai-solver.js"></script>
+  <script src="question-overrides.js"></script>
   <script src="progress.js"></script>
   <script src="content-structure.js"></script>
   <script src="content-sections.js"></script>
@@ -288,6 +289,20 @@
         testSession = FCEngine.createTestSession(fallbackId);
         if (testSession) FCEngine.saveTestSession(testSession);
       }
+    }
+
+    async function applyQuestionOverride(item) {
+      if (!item || !window.FCQuestionOverrides?.applyToItem) return item;
+      try {
+        return await window.FCQuestionOverrides.applyToItem(item);
+      } catch {
+        return item;
+      }
+    }
+
+    function prefetchQuestionOverrides() {
+      if (!testSession?.itemIds?.length || !window.FCQuestionOverrides?.prefetch) return;
+      window.FCQuestionOverrides.prefetch(testSession.itemIds).catch(() => {});
     }
 
     function getBlueprint() {
@@ -381,11 +396,12 @@
       }
     }
 
-    function renderItem() {
+    async function renderItem() {
       if (!testSession?.itemIds?.length) return;
       const itemId = testSession.itemIds[testSession.index];
       currentItem = FCContent.getItem(itemId);
       if (!currentItem) return;
+      currentItem = await applyQuestionOverride(currentItem);
 
       const section = FCContent.getSection(currentItem.sectionId);
       topicTag.textContent = section ? section.title : (currentItem.tags?.[0] || "Topic");
@@ -416,9 +432,14 @@
         if (window.FCSound?.play) FCSound.play("wrong");
         const itemSnapshot = currentItem;
         const responseSnapshot = currentResponse;
+        const wrongResponse = String(currentItem?.wrongResponse || "").trim();
+        const fallbackStep = String(currentItem?.solutionSteps?.[0] || "").trim();
+        const fallbackHint = wrongResponse || fallbackStep;
         feedbackText.innerHTML = `Incorrect. Correct answer: <span class="underline">${formatMathText(
           formatAnswer(currentItem)
-        )}</span><br><span class="block mt-2 text-slate-200">Generating step-by-step solution...</span>`;
+        )}</span><br><span class="block mt-2 text-slate-200">${
+          fallbackHint ? formatMathText(fallbackHint) : "Generating step-by-step solution..."
+        }</span>`;
         feedbackText.classList.add("text-rose-300");
         if (window.FCAI?.getStepSolution) {
           window.FCAI
@@ -438,7 +459,11 @@
               if (currentItem?.id !== itemSnapshot?.id) return;
               feedbackText.innerHTML = `Incorrect. Correct answer: <span class="underline">${formatMathText(
                 formatAnswer(itemSnapshot)
-              )}</span>`;
+              )}</span>${
+                fallbackHint
+                  ? `<br><span class="block mt-2 text-slate-200">${formatMathText(fallbackHint)}</span>`
+                  : ""
+              }`;
               typesetMath([feedbackText]);
             });
         }
@@ -515,7 +540,7 @@
       if (testSession.index >= testSession.itemIds.length) {
         finishTest();
       } else {
-        renderItem();
+        renderItem().catch(() => {});
       }
     });
 
@@ -583,6 +608,7 @@
     })();
 
     loadTest();
+    prefetchQuestionOverrides();
     if (!testSession || !testSession.itemIds.length) {
       if (window.FCUI?.showComingSoon) {
         window.FCUI.showComingSoon({
@@ -599,7 +625,7 @@
         window.location.href = "path.html";
       }
     } else {
-      renderItem();
+      renderItem().catch(() => {});
     }
   </script>
 

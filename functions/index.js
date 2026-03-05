@@ -17,6 +17,7 @@ const DEFAULT_VAPID_SUBJECT = "mailto:juliuskalume906@gmail.com";
 const DEFAULT_TIMEZONE = "Etc/UTC";
 const DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile";
 const AI_SOLUTIONS_COLLECTION = "ai_step_solutions";
+const QUESTION_OVERRIDES_COLLECTION = "question_overrides";
 
 const getRuntimeConfig = () => {
   const publicKey = String(WEBPUSH_PUBLIC_KEY.value() || process.env.WEBPUSH_PUBLIC_KEY || "").trim();
@@ -203,6 +204,42 @@ const buildSolutionText = (modelPayload) => {
     summary,
     tip,
     text: lines.join("\n").trim(),
+  };
+};
+
+const normalizeStoredSolution = (record) => {
+  const data = record && typeof record === "object" ? record : {};
+  const maybeParsed = parseGroqJson(data.solution || data.raw || "");
+  const parsedNormalized = maybeParsed ? buildSolutionText(maybeParsed) : null;
+  const fromFields = buildSolutionText({
+    summary: data.summary || "",
+    steps: Array.isArray(data.steps) ? data.steps : [],
+    finalAnswer: data.finalAnswer || "",
+    tip: data.tip || "",
+  });
+
+  const text =
+    (parsedNormalized && parsedNormalized.text) ||
+    trimForModel(data.solution || "", 8000) ||
+    fromFields.text ||
+    "";
+  const steps = (parsedNormalized && parsedNormalized.steps?.length ? parsedNormalized.steps : fromFields.steps) || [];
+  const finalAnswer =
+    (parsedNormalized && parsedNormalized.finalAnswer) ||
+    fromFields.finalAnswer ||
+    trimForModel(data.finalAnswer || "", 250);
+  const tip = (parsedNormalized && parsedNormalized.tip) || fromFields.tip || trimForModel(data.tip || "", 300);
+  const summary =
+    (parsedNormalized && parsedNormalized.summary) ||
+    fromFields.summary ||
+    trimForModel(data.summary || "", 400);
+
+  return {
+    solution: text,
+    steps,
+    finalAnswer,
+    tip,
+    summary,
   };
 };
 
@@ -578,14 +615,28 @@ exports.getStepSolution = functions.https.onRequest(async (req, res) => {
     const existing = await docRef.get();
     if (existing.exists) {
       const data = existing.data() || {};
+      const normalized = normalizeStoredSolution(data);
+      if (normalized.solution && normalized.solution !== String(data.solution || "")) {
+        await docRef.set(
+          {
+            solution: normalized.solution,
+            summary: normalized.summary || "",
+            steps: normalized.steps || [],
+            finalAnswer: normalized.finalAnswer || "",
+            tip: normalized.tip || "",
+            updatedAt: new Date().toISOString(),
+          },
+          { merge: true }
+        );
+      }
       res.status(200).json({
         ok: true,
         cached: true,
         questionId,
-        solution: String(data.solution || ""),
-        steps: Array.isArray(data.steps) ? data.steps : [],
-        finalAnswer: String(data.finalAnswer || ""),
-        tip: String(data.tip || ""),
+        solution: normalized.solution,
+        steps: normalized.steps,
+        finalAnswer: normalized.finalAnswer,
+        tip: normalized.tip,
         model: String(data.model || ""),
       });
       return;
@@ -611,7 +662,7 @@ exports.getStepSolution = functions.https.onRequest(async (req, res) => {
       correctAnswer,
       questionType,
       sectionId,
-      solution: generated.text,
+      solution: generated.text || "",
       summary: generated.summary || "",
       steps: Array.isArray(generated.steps) ? generated.steps : [],
       finalAnswer: generated.finalAnswer || "",
@@ -622,17 +673,26 @@ exports.getStepSolution = functions.https.onRequest(async (req, res) => {
       updatedAt: nowIso,
       requests: 1,
     };
-    await docRef.set(record, { merge: true });
+    const normalizedGenerated = normalizeStoredSolution(record);
+    const mergedRecord = {
+      ...record,
+      solution: normalizedGenerated.solution || record.solution,
+      summary: normalizedGenerated.summary || record.summary,
+      steps: normalizedGenerated.steps || record.steps,
+      finalAnswer: normalizedGenerated.finalAnswer || record.finalAnswer,
+      tip: normalizedGenerated.tip || record.tip,
+    };
+    await docRef.set(mergedRecord, { merge: true });
 
     res.status(200).json({
       ok: true,
       cached: false,
       questionId,
-      solution: record.solution,
-      steps: record.steps,
-      finalAnswer: record.finalAnswer,
-      tip: record.tip,
-      model: record.model,
+      solution: mergedRecord.solution,
+      steps: mergedRecord.steps,
+      finalAnswer: mergedRecord.finalAnswer,
+      tip: mergedRecord.tip,
+      model: mergedRecord.model,
     });
   } catch (err) {
     console.error("getStepSolution error", err);
@@ -895,6 +955,46 @@ const normalizeRoute = (value) => {
   if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
   const clean = raw.startsWith("/") ? raw.slice(1) : raw;
   return clean || "path.html";
+};
+
+const normalizeLines = (value, maxItems = 20, maxLen = 400) => {
+  const raw = Array.isArray(value)
+    ? value
+    : typeof value === "string"
+      ? value.split(/\r?\n/)
+      : [];
+  return raw
+    .map((entry) => trimText(entry, maxLen))
+    .filter(Boolean)
+    .slice(0, maxItems);
+};
+
+const normalizeOptionalNumber = (value, min = 0, max = 1000) => {
+  if (value == null) return null;
+  const raw = String(value).trim();
+  if (!raw) return null;
+  const num = Number(raw);
+  if (!Number.isFinite(num)) return null;
+  if (num < min || num > max) return null;
+  return num;
+};
+
+const sanitizeQuestionOverride = (data) => {
+  const source = data && typeof data === "object" ? data : {};
+  const itemId = normalizeQuestionId(source.itemId);
+  return {
+    itemId,
+    active: source.active !== false,
+    prompt: trimText(source.prompt, 2500),
+    answerValue: trimText(source.answerValue, 1200),
+    alternateAnswers: normalizeLines(source.alternateAnswers, 24, 600),
+    tolerance: normalizeOptionalNumber(source.tolerance, 0, 1000),
+    wrongResponse: trimText(source.wrongResponse, 1200),
+    solutionSteps: normalizeLines(source.solutionSteps, 12, 800),
+    choices: normalizeLines(source.choices, 8, 400),
+    updatedAt: trimText(source.updatedAt, 64),
+    updatedBy: trimText(source.updatedBy, 320),
+  };
 };
 
 const countQuery = async (queryRef) => {
@@ -1174,6 +1274,125 @@ exports.adminUserAction = functions.https.onRequest(async (req, res) =>
 exports.adminApplyUserAction = functions.https.onRequest(async (req, res) =>
   handleAdminUserAction(req, res, "adminApplyUserAction")
 );
+
+exports.getQuestionOverride = functions.https.onRequest(async (req, res) => {
+  setAdminCors(res, "GET, OPTIONS");
+  if (req.method === "OPTIONS") return res.status(204).send("");
+  if (req.method !== "GET") return res.status(405).send("Method not allowed");
+
+  try {
+    const itemId = normalizeQuestionId(req.query.itemId);
+    if (!itemId) return res.status(400).send("Missing itemId");
+
+    const doc = await admin.firestore().collection(QUESTION_OVERRIDES_COLLECTION).doc(itemId).get();
+    if (!doc.exists) return res.status(200).json({ ok: true, found: false });
+
+    const override = sanitizeQuestionOverride({ itemId, ...doc.data() });
+    if (!override.active) return res.status(200).json({ ok: true, found: false });
+    res.status(200).json({ ok: true, found: true, override });
+  } catch (err) {
+    console.error("getQuestionOverride error", err);
+    res.status(500).send("Server error");
+  }
+});
+
+exports.adminGetQuestionOverride = functions.https.onRequest(async (req, res) => {
+  setAdminCors(res, "GET, OPTIONS");
+  if (req.method === "OPTIONS") return res.status(204).send("");
+  if (req.method !== "GET") return res.status(405).send("Method not allowed");
+
+  const authResult = await verifyAdminRequest(req);
+  if (!authResult.ok) return res.status(authResult.code).send(authResult.message);
+
+  try {
+    const itemId = normalizeQuestionId(req.query.itemId);
+    if (!itemId) return res.status(400).send("Missing itemId");
+
+    const doc = await admin.firestore().collection(QUESTION_OVERRIDES_COLLECTION).doc(itemId).get();
+    if (!doc.exists) return res.status(200).json({ ok: true, found: false, override: { itemId, active: true } });
+
+    const override = sanitizeQuestionOverride({ itemId, ...doc.data() });
+    res.status(200).json({ ok: true, found: true, override });
+  } catch (err) {
+    console.error("adminGetQuestionOverride error", err);
+    res.status(500).send("Server error");
+  }
+});
+
+exports.adminUpsertQuestionOverride = functions.https.onRequest(async (req, res) => {
+  setAdminCors(res, "POST, OPTIONS");
+  if (req.method === "OPTIONS") return res.status(204).send("");
+  if (req.method !== "POST") return res.status(405).send("Method not allowed");
+
+  const authResult = await verifyAdminRequest(req);
+  if (!authResult.ok) return res.status(authResult.code).send(authResult.message);
+
+  try {
+    const body = req.body || {};
+    const itemId = normalizeQuestionId(body.itemId);
+    if (!itemId) return res.status(400).send("Missing itemId");
+
+    const nowIso = new Date().toISOString();
+    const existingDoc = await admin.firestore().collection(QUESTION_OVERRIDES_COLLECTION).doc(itemId).get();
+    const existingData = existingDoc.exists ? existingDoc.data() || {} : {};
+
+    const next = sanitizeQuestionOverride({
+      ...existingData,
+      ...body,
+      itemId,
+      updatedAt: nowIso,
+      updatedBy: authResult.user?.email || "",
+    });
+
+    const payload = {
+      itemId,
+      active: next.active,
+      prompt: next.prompt,
+      answerValue: next.answerValue,
+      alternateAnswers: next.alternateAnswers,
+      wrongResponse: next.wrongResponse,
+      solutionSteps: next.solutionSteps,
+      choices: next.choices,
+      updatedAt: nowIso,
+      updatedBy: authResult.user?.email || "",
+    };
+    if (typeof next.tolerance === "number" && Number.isFinite(next.tolerance)) {
+      payload.tolerance = next.tolerance;
+    } else {
+      payload.tolerance = admin.firestore.FieldValue.delete();
+    }
+    if (!existingDoc.exists) payload.createdAt = nowIso;
+
+    await admin.firestore().collection(QUESTION_OVERRIDES_COLLECTION).doc(itemId).set(payload, { merge: true });
+
+    const reportId = trimText(body.reportId, 128);
+    if (reportId) {
+      await admin
+        .firestore()
+        .collection("problem_reports")
+        .doc(reportId)
+        .set(
+          {
+            overrideItemId: itemId,
+            overrideUpdatedAt: nowIso,
+            overrideUpdatedBy: authResult.user?.email || "",
+          },
+          { merge: true }
+        );
+    }
+
+    res.status(200).json({
+      ok: true,
+      override: sanitizeQuestionOverride({
+        ...payload,
+        itemId,
+      }),
+    });
+  } catch (err) {
+    console.error("adminUpsertQuestionOverride error", err);
+    res.status(500).send("Server error");
+  }
+});
 
 exports.adminListProblemReports = functions.https.onRequest(async (req, res) => {
   setAdminCors(res, "GET, OPTIONS");

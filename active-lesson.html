@@ -419,6 +419,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="auth.js"></script>
     <script src="ai-solver.js"></script>
+    <script src="question-overrides.js"></script>
     <script src="progress.js"></script>
     <script src="content-structure.js"></script>
     <script src="content-sections.js"></script>
@@ -672,6 +673,20 @@
         if (sectionId) FCProgress.setCurrentSection(sectionId);
       }
 
+      async function applyQuestionOverride(item) {
+        if (!item || !window.FCQuestionOverrides?.applyToItem) return item;
+        try {
+          return await window.FCQuestionOverrides.applyToItem(item);
+        } catch {
+          return item;
+        }
+      }
+
+      function prefetchQuestionOverrides() {
+        if (!session?.itemIds?.length || !window.FCQuestionOverrides?.prefetch) return;
+        window.FCQuestionOverrides.prefetch(session.itemIds).catch(() => {});
+      }
+
       function updateProgress() {
         const total = session.itemIds.length || 1;
         const current = Math.min(session.index + 1, total);
@@ -751,12 +766,13 @@
         }
       }
 
-      function renderItem() {
+      async function renderItem() {
         if (!session.itemIds.length) return;
         const itemId = session.itemIds[session.index];
         currentResponse = "";
         currentItem = FCContent.getItem(itemId);
         if (!currentItem) return;
+        currentItem = await applyQuestionOverride(currentItem);
 
         const section = FCContent.getSection(currentItem.sectionId);
         questionTitle.innerHTML = formatMathText(currentItem.prompt || "Question");
@@ -828,7 +844,8 @@
           const itemSnapshot = currentItem;
           const responseSnapshot = currentResponse;
           const firstStep = currentItem.solutionSteps?.[0] || "Review the steps and try the next one.";
-          wrongExplanation.innerHTML = formatMathText("Generating step-by-step solution...");
+          const fallbackExplanation = String(currentItem?.wrongResponse || firstStep || "").trim();
+          wrongExplanation.innerHTML = formatMathText(fallbackExplanation || "Generating step-by-step solution...");
           if (window.FCAI?.getStepSolution) {
             window.FCAI
               .getStepSolution({
@@ -843,11 +860,11 @@
               })
               .catch(() => {
                 if (currentItem?.id !== itemSnapshot?.id) return;
-                wrongExplanation.innerHTML = formatMathText(firstStep);
+                wrongExplanation.innerHTML = formatMathText(currentItem?.wrongResponse || firstStep);
                 typesetMath([wrongAnswer, wrongExplanation]);
               });
           } else {
-            wrongExplanation.innerHTML = formatMathText(firstStep);
+            wrongExplanation.innerHTML = formatMathText(currentItem?.wrongResponse || firstStep);
           }
           markWrongAnswer();
           if (window.FC?.loseLife) {
@@ -877,7 +894,7 @@
           finishSession();
           return;
         }
-        renderItem();
+        renderItem().catch(() => {});
       }
 
       function finishSession() {
@@ -1088,6 +1105,7 @@
       });
 
       ensureSession();
+      prefetchQuestionOverrides();
       if (!session || !session.itemIds.length) {
         if (window.FCUI?.showComingSoon) {
           window.FCUI.showComingSoon({
@@ -1104,7 +1122,7 @@
           window.location.href = "path.html";
         }
       } else {
-        renderItem();
+        renderItem().catch(() => {});
         setLives();
       }
 
