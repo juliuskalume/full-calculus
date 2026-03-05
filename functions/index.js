@@ -11,8 +11,12 @@ const WEBPUSH_SUBJECT = defineString("WEBPUSH_SUBJECT");
 const WEBPUSH_TIMEZONE = defineString("WEBPUSH_TIMEZONE");
 const WEBPUSH_TEST_KEY = defineString("WEBPUSH_TEST_KEY");
 const ADMIN_EMAILS_PARAM = defineString("ADMIN_EMAILS");
+const GROQ_API_KEY = defineString("GROQ_API_KEY");
+const GROQ_MODEL = defineString("GROQ_MODEL");
 const DEFAULT_VAPID_SUBJECT = "mailto:juliuskalume906@gmail.com";
 const DEFAULT_TIMEZONE = "Etc/UTC";
+const DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile";
+const AI_SOLUTIONS_COLLECTION = "ai_step_solutions";
 
 const getRuntimeConfig = () => {
   const publicKey = String(WEBPUSH_PUBLIC_KEY.value() || process.env.WEBPUSH_PUBLIC_KEY || "").trim();
@@ -28,7 +32,10 @@ const getRuntimeConfig = () => {
     .split(",")
     .map((email) => email.trim().toLowerCase())
     .filter(Boolean);
-  return { publicKey, privateKey, subject, timeZone, testKey, adminEmails };
+  const groqApiKey = String(GROQ_API_KEY.value() || process.env.GROQ_API_KEY || "").trim();
+  const groqModel =
+    String(GROQ_MODEL.value() || process.env.GROQ_MODEL || DEFAULT_GROQ_MODEL).trim() || DEFAULT_GROQ_MODEL;
+  return { publicKey, privateKey, subject, timeZone, testKey, adminEmails, groqApiKey, groqModel };
 };
 
 let vapidSignature = "";
@@ -143,6 +150,134 @@ const verifyUserRequest = async (req) => {
   } catch (err) {
     return { ok: false, code: 401, message: "Invalid auth token" };
   }
+};
+
+const normalizeQuestionId = (value) =>
+  String(value || "")
+    .trim()
+    .replace(/[^\w.-]/g, "")
+    .slice(0, 120);
+
+const trimForModel = (value, maxLen) =>
+  String(value || "")
+    .trim()
+    .slice(0, maxLen);
+
+const parseGroqJson = (rawContent) => {
+  const text = String(rawContent || "").trim();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    const start = text.indexOf("{");
+    const end = text.lastIndexOf("}");
+    if (start < 0 || end <= start) return null;
+    try {
+      return JSON.parse(text.slice(start, end + 1));
+    } catch (innerErr) {
+      return null;
+    }
+  }
+};
+
+const buildSolutionText = (modelPayload) => {
+  const data = modelPayload && typeof modelPayload === "object" ? modelPayload : {};
+  const summary = trimForModel(data.summary || data.intro || "", 400);
+  const stepsRaw = Array.isArray(data.steps) ? data.steps : [];
+  const steps = stepsRaw
+    .map((step) => trimForModel(step, 400))
+    .filter(Boolean)
+    .slice(0, 8);
+  const finalAnswer = trimForModel(data.finalAnswer || data.answer || "", 250);
+  const tip = trimForModel(data.tip || data.commonMistake || "", 300);
+
+  const lines = [];
+  if (summary) lines.push(summary);
+  steps.forEach((step, idx) => lines.push(`${idx + 1}) ${step}`));
+  if (finalAnswer) lines.push(`Final answer: ${finalAnswer}`);
+  if (tip) lines.push(`Tip: ${tip}`);
+
+  return {
+    steps,
+    finalAnswer,
+    summary,
+    tip,
+    text: lines.join("\n").trim(),
+  };
+};
+
+const requestGroqSolution = async ({ prompt, correctAnswer, userAnswer, runtimeConfig }) => {
+  const apiKey = String(runtimeConfig?.groqApiKey || "").trim();
+  if (!apiKey) {
+    throw new Error("GROQ_API_KEY is not configured.");
+  }
+  const model = String(runtimeConfig?.groqModel || DEFAULT_GROQ_MODEL).trim() || DEFAULT_GROQ_MODEL;
+
+  const systemPrompt =
+    "You are a precise calculus tutor. Return valid JSON only with keys: summary, steps, finalAnswer, tip. " +
+    "Keep steps concise, practical, and aligned to the exact question.";
+  const userPrompt = [
+    "Question:",
+    prompt || "",
+    "",
+    "Correct answer:",
+    correctAnswer || "",
+    "",
+    "Student answer:",
+    userAnswer || "",
+    "",
+    "Give step-by-step correction. Use plain text. If relevant, include math notation.",
+  ].join("\n");
+
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model,
+      temperature: 0.2,
+      max_tokens: 600,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`Groq request failed (${response.status}): ${errorBody.slice(0, 300)}`);
+  }
+
+  const payload = await response.json();
+  const content = trimForModel(payload?.choices?.[0]?.message?.content || "", 6000);
+  if (!content) {
+    throw new Error("Groq returned an empty response.");
+  }
+
+  const parsed = parseGroqJson(content);
+  if (parsed) {
+    const normalized = buildSolutionText(parsed);
+    if (normalized.text) {
+      return {
+        ...normalized,
+        raw: content,
+        model,
+      };
+    }
+  }
+
+  return {
+    summary: "",
+    steps: [],
+    finalAnswer: "",
+    tip: "",
+    text: content,
+    raw: content,
+    model,
+  };
 };
 
 exports.sendLearningReminder = functions.pubsub
@@ -407,6 +542,103 @@ exports.notifyFriendRequest = functions.firestore
       return null;
     }
   });
+
+exports.getStepSolution = functions.https.onRequest(async (req, res) => {
+  res.set("Access-Control-Allow-Origin", "*");
+  res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  if (req.method === "OPTIONS") {
+    res.status(204).send("");
+    return;
+  }
+  if (req.method !== "POST") {
+    res.status(405).send("Method not allowed");
+    return;
+  }
+
+  try {
+    const body = req.body || {};
+    const questionId = normalizeQuestionId(body.questionId);
+    const prompt = trimForModel(body.prompt, 2500);
+    const correctAnswer = trimForModel(body.correctAnswer, 1200);
+    const userAnswer = trimForModel(body.userAnswer, 1200);
+    const questionType = trimForModel(body.questionType, 40);
+    const sectionId = trimForModel(body.sectionId, 120);
+
+    if (!questionId || questionId.length < 3) {
+      res.status(400).json({ ok: false, error: "Missing or invalid questionId." });
+      return;
+    }
+    if (!prompt) {
+      res.status(400).json({ ok: false, error: "Missing question prompt." });
+      return;
+    }
+
+    const docRef = admin.firestore().collection(AI_SOLUTIONS_COLLECTION).doc(questionId);
+    const existing = await docRef.get();
+    if (existing.exists) {
+      const data = existing.data() || {};
+      res.status(200).json({
+        ok: true,
+        cached: true,
+        questionId,
+        solution: String(data.solution || ""),
+        steps: Array.isArray(data.steps) ? data.steps : [],
+        finalAnswer: String(data.finalAnswer || ""),
+        tip: String(data.tip || ""),
+        model: String(data.model || ""),
+      });
+      return;
+    }
+
+    const runtimeConfig = getRuntimeConfig();
+    if (!runtimeConfig.groqApiKey) {
+      res.status(503).json({ ok: false, error: "AI solver is not configured." });
+      return;
+    }
+
+    const generated = await requestGroqSolution({
+      prompt,
+      correctAnswer,
+      userAnswer,
+      runtimeConfig,
+    });
+
+    const nowIso = new Date().toISOString();
+    const record = {
+      questionId,
+      prompt,
+      correctAnswer,
+      questionType,
+      sectionId,
+      solution: generated.text,
+      summary: generated.summary || "",
+      steps: Array.isArray(generated.steps) ? generated.steps : [],
+      finalAnswer: generated.finalAnswer || "",
+      tip: generated.tip || "",
+      raw: generated.raw || generated.text,
+      model: generated.model || runtimeConfig.groqModel || DEFAULT_GROQ_MODEL,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+      requests: 1,
+    };
+    await docRef.set(record, { merge: true });
+
+    res.status(200).json({
+      ok: true,
+      cached: false,
+      questionId,
+      solution: record.solution,
+      steps: record.steps,
+      finalAnswer: record.finalAnswer,
+      tip: record.tip,
+      model: record.model,
+    });
+  } catch (err) {
+    console.error("getStepSolution error", err);
+    res.status(500).json({ ok: false, error: "Unable to generate solution." });
+  }
+});
 
 // Username-based sign-in removed. Use email + password only.
 

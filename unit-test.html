@@ -203,6 +203,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="auth.js"></script>
+  <script src="ai-solver.js"></script>
   <script src="progress.js"></script>
   <script src="content-structure.js"></script>
   <script src="content-sections.js"></script>
@@ -413,10 +414,34 @@
         feedbackText.classList.add("text-emerald-300");
       } else {
         if (window.FCSound?.play) FCSound.play("wrong");
+        const itemSnapshot = currentItem;
+        const responseSnapshot = currentResponse;
         feedbackText.innerHTML = `Incorrect. Correct answer: <span class="underline">${formatMathText(
           formatAnswer(currentItem)
-        )}</span>`;
+        )}</span><br><span class="block mt-2 text-slate-200">Generating step-by-step solution...</span>`;
         feedbackText.classList.add("text-rose-300");
+        if (window.FCAI?.getStepSolution) {
+          window.FCAI
+            .getStepSolution({
+              item: itemSnapshot,
+              userAnswer: responseSnapshot,
+              context: "unit-test",
+            })
+            .then((solution) => {
+              if (!solution?.solution || currentItem?.id !== itemSnapshot?.id) return;
+              feedbackText.innerHTML = `Incorrect. Correct answer: <span class="underline">${formatMathText(
+                formatAnswer(itemSnapshot)
+              )}</span><br><span class="block mt-2 text-slate-200">${formatMathText(solution.solution)}</span>`;
+              typesetMath([feedbackText]);
+            })
+            .catch(() => {
+              if (currentItem?.id !== itemSnapshot?.id) return;
+              feedbackText.innerHTML = `Incorrect. Correct answer: <span class="underline">${formatMathText(
+                formatAnswer(itemSnapshot)
+              )}</span>`;
+              typesetMath([feedbackText]);
+            });
+        }
         if (window.FC?.loseLife) {
           const beforeLives = FC.get()?.lives ?? 0;
           FC.loseLife();
