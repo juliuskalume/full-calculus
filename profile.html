@@ -495,7 +495,7 @@
       // chips/cards from meta (fc_meta)
       document.getElementById("xpChip").textContent = String(meta.xp ?? 0);
       document.getElementById("streakChip").textContent = String(meta.streak ?? 0);
-      document.getElementById("livesChip").textContent = String(meta.lives ?? 0);
+      document.getElementById("livesChip").textContent = FC.hasInfiniteHearts?.() ? "∞" : String(meta.lives ?? 0);
 
       document.getElementById("xpVal").textContent = String(meta.xp ?? 0);
       document.getElementById("streakVal").textContent = String(meta.streak ?? 0);

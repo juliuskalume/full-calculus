@@ -55,6 +55,7 @@ window.FC = {
       weeklyXp: 0,
       lastWeekKey: "",
       lastWeekXp: 0,
+      infiniteHearts: false,
     };
 
     let s;
@@ -73,8 +74,13 @@ window.FC = {
     if (typeof s.weeklyXp !== "number") s.weeklyXp = 0;
     if (typeof s.lastWeekKey !== "string") s.lastWeekKey = "";
     if (typeof s.lastWeekXp !== "number") s.lastWeekXp = 0;
+    if (typeof s.infiniteHearts !== "boolean") s.infiniteHearts = false;
 
     s = this._ensureWeekly(s);
+    if (s.infiniteHearts) {
+      s.lives = HEART_MAX;
+      s.lastHeartTime = Date.now();
+    }
     s = this._refillHearts(s);
     s = this._refreshStreak(s);
     const beforeStreak = Number(s.streak) || 0;
@@ -100,6 +106,12 @@ window.FC = {
 
   loseLife() {
     const s = this.get();
+    if (s.infiniteHearts) {
+      s.lives = HEART_MAX;
+      s.lastHeartTime = Date.now();
+      this.set(s);
+      return;
+    }
     if (s.lives > 0) {
       s.lives = Math.max(0, s.lives - 1);
       if (s.lives < HEART_MAX) s.lastHeartTime = Date.now();
@@ -115,26 +127,31 @@ window.FC = {
     return s;
   },
 
+  hasInfiniteHearts() {
+    const s = this.get();
+    return !!s.infiniteHearts;
+  },
+
+  enableInfiniteHearts() {
+    const s = this.get();
+    s.infiniteHearts = true;
+    s.lives = HEART_MAX;
+    s.lastHeartTime = Date.now();
+    this.set(s);
+    this._maybeSyncMeta(true);
+    return s;
+  },
+
   consumeRewardRefill() {
-    try {
-      const flag = localStorage.getItem("fc_reward_refill");
-      if (flag !== "1") return false;
-      localStorage.removeItem("fc_reward_refill");
-      const s = this.get();
-      if (s.lives < HEART_MAX) {
-        s.lives = Math.min(HEART_MAX, s.lives + 1);
-        s.lastHeartTime = Date.now();
-        this.set(s);
-        this._maybeSyncMeta(true);
-        return true;
-      }
-      return true;
-    } catch {
-      return false;
-    }
+    return false;
   },
 
   _refillHearts(s) {
+    if (s.infiniteHearts) {
+      s.lives = HEART_MAX;
+      s.lastHeartTime = Date.now();
+      return s;
+    }
     if (s.lives >= HEART_MAX) return s;
     const now = Date.now();
     const elapsedMin = Math.floor((now - s.lastHeartTime) / 60000);
@@ -216,7 +233,14 @@ window.FC = {
 };
 
 if (!localStorage.getItem("fc_meta")) {
-  FC.set({ xp: 450, streak: 0, lives: HEART_MAX, lastHeartTime: Date.now(), lastActiveDate: "" });
+  FC.set({
+    xp: 450,
+    streak: 0,
+    lives: HEART_MAX,
+    lastHeartTime: Date.now(),
+    lastActiveDate: "",
+    infiniteHearts: false,
+  });
 } else {
   FC.get();
 }

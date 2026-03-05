@@ -232,22 +232,16 @@
                 Out of hearts
               </h1>
                 <p class="text-slate-600 dark:text-slate-300 text-base font-normal leading-relaxed text-center pb-4 pt-1">
-                  Watch a short ad to gain 1 heart and continue learning.
+                  Rate Full Calculus and leave an honest review to unlock infinite hearts.
                 </p>
                 <p id="heartsStatus" class="text-xs text-slate-500 dark:text-slate-400 text-center"></p>
               </div>
               <div class="flex flex-col w-full gap-3 px-6 pb-10 sm:pb-8">
                 <button
-                  id="watchAdBtn"
+                  id="rateAppBtn"
                   class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-14 px-5 bg-primary hover:bg-primary-dark text-black text-lg font-bold leading-normal tracking-wide transition-colors shadow-md"
                 >
-                  <span class="truncate uppercase">Watch Ad</span>
-                </button>
-                <button
-                  id="buyHeartsBtn"
-                  class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-14 px-5 bg-[#e6f7ff] text-[#1b4b66] text-lg font-bold leading-normal tracking-wide transition-colors border border-[#b7e7ff] hover:border-[#8fd7ff]"
-                >
-                  <span class="truncate">Use 500 XP to refill 5 hearts</span>
+                  <span class="truncate uppercase">Rate App & Unlock Hearts</span>
                 </button>
                 <button
                   id="closeHeartsBtn"
@@ -471,45 +465,18 @@
 
         typesetMath([contentRoot]);
 
-        const PENDING_START_KEY = "fc_pending_start";
+        const PLAY_STORE_WEB_URL = "https://play.google.com/store/apps/details?id=com.fullcalculus.app";
+        const PLAY_STORE_MARKET_URL = "market://details?id=com.fullcalculus.app";
         const heartsOverlay = document.getElementById("heartsOverlay");
         const heartsStatus = document.getElementById("heartsStatus");
-        const watchAdBtn = document.getElementById("watchAdBtn");
-        const buyHeartsBtn = document.getElementById("buyHeartsBtn");
+        const rateAppBtn = document.getElementById("rateAppBtn");
         const closeHeartsBtn = document.getElementById("closeHeartsBtn");
-        const HEART_XP_COST = 500;
-        let pendingStart = null;
 
-        const savePendingStart = (data) => {
-          try {
-            localStorage.setItem(PENDING_START_KEY, JSON.stringify(data));
-          } catch {
-            // ignore
-          }
-        };
-
-        const consumePendingStart = () => {
-          try {
-            const raw = localStorage.getItem(PENDING_START_KEY);
-            if (!raw) return null;
-            localStorage.removeItem(PENDING_START_KEY);
-            return JSON.parse(raw);
-          } catch {
-            return null;
-          }
-        };
-
-        const showHeartsOverlay = (startData) => {
-          pendingStart = startData || null;
+        const showHeartsOverlay = () => {
           if (!heartsOverlay) return;
           heartsOverlay.classList.remove("hidden");
           document.body.classList.add("overflow-hidden");
-          if (heartsStatus) {
-            heartsStatus.textContent = window.AndroidAds?.showAd
-              ? ""
-              : "Ads are only available in the Android app. Please wait for hearts to refill.";
-          }
-          updateBuyHeartsButton();
+          if (heartsStatus) heartsStatus.textContent = "";
         };
 
         const hideHeartsOverlay = () => {
@@ -517,44 +484,28 @@
           document.body.classList.remove("overflow-hidden");
         };
 
-        const updateBuyHeartsButton = () => {
-          if (!buyHeartsBtn) return;
-          const xp = Number(FC.get().xp || 0);
-          const canBuy = xp >= HEART_XP_COST;
-          buyHeartsBtn.disabled = !canBuy;
-          buyHeartsBtn.classList.toggle("opacity-50", !canBuy);
-          buyHeartsBtn.classList.toggle("cursor-not-allowed", !canBuy);
+        const openStoreForRating = () => {
+          const ua = String(navigator.userAgent || "").toLowerCase();
+          if (ua.includes("android")) {
+            window.location.href = PLAY_STORE_MARKET_URL;
+            setTimeout(() => {
+              try {
+                window.open(PLAY_STORE_WEB_URL, "_blank", "noopener");
+              } catch {
+                // ignore
+              }
+            }, 600);
+            return;
+          }
+          window.open(PLAY_STORE_WEB_URL, "_blank", "noopener");
         };
 
-        watchAdBtn?.addEventListener("click", () => {
-          if (!pendingStart) {
-            hideHeartsOverlay();
-            return;
-          }
-          savePendingStart(pendingStart);
-          if (window.AndroidAds?.showAd) {
-            window.AndroidAds.showAd("rewarded", "notes.html");
-          }
-          hideHeartsOverlay();
-        });
-
-        buyHeartsBtn?.addEventListener("click", () => {
-          const meta = FC.get();
-          const xp = Number(meta.xp || 0);
-          if (xp < HEART_XP_COST) {
-            if (heartsStatus) heartsStatus.textContent = "You need 500 XP to refill your hearts.";
-            updateBuyHeartsButton();
-            return;
-          }
-          if (window.FC?.addXP) {
-            FC.addXP(-HEART_XP_COST);
+        const unlockInfiniteHearts = () => {
+          if (window.FC?.enableInfiniteHearts) {
+            FC.enableInfiniteHearts();
           } else {
-            meta.xp = Math.max(0, xp - HEART_XP_COST);
-            FC.set(meta);
-          }
-          if (window.FC?.refillLives) {
-            FC.refillLives();
-          } else {
+            const meta = FC.get();
+            meta.infiniteHearts = true;
             meta.lives = 5;
             meta.lastHeartTime = Date.now();
             FC.set(meta);
@@ -562,13 +513,20 @@
           if (window.FCAuth?.syncToRemote) {
             window.FCAuth.syncToRemote().catch(() => {});
           }
-          hideHeartsOverlay();
-          if (pendingStart && (FC.get().lives ?? 0) > 0) {
-            startLessonFromPending(pendingStart);
-          }
-        });
+        };
 
-        closeHeartsBtn?.addEventListener("click", () => hideHeartsOverlay());
+        if (rateAppBtn) {
+          rateAppBtn.onclick = () => {
+            unlockInfiniteHearts();
+            if (heartsStatus) heartsStatus.textContent = "Infinite hearts unlocked. Thanks for supporting Full Calculus.";
+            hideHeartsOverlay();
+            openStoreForRating();
+          };
+        }
+
+        if (closeHeartsBtn) {
+          closeHeartsBtn.onclick = () => hideHeartsOverlay();
+        }
 
         const startLessonFromPending = (pending) => {
           if (!pending || pending.type !== "lesson") return false;
@@ -586,16 +544,6 @@
           return true;
         };
 
-        if (window.FC?.consumeRewardRefill) {
-          if (FC.consumeRewardRefill()) {
-            // no UI update needed here
-          }
-        }
-        const pending = consumePendingStart();
-        if (pending && (FC.get().lives ?? 0) > 0) {
-          startLessonFromPending(pending);
-        }
-
         contentRoot.querySelectorAll(".startLessonBtn").forEach((btn) => {
           btn.addEventListener("click", () => {
             const sectionId = btn.getAttribute("data-section-id");
@@ -611,18 +559,11 @@
               });
               return;
             }
-
-            setLessonReturn("notes.html", scrollTop);
-            const session = FCEngine.createSession({
-              mode: "practice",
+            startLessonFromPending({
+              type: "lesson",
               sectionId,
-              count: 3,
-              types: ["mcq", "numeric", "expression"],
-              xpPerCorrect: 8,
+              scrollTop,
             });
-            FCEngine.saveSession(session);
-            FCProgress.setCurrentSection(sectionId);
-            window.location.href = "active-lesson.html";
           });
         });
       }

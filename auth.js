@@ -359,12 +359,13 @@
     const local = toObject(localMeta);
     const remote = toObject(remoteMeta);
     const toNumber = (value) => (typeof value === "number" ? value : Number(value) || 0);
-    return {
-      xp: Math.max(toNumber(local.xp), toNumber(remote.xp)),
-      streak: Math.max(toNumber(local.streak), toNumber(remote.streak)),
-      lives: Math.max(toNumber(local.lives), toNumber(remote.lives)),
-      lastHeartTime: Math.max(toNumber(local.lastHeartTime), toNumber(remote.lastHeartTime)),
-    };
+    const merged = { ...remote, ...local };
+    merged.xp = Math.max(toNumber(local.xp), toNumber(remote.xp));
+    merged.streak = Math.max(toNumber(local.streak), toNumber(remote.streak));
+    merged.lives = Math.max(toNumber(local.lives), toNumber(remote.lives));
+    merged.lastHeartTime = Math.max(toNumber(local.lastHeartTime), toNumber(remote.lastHeartTime));
+    merged.infiniteHearts = !!(local.infiniteHearts || remote.infiniteHearts);
+    return merged;
   };
 
   const mergeLocalAndRemoteState = (localState, remoteData) => ({

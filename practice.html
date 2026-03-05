@@ -487,7 +487,7 @@
         const livesEl = document.getElementById("livesVal");
         if (streakEl) streakEl.textContent = String(meta.streak ?? 0);
         if (xpEl) xpEl.textContent = String(meta.xp ?? 0);
-        if (livesEl) livesEl.textContent = String(meta.lives ?? 0);
+        if (livesEl) livesEl.textContent = FC.hasInfiniteHearts?.() ? "∞" : String(meta.lives ?? 0);
       })();
 
       function loadPrefs() {

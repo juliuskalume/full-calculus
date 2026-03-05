@@ -261,15 +261,6 @@
         };
 
         document.getElementById("continueBtn").addEventListener("click", () => {
-          const nextId = getNextSectionAfterTest();
-          const nextUrl = nextId ? "active-lesson.html" : "path.html";
-          if (nextId && window.FCProgress?.setCurrentSection) {
-            FCProgress.setCurrentSection(nextId);
-          }
-          if (window.AndroidAds?.showAd) {
-            window.AndroidAds.showAd("rewarded", nextUrl);
-            return;
-          }
           goNext();
         });
 
