@@ -253,7 +253,8 @@ window.FCEngine = (function () {
       filtered = window.FCContent.items.filter((item) => item.type !== "free-response" && item.grading?.mode !== "manual");
     }
 
-    const items = shuffle(filtered).slice(0, count);
+    const ordered = options.preserveOrder ? [...filtered] : shuffle(filtered);
+    const items = ordered.slice(0, count);
 
     return {
       id: `sess_${Date.now()}`,
@@ -265,6 +266,7 @@ window.FCEngine = (function () {
       correct: 0,
       responses: [],
       xpPerCorrect: options.xpPerCorrect || 10,
+      preserveOrder: !!options.preserveOrder,
       startedAt: nowIso(),
     };
   }
