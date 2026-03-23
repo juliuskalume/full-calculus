@@ -773,6 +773,11 @@
         currentItem = FCContent.getItem(itemId);
         if (!currentItem) return;
         currentItem = await applyQuestionOverride(currentItem);
+        currentItem = FCEngine.prepareItemForChoiceMode(currentItem);
+        if (!currentItem) {
+          advanceSession();
+          return;
+        }
 
         const section = FCContent.getSection(currentItem.sectionId);
         questionTitle.innerHTML = formatMathText(currentItem.prompt || "Question");
@@ -785,11 +790,7 @@
         choicesContainer.classList.remove("hidden");
         inputContainer.classList.add("hidden");
 
-        if (currentItem.type === "mcq") {
-          renderChoices(currentItem);
-        } else {
-          renderInput(currentItem);
-        }
+        renderChoices(currentItem);
 
         resetState();
         updateProgress();

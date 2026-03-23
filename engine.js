@@ -25,6 +25,149 @@ window.FCEngine = (function () {
     return arr;
   }
 
+  function cloneItem(item) {
+    try {
+      return JSON.parse(JSON.stringify(item));
+    } catch {
+      return item ? { ...item } : item;
+    }
+  }
+
+  function trimTrailingZeros(value) {
+    return String(value)
+      .replace(/(\.\d*?[1-9])0+$/g, "$1")
+      .replace(/\.0+$/g, "")
+      .replace(/^-0$/, "0");
+  }
+
+  function getDecimalPlaces(value) {
+    const raw = String(value ?? "").trim();
+    const match = raw.match(/\.(\d+)/);
+    return match ? match[1].length : 0;
+  }
+
+  function formatNumericChoice(value, decimals) {
+    if (!Number.isFinite(value)) return "0";
+    if (!Number.isFinite(decimals) || decimals < 0) decimals = 0;
+    const capped = Math.min(4, decimals);
+    if (capped === 0) return String(Math.round(value));
+    return trimTrailingZeros(value.toFixed(capped));
+  }
+
+  function uniqueNormalized(list) {
+    const seen = new Set();
+    return list.filter((entry) => {
+      const key = normalizeText(entry);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
+  function buildNumericChoices(answerValue) {
+    const correct = Number(answerValue);
+    if (!Number.isFinite(correct)) return [];
+
+    const rawDecimals = getDecimalPlaces(answerValue);
+    const decimals = rawDecimals > 0 ? Math.min(4, rawDecimals + (Math.abs(correct) < 1 ? 1 : 0)) : 0;
+    const step =
+      rawDecimals > 0
+        ? Math.pow(10, -rawDecimals)
+        : Math.max(1, Math.round(Math.abs(correct) * 0.25) || 1);
+
+    const candidates = [
+      correct,
+      correct + step,
+      correct - step,
+      correct + step * 2,
+      correct - step * 2,
+      correct === 0 ? 1 : -correct,
+      correct + Math.max(1, Math.abs(correct)),
+      correct - Math.max(1, Math.abs(correct)),
+      0,
+      1,
+    ];
+
+    const choices = uniqueNormalized(candidates.map((value) => formatNumericChoice(value, decimals)));
+    const correctText = formatNumericChoice(correct, decimals);
+    const distractors = choices.filter((choice) => normalizeText(choice) !== normalizeText(correctText));
+    return shuffle([correctText, ...distractors.slice(0, 5)]).slice(0, 4);
+  }
+
+  function mutateExpression(expr) {
+    const raw = String(expr || "").trim();
+    if (!raw) return [];
+
+    const out = [
+      raw.startsWith("-") ? raw.slice(1) : `-${raw}`,
+      `${raw}+1`,
+      `${raw}-1`,
+      `2*(${raw})`,
+      `(${raw})/2`,
+    ];
+
+    if (raw.includes("sin")) out.push(raw.replace("sin", "cos"));
+    if (raw.includes("cos")) {
+      out.push(raw.replace("cos", "sin"));
+      out.push(raw.replace("cos", "-sin"));
+    }
+    if (raw.includes("tan")) out.push(raw.replace("tan", "sec"));
+    if (raw.includes("+")) out.push(raw.replace("+", "-"));
+    if (raw.includes("-")) out.push(raw.replace("-", "+"));
+    if (raw.includes("*")) out.push(raw.replace(/\*/g, ""));
+    if (raw.includes("/")) out.push(raw.replace("/", "*"));
+    if (raw.includes("^")) {
+      out.push(raw.replace(/\^(\d+)/, (_, power) => `^${Math.max(1, Number(power) - 1)}`));
+      out.push(raw.replace(/\^(\d+)/, (_, power) => `^${Number(power) + 1}`));
+    }
+
+    return uniqueNormalized(out);
+  }
+
+  function buildExpressionChoices(item) {
+    const answer = String(item?.answer?.value ?? "").trim();
+    if (!answer) return [];
+
+    const numericEquivalent = Number(answer);
+    if (answer !== "" && Number.isFinite(numericEquivalent) && /^-?\d+(\.\d+)?$/.test(answer)) {
+      return buildNumericChoices(answer);
+    }
+
+    const correctSet = new Set(
+      [answer, ...(item?.answer?.equivalences || [])]
+        .map((entry) => normalizeExpression(entry))
+        .filter(Boolean)
+    );
+
+    const pool = mutateExpression(answer).filter((entry) => !correctSet.has(normalizeExpression(entry)));
+    const fallbackPool = ["0", "1", "x", "-x", "x^2", "2*x", "sin(x)", "cos(x)"].filter(
+      (entry) => !correctSet.has(normalizeExpression(entry))
+    );
+    const distractors = uniqueNormalized([...pool, ...fallbackPool]).slice(0, 5);
+    return shuffle([answer, ...distractors]).slice(0, 4);
+  }
+
+  function prepareItemForChoiceMode(item) {
+    if (!item) return null;
+    if (item.type === "free-response" || item.grading?.mode === "manual") return null;
+
+    const next = cloneItem(item);
+    const existingChoices = Array.isArray(next.choices) ? next.choices.filter(Boolean) : [];
+    const generatedChoices =
+      existingChoices.length > 1
+        ? existingChoices
+        : next.type === "numeric"
+        ? buildNumericChoices(next.answer?.value)
+        : buildExpressionChoices(next);
+
+    if (!generatedChoices.length) return null;
+
+    next.originalType = next.type;
+    next.type = "mcq";
+    next.choices = uniqueNormalized(generatedChoices);
+    return next.choices.length >= 2 ? next : null;
+  }
+
   function pickFromPool(pool, count, used) {
     const choices = pool.filter((item) => !used.has(item.id));
     const picked = [];
@@ -103,9 +246,11 @@ window.FCEngine = (function () {
       ? pool.filter((item) => options.types.includes(item.type))
       : pool;
 
+    filtered = filtered.filter((item) => item.type !== "free-response" && item.grading?.mode !== "manual");
+
     const hasSelection = !!(options.itemIds || options.sectionId || (options.tags && options.tags.length));
     if (!filtered.length && window.FCContent && !hasSelection) {
-      filtered = window.FCContent.items;
+      filtered = window.FCContent.items.filter((item) => item.type !== "free-response" && item.grading?.mode !== "manual");
     }
 
     const items = shuffle(filtered).slice(0, count);
@@ -282,6 +427,7 @@ window.FCEngine = (function () {
     saveTestSession,
     getTestSession,
     clearTestSession,
+    prepareItemForChoiceMode,
     gradeItem,
     buildTagBreakdown,
     saveLastTest,

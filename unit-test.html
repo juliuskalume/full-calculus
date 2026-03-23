@@ -402,17 +402,23 @@
       currentItem = FCContent.getItem(itemId);
       if (!currentItem) return;
       currentItem = await applyQuestionOverride(currentItem);
+      currentItem = FCEngine.prepareItemForChoiceMode(currentItem);
+      if (!currentItem) {
+        testSession.index += 1;
+        if (testSession.index >= testSession.itemIds.length) {
+          finishTest();
+        } else {
+          renderItem().catch(() => {});
+        }
+        return;
+      }
 
       const section = FCContent.getSection(currentItem.sectionId);
       topicTag.textContent = section ? section.title : (currentItem.tags?.[0] || "Topic");
       questionText.innerHTML = formatMathText(currentItem.prompt || "Question");
 
       resetInputs();
-      if (currentItem.type === "mcq") {
-        renderChoices(currentItem);
-      } else {
-        renderInput(currentItem);
-      }
+      renderChoices(currentItem);
 
       updateProgress();
       updateHeader();
