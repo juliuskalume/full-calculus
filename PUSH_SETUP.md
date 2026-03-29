@@ -31,7 +31,7 @@ Create `functions/.env.full-calculus` from `functions/.env.example` and fill val
 ```bash
 WEBPUSH_PUBLIC_KEY=BH0mxXqAfmTAP45v5iHf8J2gdyQHlC5qiMiAlTbeR0Q3z_8YSnr17Y7CPQ1v3uWMBIZwZPkABb_HcULAvCUz4wU
 WEBPUSH_PRIVATE_KEY=REPLACE_WITH_YOUR_PRIVATE_KEY
-WEBPUSH_SUBJECT=mailto:juliuskalume906@gmail.com
+WEBPUSH_SUBJECT=mailto:sentira.official@gmail.com
 WEBPUSH_TIMEZONE=Etc/UTC
 WEBPUSH_TEST_KEY=CHANGE_ME
 ADMIN_EMAILS=sentira.official@gmail.com,skalmistjulius@gmail.com

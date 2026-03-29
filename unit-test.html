@@ -312,7 +312,7 @@
     function updateHeader() {
       const blueprint = getBlueprint();
       if (testTitle && blueprint) testTitle.textContent = blueprint.title;
-      if (heartsEl && window.FC?.get) heartsEl.textContent = FC.hasInfiniteHearts?.() ? "∞" : String(FC.get().lives ?? 0);
+      if (heartsEl && window.FC?.get) heartsEl.textContent = String(FC.get().lives ?? 0);
     }
 
     function updateProgress() {
@@ -484,7 +484,7 @@
       }
       typesetMath([feedbackText]);
 
-      if (window.FC?.get && heartsEl) heartsEl.textContent = FC.hasInfiniteHearts?.() ? "∞" : String(FC.get().lives ?? 0);
+      if (window.FC?.get && heartsEl) heartsEl.textContent = String(FC.get().lives ?? 0);
       FCProgress.recordItemResult(currentItem.id, result.correct);
       testSession.responses.push({ itemId: currentItem.id, response: currentResponse, correct: result.correct });
       if (correct) testSession.correct += 1;

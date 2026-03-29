@@ -364,7 +364,6 @@
     merged.streak = Math.max(toNumber(local.streak), toNumber(remote.streak));
     merged.lives = Math.max(toNumber(local.lives), toNumber(remote.lives));
     merged.lastHeartTime = Math.max(toNumber(local.lastHeartTime), toNumber(remote.lastHeartTime));
-    merged.infiniteHearts = !!(local.infiniteHearts || remote.infiniteHearts);
     return merged;
   };
 

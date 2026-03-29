@@ -696,7 +696,7 @@
 
       function setLives() {
         if (!window.FC?.get || !livesEl) return;
-        livesEl.textContent = FC.hasInfiniteHearts?.() ? "∞" : String(FC.get().lives ?? 0);
+        livesEl.textContent = String(FC.get().lives ?? 0);
       }
 
       function resetState() {

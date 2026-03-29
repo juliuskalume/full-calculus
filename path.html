@@ -275,16 +275,16 @@
                 Out of hearts
               </h1>
                 <p class="text-slate-600 dark:text-slate-300 text-base font-normal leading-relaxed text-center pb-4 pt-1">
-                  Rate Full Calculus and leave an honest review to unlock infinite hearts.
+                  Hearts refill automatically every 5 minutes, or use XP to refill all 5 right now.
                 </p>
                 <p id="heartsStatus" class="text-xs text-slate-500 dark:text-slate-400 text-center"></p>
               </div>
               <div class="flex flex-col w-full gap-3 px-6 pb-10 sm:pb-8">
                 <button
-                  id="rateAppBtn"
-                  class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-14 px-5 bg-primary hover:bg-primary-dark text-black text-lg font-bold leading-normal tracking-wide transition-colors shadow-md"
+                  id="buyHeartsBtn"
+                  class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-14 px-5 bg-[#e6f7ff] text-[#1b4b66] text-lg font-bold leading-normal tracking-wide transition-colors border border-[#b7e7ff] hover:border-[#8fd7ff]"
                 >
-                  <span class="truncate uppercase">Rate App & Unlock Hearts</span>
+                  <span class="truncate">Use 500 XP to refill 5 hearts</span>
                 </button>
                 <button
                   id="closeHeartsBtn"
@@ -368,28 +368,30 @@
           const meta = FC.get();
           document.getElementById("streakVal").textContent = String(meta.streak);
           document.getElementById("xpVal").textContent = String(meta.xp);
-          document.getElementById("livesVal").textContent = FC.hasInfiniteHearts?.() ? "∞" : String(meta.lives);
+          document.getElementById("livesVal").textContent = String(meta.lives);
         })();
-
-        const PLAY_STORE_WEB_URL = "https://play.google.com/store/apps/details?id=com.fullcalculus.app";
-        const PLAY_STORE_MARKET_URL = "market://details?id=com.fullcalculus.app";
-
         const updateLivesUI = () => {
           const meta = FC.get();
           const livesEl = document.getElementById("livesVal");
-          if (livesEl) livesEl.textContent = FC.hasInfiniteHearts?.() ? "∞" : String(meta.lives ?? 0);
+          if (livesEl) livesEl.textContent = String(meta.lives ?? 0);
         };
 
         const heartsOverlay = document.getElementById("heartsOverlay");
         const heartsStatus = document.getElementById("heartsStatus");
-        const rateAppBtn = document.getElementById("rateAppBtn");
+        const buyHeartsBtn = document.getElementById("buyHeartsBtn");
         const closeHeartsBtn = document.getElementById("closeHeartsBtn");
+        const HEART_XP_COST = 500;
+        let pendingStart = null;
 
-        const showHeartsOverlay = () => {
+        const showHeartsOverlay = (startData) => {
+          pendingStart = startData || null;
           if (!heartsOverlay) return;
           heartsOverlay.classList.remove("hidden");
           document.body.classList.add("overflow-hidden");
-          if (heartsStatus) heartsStatus.textContent = "";
+          if (heartsStatus) {
+            heartsStatus.textContent = "Hearts refill automatically every 5 minutes.";
+          }
+          updateBuyHeartsButton();
         };
 
         const hideHeartsOverlay = () => {
@@ -397,43 +399,47 @@
           document.body.classList.remove("overflow-hidden");
         };
 
-        const openStoreForRating = () => {
-          const ua = String(navigator.userAgent || "").toLowerCase();
-          if (ua.includes("android")) {
-            window.location.href = PLAY_STORE_MARKET_URL;
-            setTimeout(() => {
-              try {
-                window.open(PLAY_STORE_WEB_URL, "_blank", "noopener");
-              } catch {
-                // ignore
-              }
-            }, 600);
-            return;
-          }
-          window.open(PLAY_STORE_WEB_URL, "_blank", "noopener");
+        const updateBuyHeartsButton = () => {
+          if (!buyHeartsBtn) return;
+          const xp = Number(FC.get().xp || 0);
+          const canBuy = xp >= HEART_XP_COST;
+          buyHeartsBtn.disabled = !canBuy;
+          buyHeartsBtn.classList.toggle("opacity-50", !canBuy);
+          buyHeartsBtn.classList.toggle("cursor-not-allowed", !canBuy);
         };
 
-        const unlockInfiniteHearts = () => {
-          if (window.FC?.enableInfiniteHearts) {
-            FC.enableInfiniteHearts();
+        buyHeartsBtn?.addEventListener("click", () => {
+          const meta = FC.get();
+          const xp = Number(meta.xp || 0);
+          if (xp < HEART_XP_COST) {
+            if (heartsStatus) heartsStatus.textContent = "You need 500 XP to refill your hearts.";
+            updateBuyHeartsButton();
+            return;
+          }
+          if (window.FC?.addXP) {
+            FC.addXP(-HEART_XP_COST);
           } else {
-            const meta = FC.get();
-            meta.infiniteHearts = true;
+            meta.xp = Math.max(0, xp - HEART_XP_COST);
+            FC.set(meta);
+          }
+          if (window.FC?.refillLives) {
+            FC.refillLives();
+          } else {
             meta.lives = 5;
             meta.lastHeartTime = Date.now();
             FC.set(meta);
           }
           updateLivesUI();
+          const xpEl = document.getElementById("xpVal");
+          if (xpEl) xpEl.textContent = String(FC.get().xp ?? 0);
           if (window.FCAuth?.syncToRemote) {
             window.FCAuth.syncToRemote().catch(() => {});
           }
-        };
-
-        rateAppBtn?.addEventListener("click", () => {
-          unlockInfiniteHearts();
-          if (heartsStatus) heartsStatus.textContent = "Infinite hearts unlocked. Thanks for supporting Full Calculus.";
           hideHeartsOverlay();
-          openStoreForRating();
+          if (pendingStart && (FC.get().lives ?? 0) > 0) {
+            if (pendingStart.type === "lesson") startLessonFromPending(pendingStart);
+            if (pendingStart.type === "test") startTestFromPending(pendingStart);
+          }
         });
 
         closeHeartsBtn?.addEventListener("click", () => hideHeartsOverlay());
