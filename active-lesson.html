@@ -210,6 +210,19 @@
             class="hidden w-full rounded-xl bg-white dark:bg-surface-dark border-2 border-gray-200 dark:border-gray-700 px-4 py-3 text-base text-gray-900 dark:text-white focus:border-primary focus:ring-0"
           ></textarea>
           <p id="inputHint" class="text-xs opacity-50 italic text-center">Use * for multiplication.</p>
+          <div
+            id="answerPreviewCard"
+            class="hidden rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left dark:border-slate-700 dark:bg-slate-900/40"
+          >
+            <div class="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+              Live preview
+            </div>
+            <div
+              id="answerPreviewMath"
+              class="mt-2 min-h-[1.5rem] text-base font-medium text-slate-900 dark:text-slate-100"
+            ></div>
+            <p id="answerPreviewNote" class="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400"></p>
+          </div>
         </div>
       </main>
 
@@ -437,6 +450,7 @@
     <script src="content-pdf-practice.js"></script>
     <script src="content-tests.js"></script>
     <script src="content.js"></script>
+    <script src="math-validation.js"></script>
     <script src="engine.js"></script>
 
     <script>
@@ -467,6 +481,9 @@
       const textAnswer = document.getElementById("textAnswer");
       const textAreaAnswer = document.getElementById("textAreaAnswer");
       const inputHint = document.getElementById("inputHint");
+      const answerPreviewCard = document.getElementById("answerPreviewCard");
+      const answerPreviewMath = document.getElementById("answerPreviewMath");
+      const answerPreviewNote = document.getElementById("answerPreviewNote");
       const visualCard = document.getElementById("visualCard");
       const progressFill = document.getElementById("progressFill");
       const livesEl = document.getElementById("lives");
@@ -508,6 +525,96 @@
 
       function formatMathText(value) {
         return escapeHtml(value).replace(/\n/g, "<br>");
+      }
+
+      function normalizeMathFragment(value) {
+        return String(value || "")
+          .replace(/->/g, "\\to ")
+          .replace(/<=/g, "\\le ")
+          .replace(/>=/g, "\\ge ");
+      }
+
+      function autoWrapMathText(value) {
+        const raw = String(value ?? "");
+        if (!raw) return "";
+
+        const protectedSegments = [];
+        let working = raw.replace(/\\\([\s\S]*?\\\)|\\\[[\s\S]*?\\\]|\$\$[\s\S]*?\$\$|\$[^$\n]+\$/g, (match) => {
+          const token = `@@MATH${protectedSegments.length}@@`;
+          protectedSegments.push(match);
+          return token;
+        });
+
+        const wrap = (pattern) => {
+          working = working.replace(pattern, (match) => {
+            if (!match || match.includes("@@MATH")) return match;
+            const trimmed = match.trim();
+            if (!trimmed) return match;
+            return `\\(${normalizeMathFragment(trimmed)}\\)`;
+          });
+        };
+
+        wrap(/((?:[A-Za-z]+\([^()\n]*\)|\([^()\n]*\)|\b(?:pi|e|x|y|z|t|u|v|w)\b|-?\d+(?:\.\d+)?)(?:\s*(?:\^|[*/+\-]|<=|>=|=|<|>|->)\s*(?:[A-Za-z]+\([^()\n]*\)|\([^()\n]*\)|\b(?:pi|e|x|y|z|t|u|v|w)\b|-?\d+(?:\.\d+)?))+)/g);
+        wrap(/(\b[a-zA-Z]+\([^()\n]*\))/g);
+        wrap(/(\([^()\n]*\)\s*\^\s*-?\d+(?:\.\d+)?)/g);
+        wrap(/(\b-?\d+(?:\.\d+)?[A-Za-z](?:\^\d+)?\b)/g);
+
+        return working.replace(/@@MATH(\d+)@@/g, (_, index) => protectedSegments[Number(index)] || "");
+      }
+
+      function formatFeedbackMathText(value) {
+        return escapeHtml(autoWrapMathText(value)).replace(/\n/g, "<br>");
+      }
+
+      function formatStoredAnswer(value, itemType) {
+        const raw = String(value ?? "").trim();
+        if (!raw) return "";
+        if (itemType === "numeric" || itemType === "expression") {
+          return `\\(${raw}\\)`;
+        }
+        return raw;
+      }
+
+      function clearInputPreview() {
+        if (!answerPreviewCard || !answerPreviewMath || !answerPreviewNote) return;
+        answerPreviewCard.classList.add("hidden");
+        answerPreviewMath.innerHTML = "";
+        answerPreviewNote.textContent = "";
+        answerPreviewNote.className = "mt-2 text-xs font-medium text-slate-500 dark:text-slate-400";
+      }
+
+      function renderInputPreview(item, value, forceMessage) {
+        if (!answerPreviewCard || !answerPreviewMath || !answerPreviewNote) return;
+        if (!item || item.type === "free-response" || item.type === "mcq") {
+          clearInputPreview();
+          return;
+        }
+
+        const raw = String(value ?? "").trim();
+        if (!raw) {
+          clearInputPreview();
+          return;
+        }
+
+        const preview = window.FCMathValidation?.buildPreview
+          ? window.FCMathValidation.buildPreview(raw, { allowVariable: item.type !== "numeric" })
+          : { empty: false, valid: true, latex: "", normalized: raw, warning: "" };
+
+        answerPreviewCard.classList.remove("hidden");
+        answerPreviewMath.innerHTML = preview.valid && preview.latex ? `\\(${preview.latex}\\)` : formatMathText(raw);
+        answerPreviewNote.textContent = forceMessage || preview.warning || "";
+        answerPreviewNote.className = "mt-2 text-xs font-medium";
+        if (preview.valid) {
+          answerPreviewNote.classList.add("text-slate-500", "dark:text-slate-400");
+        } else {
+          answerPreviewNote.classList.add("text-rose-500");
+        }
+        typesetMath([answerPreviewMath]);
+      }
+
+      function setInlineValidationMessage(message) {
+        if (!currentItem || currentItem.type === "mcq" || currentItem.type === "free-response") return;
+        renderInputPreview(currentItem, currentResponse, message || "Invalid format.");
       }
 
       function readReportQueue() {
@@ -719,6 +826,7 @@
         sheet.classList.add("sheetHidden");
         sheetCorrect.classList.add("hidden");
         sheetWrong.classList.add("hidden");
+        clearInputPreview();
       }
 
       function renderChoices(item) {
@@ -760,7 +868,10 @@
         textAnswer.classList.add("hidden");
         textAnswer.value = "";
         textAreaAnswer.value = "";
+        textAnswer.inputMode = item.type === "numeric" ? "decimal" : "text";
+        textAnswer.placeholder = item.type === "numeric" ? "Enter a value" : "Type your answer";
         currentResponse = "";
+        clearInputPreview();
 
         if (item.type === "free-response") {
           textAreaAnswer.classList.remove("hidden");
@@ -771,10 +882,14 @@
           };
         } else {
           textAnswer.classList.remove("hidden");
-          inputHint.textContent = item.type === "expression" ? "Use * for multiplication." : "Enter a value.";
+          inputHint.textContent =
+            item.type === "expression"
+              ? "Use parentheses when a whole numerator or denominator must stay together."
+              : "Fractions and decimals are both accepted.";
           textAnswer.oninput = () => {
             currentResponse = textAnswer.value;
             checkBtn.disabled = !currentResponse.trim();
+            renderInputPreview(item, currentResponse);
           };
         }
       }
@@ -786,28 +901,42 @@
         currentItem = FCContent.getItem(itemId);
         if (!currentItem) return;
         currentItem = await applyQuestionOverride(currentItem);
-        currentItem = FCEngine.prepareItemForChoiceMode(currentItem);
-        if (!currentItem) {
+        if (currentItem.type === "free-response" || currentItem.grading?.mode === "manual") {
           advanceSession();
           return;
         }
 
         const section = FCContent.getSection(currentItem.sectionId);
         questionTitle.innerHTML = formatMathText(currentItem.prompt || "Question");
-        questionHint.innerHTML = formatMathText(
-          (currentItem.hints && currentItem.hints[0]) || (section ? section.title : "")
-        );
+        if (currentItem.type === "mcq") {
+          questionHint.innerHTML = formatMathText(
+            (currentItem.hints && currentItem.hints[0]) || "Pick the best answer."
+          );
+        } else if (currentItem.type === "expression") {
+          questionHint.innerHTML = formatMathText(
+            (currentItem.hints && currentItem.hints[0]) || "Type an equivalent expression."
+          );
+        } else if (currentItem.type === "numeric") {
+          questionHint.innerHTML = formatMathText(
+            (currentItem.hints && currentItem.hints[0]) || "Type the value."
+          );
+        } else {
+          questionHint.innerHTML = formatMathText((currentItem.hints && currentItem.hints[0]) || (section ? section.title : ""));
+        }
 
         if (visualCard) visualCard.classList.add("hidden");
 
-        choicesContainer.classList.remove("hidden");
-        inputContainer.classList.add("hidden");
-
-        renderChoices(currentItem);
+        if (currentItem.type === "mcq") {
+          choicesContainer.classList.remove("hidden");
+          inputContainer.classList.add("hidden");
+          renderChoices(currentItem);
+        } else {
+          renderInput(currentItem);
+        }
 
         resetState();
         updateProgress();
-        typesetMath([questionTitle, questionHint, choicesContainer]);
+        typesetMath([questionTitle, questionHint, choicesContainer, answerPreviewMath]);
       }
 
       function showSheet(isCorrect) {
@@ -821,8 +950,8 @@
       function formatAnswer(item) {
         const answer = item.answer?.value ?? "";
         if (item.type === "mcq") return answer;
-        if (item.type === "numeric") return String(answer);
-        if (item.type === "expression") return String(answer);
+        if (item.type === "numeric") return formatStoredAnswer(answer, item.type);
+        if (item.type === "expression") return formatStoredAnswer(answer, item.type);
         if (item.type === "free-response") return "Saved for review";
         return String(answer);
       }
@@ -859,7 +988,9 @@
           const responseSnapshot = currentResponse;
           const firstStep = currentItem.solutionSteps?.[0] || "Review the steps and try the next one.";
           const fallbackExplanation = String(currentItem?.wrongResponse || firstStep || "").trim();
-          wrongExplanation.innerHTML = formatMathText(fallbackExplanation || "Generating step-by-step solution...");
+          wrongExplanation.innerHTML = formatFeedbackMathText(
+            fallbackExplanation || "Generating step-by-step solution..."
+          );
           if (window.FCAI?.getStepSolution) {
             window.FCAI
               .getStepSolution({
@@ -869,16 +1000,16 @@
               })
               .then((solution) => {
                 if (!solution?.solution || currentItem?.id !== itemSnapshot?.id) return;
-                wrongExplanation.innerHTML = formatMathText(solution.solution);
+                wrongExplanation.innerHTML = formatFeedbackMathText(solution.solution);
                 typesetMath([wrongAnswer, wrongExplanation]);
               })
               .catch(() => {
                 if (currentItem?.id !== itemSnapshot?.id) return;
-                wrongExplanation.innerHTML = formatMathText(currentItem?.wrongResponse || firstStep);
+                wrongExplanation.innerHTML = formatFeedbackMathText(currentItem?.wrongResponse || firstStep);
                 typesetMath([wrongAnswer, wrongExplanation]);
               });
           } else {
-            wrongExplanation.innerHTML = formatMathText(currentItem?.wrongResponse || firstStep);
+            wrongExplanation.innerHTML = formatFeedbackMathText(currentItem?.wrongResponse || firstStep);
           }
           markWrongAnswer();
           if (window.FC?.loseLife) {
@@ -972,8 +1103,12 @@
       checkBtn.addEventListener("click", () => {
         if (locked) return;
         if (!currentResponse || !String(currentResponse).trim()) return;
-        locked = true;
         const result = FCEngine.gradeItem(currentItem, currentResponse);
+        if (result.invalidFormat) {
+          setInlineValidationMessage(result.message || "Invalid format.");
+          return;
+        }
+        locked = true;
         applyResult(result);
       });
 

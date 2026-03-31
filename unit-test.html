@@ -18,6 +18,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
 
   <!-- MathJax -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [["$", "$"], ["\\(", "\\)"]],
+        displayMath: [["$$", "$$"], ["\\[", "\\]"]],
+        processEscapes: true
+      }
+    };
+  </script>
   <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
   <script>
@@ -129,6 +138,19 @@
           class="hidden w-full rounded-xl bg-white dark:bg-surfaceDark border-2 border-borderLight dark:border-borderDark px-4 py-3 text-base text-gray-900 dark:text-white focus:border-primary focus:ring-0"
         ></textarea>
         <p id="answerHint" class="text-xs opacity-50 italic text-center">Use * for multiplication.</p>
+        <div
+          id="answerPreviewCard"
+          class="hidden rounded-xl border border-borderLight bg-white px-4 py-3 text-left dark:border-borderDark dark:bg-surfaceDark"
+        >
+          <div class="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+            Live preview
+          </div>
+          <div
+            id="answerPreviewMath"
+            class="mt-2 min-h-[1.5rem] text-base font-medium text-slate-900 dark:text-slate-100"
+          ></div>
+          <p id="answerPreviewNote" class="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400"></p>
+        </div>
       </div>
 
       <div id="feedbackText" class="text-sm font-semibold text-center mb-4"></div>
@@ -212,6 +234,7 @@
   <script src="content-items.js"></script>
   <script src="content-tests.js"></script>
   <script src="content.js"></script>
+  <script src="math-validation.js"></script>
   <script src="engine.js"></script>
 
   <script>
@@ -226,6 +249,9 @@
     const answerInput = document.getElementById("answerInput");
     const answerTextArea = document.getElementById("answerTextArea");
     const answerHint = document.getElementById("answerHint");
+    const answerPreviewCard = document.getElementById("answerPreviewCard");
+    const answerPreviewMath = document.getElementById("answerPreviewMath");
+    const answerPreviewNote = document.getElementById("answerPreviewNote");
     const feedbackText = document.getElementById("feedbackText");
     const submitBtn = document.getElementById("submitBtn");
     const testTitle = document.getElementById("testTitle");
@@ -262,6 +288,91 @@
 
     function formatMathText(value) {
       return escapeHtml(value).replace(/\n/g, "<br>");
+    }
+
+    function normalizeMathFragment(value) {
+      return String(value || "")
+        .replace(/->/g, "\\to ")
+        .replace(/<=/g, "\\le ")
+        .replace(/>=/g, "\\ge ");
+    }
+
+    function autoWrapMathText(value) {
+      const raw = String(value ?? "");
+      if (!raw) return "";
+
+      const protectedSegments = [];
+      let working = raw.replace(/\\\([\s\S]*?\\\)|\\\[[\s\S]*?\\\]|\$\$[\s\S]*?\$\$|\$[^$\n]+\$/g, (match) => {
+        const token = `@@MATH${protectedSegments.length}@@`;
+        protectedSegments.push(match);
+        return token;
+      });
+
+      const wrap = (pattern) => {
+        working = working.replace(pattern, (match) => {
+          if (!match || match.includes("@@MATH")) return match;
+          const trimmed = match.trim();
+          if (!trimmed) return match;
+          return `\\(${normalizeMathFragment(trimmed)}\\)`;
+        });
+      };
+
+      wrap(/((?:[A-Za-z]+\([^()\n]*\)|\([^()\n]*\)|\b(?:pi|e|x|y|z|t|u|v|w)\b|-?\d+(?:\.\d+)?)(?:\s*(?:\^|[*/+\-]|<=|>=|=|<|>|->)\s*(?:[A-Za-z]+\([^()\n]*\)|\([^()\n]*\)|\b(?:pi|e|x|y|z|t|u|v|w)\b|-?\d+(?:\.\d+)?))+)/g);
+      wrap(/(\b[a-zA-Z]+\([^()\n]*\))/g);
+      wrap(/(\([^()\n]*\)\s*\^\s*-?\d+(?:\.\d+)?)/g);
+      wrap(/(\b-?\d+(?:\.\d+)?[A-Za-z](?:\^\d+)?\b)/g);
+
+      return working.replace(/@@MATH(\d+)@@/g, (_, index) => protectedSegments[Number(index)] || "");
+    }
+
+    function formatFeedbackMathText(value) {
+      return escapeHtml(autoWrapMathText(value)).replace(/\n/g, "<br>");
+    }
+
+    function formatStoredAnswer(value, itemType) {
+      const raw = String(value ?? "").trim();
+      if (!raw) return "";
+      if (itemType === "numeric" || itemType === "expression") {
+        return `\\(${raw}\\)`;
+      }
+      return raw;
+    }
+
+    function clearInputPreview() {
+      if (!answerPreviewCard || !answerPreviewMath || !answerPreviewNote) return;
+      answerPreviewCard.classList.add("hidden");
+      answerPreviewMath.innerHTML = "";
+      answerPreviewNote.textContent = "";
+      answerPreviewNote.className = "mt-2 text-xs font-medium text-slate-500 dark:text-slate-400";
+    }
+
+    function renderInputPreview(item, value, forceMessage) {
+      if (!answerPreviewCard || !answerPreviewMath || !answerPreviewNote) return;
+      if (!item || item.type === "mcq" || item.type === "free-response") {
+        clearInputPreview();
+        return;
+      }
+
+      const raw = String(value ?? "").trim();
+      if (!raw) {
+        clearInputPreview();
+        return;
+      }
+
+      const preview = window.FCMathValidation?.buildPreview
+        ? window.FCMathValidation.buildPreview(raw, { allowVariable: item.type !== "numeric" })
+        : { empty: false, valid: true, latex: "", normalized: raw, warning: "" };
+
+      answerPreviewCard.classList.remove("hidden");
+      answerPreviewMath.innerHTML = preview.valid && preview.latex ? `\\(${preview.latex}\\)` : formatMathText(raw);
+      answerPreviewNote.textContent = forceMessage || preview.warning || "";
+      answerPreviewNote.className = "mt-2 text-xs font-medium";
+      if (preview.valid) {
+        answerPreviewNote.classList.add("text-slate-500", "dark:text-slate-400");
+      } else {
+        answerPreviewNote.classList.add("text-rose-500");
+      }
+      typesetMath([answerPreviewMath]);
     }
 
     function typesetMath(targets) {
@@ -326,8 +437,8 @@
     function formatAnswer(item) {
       const answer = item.answer?.value ?? "";
       if (item.type === "mcq") return answer;
-      if (item.type === "numeric") return String(answer);
-      if (item.type === "expression") return String(answer);
+      if (item.type === "numeric") return formatStoredAnswer(answer, item.type);
+      if (item.type === "expression") return formatStoredAnswer(answer, item.type);
       if (item.type === "free-response") return "Saved for review";
       return String(answer);
     }
@@ -342,6 +453,7 @@
       answerTextArea.classList.add("hidden");
       choicesContainer.classList.add("hidden");
       inputContainer.classList.remove("hidden");
+      clearInputPreview();
       awaitingAnswer = true;
       submitBtn.textContent = "Submit Answer";
     }
@@ -380,6 +492,11 @@
       choicesContainer.classList.add("hidden");
       answerInput.classList.add("hidden");
       answerTextArea.classList.add("hidden");
+      answerInput.value = "";
+      answerTextArea.value = "";
+      answerInput.inputMode = item.type === "numeric" ? "decimal" : "text";
+      answerInput.placeholder = item.type === "numeric" ? "Enter a value" : "Type your answer";
+      clearInputPreview();
 
       if (item.type === "free-response") {
         answerTextArea.classList.remove("hidden");
@@ -389,9 +506,13 @@
         };
       } else {
         answerInput.classList.remove("hidden");
-        answerHint.textContent = item.type === "expression" ? "Use * for multiplication." : "Enter a value.";
+        answerHint.textContent =
+          item.type === "expression"
+            ? "Use parentheses when a whole numerator or denominator must stay together."
+            : "Fractions and decimals are both accepted.";
         answerInput.oninput = () => {
           currentResponse = answerInput.value;
+          renderInputPreview(item, currentResponse);
         };
       }
     }
@@ -402,8 +523,7 @@
       currentItem = FCContent.getItem(itemId);
       if (!currentItem) return;
       currentItem = await applyQuestionOverride(currentItem);
-      currentItem = FCEngine.prepareItemForChoiceMode(currentItem);
-      if (!currentItem) {
+      if (currentItem.type === "free-response" || currentItem.grading?.mode === "manual") {
         testSession.index += 1;
         if (testSession.index >= testSession.itemIds.length) {
           finishTest();
@@ -418,14 +538,25 @@
       questionText.innerHTML = formatMathText(currentItem.prompt || "Question");
 
       resetInputs();
-      renderChoices(currentItem);
+      if (currentItem.type === "mcq") {
+        renderChoices(currentItem);
+      } else {
+        renderInput(currentItem);
+      }
 
       updateProgress();
       updateHeader();
-      typesetMath([questionText, choicesContainer]);
+      typesetMath([questionText, choicesContainer, answerPreviewMath]);
     }
 
     function recordResult(result) {
+      if (result.invalidFormat) {
+        renderInputPreview(currentItem, currentResponse, result.message || "Invalid format.");
+        feedbackText.textContent = result.message || "Invalid format.";
+        feedbackText.className = "text-sm font-semibold text-center mb-4 text-amber-300";
+        return false;
+      }
+
       const correct = result.correct === true;
       if (result.correct === null) {
         feedbackText.textContent = "Saved for review.";
@@ -444,7 +575,7 @@
         feedbackText.innerHTML = `Incorrect. Correct answer: <span class="underline">${formatMathText(
           formatAnswer(currentItem)
         )}</span><br><span class="block mt-2 text-slate-200">${
-          fallbackHint ? formatMathText(fallbackHint) : "Generating step-by-step solution..."
+          fallbackHint ? formatFeedbackMathText(fallbackHint) : "Generating step-by-step solution..."
         }</span>`;
         feedbackText.classList.add("text-rose-300");
         if (window.FCAI?.getStepSolution) {
@@ -458,7 +589,7 @@
               if (!solution?.solution || currentItem?.id !== itemSnapshot?.id) return;
               feedbackText.innerHTML = `Incorrect. Correct answer: <span class="underline">${formatMathText(
                 formatAnswer(itemSnapshot)
-              )}</span><br><span class="block mt-2 text-slate-200">${formatMathText(solution.solution)}</span>`;
+              )}</span><br><span class="block mt-2 text-slate-200">${formatFeedbackMathText(solution.solution)}</span>`;
               typesetMath([feedbackText]);
             })
             .catch(() => {
@@ -467,7 +598,7 @@
                 formatAnswer(itemSnapshot)
               )}</span>${
                 fallbackHint
-                  ? `<br><span class="block mt-2 text-slate-200">${formatMathText(fallbackHint)}</span>`
+                  ? `<br><span class="block mt-2 text-slate-200">${formatFeedbackMathText(fallbackHint)}</span>`
                   : ""
               }`;
               typesetMath([feedbackText]);
@@ -489,6 +620,7 @@
       testSession.responses.push({ itemId: currentItem.id, response: currentResponse, correct: result.correct });
       if (correct) testSession.correct += 1;
       FCEngine.saveTestSession(testSession);
+      return true;
     }
 
     function finishTest() {
@@ -536,7 +668,8 @@
           return;
         }
         const result = FCEngine.gradeItem(currentItem, currentResponse);
-        recordResult(result);
+        const accepted = recordResult(result);
+        if (accepted === false) return;
         awaitingAnswer = false;
         submitBtn.textContent = "Next Question";
         return;

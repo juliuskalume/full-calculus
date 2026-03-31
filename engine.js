@@ -316,6 +316,9 @@ window.FCEngine = (function () {
   }
 
   function normalizeExpression(expr) {
+    if (window.FCMathValidation?.normalizeExpression) {
+      return window.FCMathValidation.normalizeExpression(expr);
+    }
     return String(expr || "")
       .replace(/\s+/g, "")
       .replace(/(\d)([a-zA-Z])/g, "$1*$2")
@@ -324,34 +327,21 @@ window.FCEngine = (function () {
       .replace(/([a-zA-Z0-9])(\()/g, "$1*$2");
   }
 
-  function evalExpression(expr, scope) {
-    if (!window.math || !expr) return null;
-    try {
-      return window.math.evaluate(expr, scope || {});
-    } catch {
-      return null;
-    }
-  }
-
-  function compareExpression(userExpr, correctExpr, tolerance) {
-    const normUser = normalizeExpression(userExpr);
-    const normCorrect = normalizeExpression(correctExpr);
-    if (!window.math) return normUser === normCorrect;
-
-    const samples = [-3, -2, -1, -0.5, 0.5, 1, 2, 3];
-    let valid = 0;
-    const tol = typeof tolerance === "number" ? tolerance : 1e-4;
-
-    for (const x of samples) {
-      const u = evalExpression(normUser, { x });
-      const c = evalExpression(normCorrect, { x });
-      if (!Number.isFinite(u) || !Number.isFinite(c)) continue;
-      valid += 1;
-      const scale = Math.max(1, Math.abs(c));
-      if (Math.abs(u - c) > tol * scale) return false;
+  function validateMathAnswer(expectedValues, response, options) {
+    const candidates = (Array.isArray(expectedValues) ? expectedValues : [expectedValues]).filter(
+      (entry) => entry !== null && entry !== undefined && String(entry).trim() !== ""
+    );
+    if (!candidates.length) {
+      return { valid: true, correct: false, message: "" };
     }
 
-    return valid > 0;
+    if (window.FCMathValidation?.validateEquivalent) {
+      return window.FCMathValidation.validateEquivalent(candidates, response, options || {});
+    }
+
+    const normalizedResponse = normalizeExpression(response);
+    const correct = candidates.some((entry) => normalizeExpression(entry) === normalizedResponse);
+    return { valid: true, correct, message: "" };
   }
 
   function gradeItem(item, response) {
@@ -370,22 +360,39 @@ window.FCEngine = (function () {
     }
 
     if (item.type === "numeric") {
-      const val = Number(response);
-      const target = Number(answer);
-      const tol = item.answer?.tolerance ?? item.grading?.tolerance ?? 0;
-      const alternatives = (item.answer?.equivalences || [])
-        .map((entry) => Number(entry))
-        .filter((entry) => Number.isFinite(entry));
-      const candidates = [target, ...alternatives].filter((entry) => Number.isFinite(entry));
-      const correct = Number.isFinite(val) && candidates.some((candidate) => Math.abs(val - candidate) <= tol);
-      return { correct, score: correct ? 1 : 0, mode: "numeric" };
+      const tolerance = item.answer?.tolerance ?? item.grading?.tolerance ?? 1e-6;
+      const validation = validateMathAnswer([answer, ...(item.answer?.equivalences || [])], response, {
+        allowVariable: false,
+        tolerance: tolerance,
+      });
+      if (!validation.valid) {
+        return {
+          correct: false,
+          score: 0,
+          mode: "numeric",
+          invalidFormat: true,
+          message: validation.message || "Invalid format.",
+        };
+      }
+      return { correct: validation.correct, score: validation.correct ? 1 : 0, mode: "numeric" };
     }
 
     if (item.type === "expression") {
-      const tol = item.grading?.tolerance ?? item.answer?.tolerance ?? 1e-4;
-      const equivalents = [answer, ...(item.answer?.equivalences || [])].filter(Boolean);
-      const correct = equivalents.some((expr) => compareExpression(response, expr, tol));
-      return { correct, score: correct ? 1 : 0, mode: "expression" };
+      const tolerance = item.grading?.tolerance ?? item.answer?.tolerance ?? 1e-6;
+      const validation = validateMathAnswer([answer, ...(item.answer?.equivalences || [])], response, {
+        allowVariable: true,
+        tolerance: tolerance,
+      });
+      if (!validation.valid) {
+        return {
+          correct: false,
+          score: 0,
+          mode: "expression",
+          invalidFormat: true,
+          message: validation.message || "Invalid format.",
+        };
+      }
+      return { correct: validation.correct, score: validation.correct ? 1 : 0, mode: "expression" };
     }
 
     const candidates = [answer, ...(item.answer?.equivalences || [])].map((v) => normalizeText(v)).filter(Boolean);
