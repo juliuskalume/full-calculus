@@ -8,3 +8,4 @@ functions/.env
 functions/.env.*
 !functions/.env.example
 .DS_Store
+firebase-debug.log
