@@ -13,6 +13,7 @@
     reports: [],
     notifications: [],
     confirmAction: null,
+    activeReportId: "",
   };
 
   const setMsg = (id, text, tone) => {
@@ -340,8 +341,8 @@
       .filter(Boolean)
       .slice(0, maxItems);
 
-  const setOverrideMsg = (reportId, message, tone) => {
-    const node = el("reportsList").querySelector(`.override-msg[data-id="${CSS.escape(reportId)}"]`);
+  const setOverrideMsg = (message, tone) => {
+    const node = el("reportEditorMsg");
     if (!node) return;
     node.textContent = message || "";
     node.classList.remove("text-rose-600", "text-emerald-600", "text-slate-500");
@@ -350,96 +351,98 @@
     else node.classList.add("text-slate-500");
   };
 
-  const fillOverrideEditor = (reportId, report, override) => {
-    const panel = el("reportsList").querySelector(`.report-override[data-id="${CSS.escape(reportId)}"]`);
-    if (!panel) return;
-    panel.querySelector(".ov-item-id").textContent = report.itemId || "-";
-    panel.querySelector(".ov-prompt").value = override?.prompt || report.prompt || "";
-    panel.querySelector(".ov-answer").value = override?.answerValue || report.expectedAnswer || "";
-    panel.querySelector(".ov-alts").value = Array.isArray(override?.alternateAnswers)
+  const closeOverrideEditor = () => {
+    state.activeReportId = "";
+    el("reportEditorCard").classList.add("hidden");
+    el("reportEditorTitle").textContent = "No report selected";
+    el("reportEditorMeta").textContent = "";
+    el("reportEditorItemId").textContent = "";
+    el("reportEditorPrompt").value = "";
+    el("reportEditorAnswer").value = "";
+    el("reportEditorTolerance").value = "";
+    el("reportEditorAlternates").value = "";
+    el("reportEditorWrong").value = "";
+    el("reportEditorSteps").value = "";
+    el("reportEditorChoices").value = "";
+    el("reportEditorActive").checked = true;
+    setOverrideMsg("");
+  };
+
+  const fillOverrideEditor = (report, override) => {
+    el("reportEditorItemId").textContent = report.itemId || "-";
+    el("reportEditorPrompt").value = override?.prompt || report.prompt || "";
+    el("reportEditorAnswer").value = override?.answerValue || report.expectedAnswer || "";
+    el("reportEditorAlternates").value = Array.isArray(override?.alternateAnswers)
       ? override.alternateAnswers.join("\n")
       : "";
-    panel.querySelector(".ov-tolerance").value =
+    el("reportEditorTolerance").value =
       override?.tolerance == null || override?.tolerance === "" ? "" : String(override.tolerance);
-    panel.querySelector(".ov-wrong").value = override?.wrongResponse || "";
-    panel.querySelector(".ov-steps").value = Array.isArray(override?.solutionSteps)
+    el("reportEditorWrong").value = override?.wrongResponse || "";
+    el("reportEditorSteps").value = Array.isArray(override?.solutionSteps)
       ? override.solutionSteps.join("\n")
       : "";
-    panel.querySelector(".ov-choices").value = Array.isArray(override?.choices) ? override.choices.join("\n") : "";
-    panel.querySelector(".ov-active").checked = override?.active !== false;
+    el("reportEditorChoices").value = Array.isArray(override?.choices) ? override.choices.join("\n") : "";
+    el("reportEditorActive").checked = override?.active !== false;
   };
 
   const loadOverrideEditor = async (reportId) => {
     const report = state.reports.find((entry) => String(entry.id) === String(reportId));
     if (!report) return;
     if (!report.itemId) {
-      setOverrideMsg(reportId, "This report does not include a question id.", "error");
+      setOverrideMsg("This report does not include a question id.", "error");
       return;
     }
-    const panel = el("reportsList").querySelector(`.report-override[data-id="${CSS.escape(reportId)}"]`);
-    if (!panel) return;
-    panel.classList.remove("hidden");
-    if (panel.dataset.loaded === "1") return;
-
-    setOverrideMsg(reportId, "Loading question settings...");
-    fillOverrideEditor(reportId, report, null);
+    state.activeReportId = String(reportId);
+    el("reportEditorCard").classList.remove("hidden");
+    el("reportEditorTitle").textContent = `Patch ${report.itemId}`;
+    el("reportEditorMeta").textContent = `${report.issueType || "Issue"} · ${fmt(report.createdAt)} · ${report.page || "-"}`;
+    el("reportEditorCard").scrollIntoView({ behavior: "smooth", block: "start" });
+    setOverrideMsg("Loading question settings...");
+    fillOverrideEditor(report, null);
     try {
       const data = await api("adminGetQuestionOverride", {
         query: { itemId: report.itemId },
       });
-      fillOverrideEditor(reportId, report, data?.found ? data.override : null);
-      panel.dataset.loaded = "1";
-      setOverrideMsg(reportId, "Edit fields and save.", "ok");
+      fillOverrideEditor(report, data?.found ? data.override : null);
+      setOverrideMsg("Edit fields and save.", "ok");
     } catch (err) {
-      setOverrideMsg(reportId, err.message || "Could not load current question override.", "error");
-    }
-  };
-
-  const toggleOverrideEditor = async (reportId) => {
-    const panel = el("reportsList").querySelector(`.report-override[data-id="${CSS.escape(reportId)}"]`);
-    if (!panel) return;
-    if (panel.classList.contains("hidden")) {
-      await loadOverrideEditor(reportId);
-    } else {
-      panel.classList.add("hidden");
+      setOverrideMsg(err.message || "Could not load current question override.", "error");
     }
   };
 
   const saveQuestionOverride = async (reportId) => {
     const report = state.reports.find((entry) => String(entry.id) === String(reportId));
     if (!report || !report.itemId) {
-      setOverrideMsg(reportId, "Missing item id for this report.", "error");
+      setOverrideMsg("Missing item id for this report.", "error");
       return;
     }
-    const panel = el("reportsList").querySelector(`.report-override[data-id="${CSS.escape(reportId)}"]`);
-    if (!panel) return;
 
-    const toleranceRaw = panel.querySelector(".ov-tolerance").value.trim();
+    const toleranceRaw = el("reportEditorTolerance").value.trim();
     const payload = {
       reportId,
       itemId: report.itemId,
-      prompt: panel.querySelector(".ov-prompt").value.trim(),
-      answerValue: panel.querySelector(".ov-answer").value.trim(),
-      alternateAnswers: parseEditorLines(panel.querySelector(".ov-alts").value, 24, 600),
+      prompt: el("reportEditorPrompt").value.trim(),
+      answerValue: el("reportEditorAnswer").value.trim(),
+      alternateAnswers: parseEditorLines(el("reportEditorAlternates").value, 24, 600),
       tolerance: toleranceRaw || null,
-      wrongResponse: panel.querySelector(".ov-wrong").value.trim(),
-      solutionSteps: parseEditorLines(panel.querySelector(".ov-steps").value, 12, 800),
-      choices: parseEditorLines(panel.querySelector(".ov-choices").value, 8, 400),
-      active: !!panel.querySelector(".ov-active").checked,
+      wrongResponse: el("reportEditorWrong").value.trim(),
+      solutionSteps: parseEditorLines(el("reportEditorSteps").value, 12, 800),
+      choices: parseEditorLines(el("reportEditorChoices").value, 8, 400),
+      active: !!el("reportEditorActive").checked,
     };
 
-    const saveBtn = panel.querySelector(".report-override-save");
+    const saveBtn = el("reportEditorSave");
     if (saveBtn) saveBtn.disabled = true;
-    setOverrideMsg(reportId, "Saving question override...");
+    setOverrideMsg("Saving question override...");
     try {
       await api("adminUpsertQuestionOverride", {
         method: "POST",
         body: payload,
       });
-      setOverrideMsg(reportId, "Question override saved.", "ok");
+      setOverrideMsg("Question override saved.", "ok");
       setMsg("reportsMsg", `Question update saved for ${report.itemId}.`, "ok");
     } catch (err) {
-      setOverrideMsg(reportId, err.message || "Could not save question override.", "error");
+      setOverrideMsg(err.message || "Could not save question override.", "error");
     } finally {
       if (saveBtn) saveBtn.disabled = false;
     }
@@ -481,55 +484,17 @@
               <button class="report-action px-2.5 py-1.5 rounded-xl bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold" data-id="${escapeHtml(
                 r.id || ""
               )}" data-status="closed">Closed</button>
-              <button class="report-edit px-2.5 py-1.5 rounded-xl border border-violet-200 bg-violet-50 hover:bg-violet-100 text-violet-700 text-xs font-semibold ${
+              <button class="report-open-editor px-2.5 py-1.5 rounded-xl border border-violet-200 bg-violet-50 hover:bg-violet-100 text-violet-700 text-xs font-semibold ${
                 hasItem ? "" : "opacity-60 cursor-not-allowed"
-              }" data-id="${escapeHtml(r.id || "")}" ${hasItem ? "" : "disabled"}>Edit question</button>
-            </div>
-            <div class="report-override hidden mt-3 rounded-xl border border-violet-200 bg-violet-50/60 p-3 space-y-2" data-id="${escapeHtml(
-              r.id || ""
-            )}" data-loaded="0">
-              <p class="text-xs font-semibold text-violet-700">Question ID: <span class="ov-item-id"></span></p>
-              <label class="block text-xs font-semibold text-slate-700">Prompt
-                <textarea class="ov-prompt mt-1 w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm" rows="2"></textarea>
-              </label>
-              <div class="grid md:grid-cols-2 gap-2">
-                <label class="block text-xs font-semibold text-slate-700">Correct answer
-                  <input class="ov-answer mt-1 w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm" type="text" />
-                </label>
-                <label class="block text-xs font-semibold text-slate-700">Tolerance (optional)
-                  <input class="ov-tolerance mt-1 w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm" type="number" min="0" step="0.0001" />
-                </label>
-              </div>
-              <label class="block text-xs font-semibold text-slate-700">Alternate answers (one per line)
-                <textarea class="ov-alts mt-1 w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm" rows="2"></textarea>
-              </label>
-              <label class="block text-xs font-semibold text-slate-700">Wrong answer response
-                <textarea class="ov-wrong mt-1 w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm" rows="2"></textarea>
-              </label>
-              <label class="block text-xs font-semibold text-slate-700">Solution steps (one per line)
-                <textarea class="ov-steps mt-1 w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm" rows="3"></textarea>
-              </label>
-              <label class="block text-xs font-semibold text-slate-700">MCQ choices (one per line)
-                <textarea class="ov-choices mt-1 w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm" rows="2"></textarea>
-              </label>
-              <label class="inline-flex items-center gap-2 text-xs font-semibold text-slate-700">
-                <input class="ov-active" type="checkbox" checked />
-                Override active
-              </label>
-              <div class="flex flex-wrap gap-2">
-                <button class="report-override-save px-3 py-1.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold" data-id="${escapeHtml(
-                  r.id || ""
-                )}">Save question update</button>
-                <button class="report-edit px-3 py-1.5 rounded-xl border border-slate-300 bg-white text-xs font-semibold" data-id="${escapeHtml(
-                  r.id || ""
-                )}">Close</button>
-              </div>
-              <p class="override-msg text-xs font-semibold text-slate-500 min-h-[1rem]" data-id="${escapeHtml(r.id || "")}"></p>
+              }" data-id="${escapeHtml(r.id || "")}" ${hasItem ? "" : "disabled"}>${hasItem ? "Edit question" : "No question id"}</button>
             </div>
           </article>
         `;
       })
       .join("");
+    if (state.activeReportId && !state.reports.some((entry) => String(entry.id) === String(state.activeReportId))) {
+      closeOverrideEditor();
+    }
   };
 
   const loadReports = async () => {
@@ -753,20 +718,23 @@
         "handledBy",
       ]);
     });
+    el("reportEditorClose").addEventListener("click", closeOverrideEditor);
+    el("reportEditorReload").addEventListener("click", () => {
+      if (state.activeReportId) loadOverrideEditor(state.activeReportId);
+    });
+    el("reportEditorSave").addEventListener("click", () => {
+      if (state.activeReportId) saveQuestionOverride(state.activeReportId);
+    });
     el("reportsList").addEventListener("click", (evt) => {
       const statusBtn = evt.target.closest(".report-action");
       if (statusBtn) {
         updateReport(statusBtn.dataset.id, statusBtn.dataset.status);
         return;
       }
-      const editBtn = evt.target.closest(".report-edit");
+      const editBtn = evt.target.closest(".report-open-editor");
       if (editBtn) {
-        toggleOverrideEditor(editBtn.dataset.id);
+        loadOverrideEditor(editBtn.dataset.id);
         return;
-      }
-      const saveBtn = evt.target.closest(".report-override-save");
-      if (saveBtn) {
-        saveQuestionOverride(saveBtn.dataset.id);
       }
     });
 
