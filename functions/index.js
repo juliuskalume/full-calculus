@@ -1028,6 +1028,37 @@ const fetchPublicProfilesByUid = async (uids) => {
   return map;
 };
 
+const fetchUserDocsByUid = async (uids) => {
+  const db = admin.firestore();
+  const map = new Map();
+  const idField = admin.firestore.FieldPath.documentId();
+  for (const group of chunk(uids, 10)) {
+    if (!group.length) continue;
+    const snap = await db
+      .collection("users")
+      .where(idField, "in", group)
+      .get();
+    snap.forEach((doc) => {
+      map.set(doc.id, doc.data() || {});
+    });
+  }
+  return map;
+};
+
+const toMillis = (value) => {
+  if (!value) return 0;
+  if (typeof value?.toMillis === "function") return value.toMillis();
+  if (value instanceof Date) return value.getTime();
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "object") {
+    const seconds = Number(value._seconds ?? value.seconds);
+    const nanos = Number(value._nanoseconds ?? value.nanoseconds ?? 0);
+    if (Number.isFinite(seconds)) return seconds * 1000 + Math.floor(nanos / 1e6);
+  }
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
 const listTokensByTarget = async (targetType, targetUid) => {
   const db = admin.firestore();
   const webRef =
@@ -1411,9 +1442,41 @@ exports.adminListProblemReports = functions.https.onRequest(async (req, res) => 
       query = query.where("status", "==", status);
     }
     const snap = await query.limit(250).get();
-    const items = snap.docs
+    const baseItems = snap.docs
       .map((doc) => ({ id: doc.id, ...doc.data() }))
-      .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+      .sort((a, b) => toMillis(b.createdAt || b.clientCreatedAt) - toMillis(a.createdAt || a.clientCreatedAt));
+    const uids = Array.from(
+      new Set(
+        baseItems
+          .map((item) => trimText(item.uid, 128))
+          .filter(Boolean)
+      )
+    );
+    const [userDocs, publicProfiles] = await Promise.all([
+      fetchUserDocsByUid(uids),
+      fetchPublicProfilesByUid(uids),
+    ]);
+    const items = baseItems.map((item) => {
+      const uid = trimText(item.uid, 128);
+      const userData = uid ? userDocs.get(uid) || {} : {};
+      const publicData = uid ? publicProfiles.get(uid) || {} : {};
+      return {
+        ...item,
+        email: trimText(item.email, 320) || trimText(userData.email, 320),
+        username:
+          trimText(item.username, 120) ||
+          trimText(item.reporterUsername, 120) ||
+          trimText(userData.username, 120) ||
+          trimText(publicData.username, 120) ||
+          trimText(userData.displayName, 120) ||
+          trimText(publicData.displayName, 120),
+        fullName:
+          trimText(item.fullName, 160) ||
+          trimText(item.reporterName, 160) ||
+          trimText(userData.fullName, 160) ||
+          trimText(publicData.fullName, 160),
+      };
+    });
     res.status(200).json({ ok: true, items });
   } catch (err) {
     console.error("adminListProblemReports error", err);

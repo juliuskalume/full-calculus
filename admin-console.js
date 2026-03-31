@@ -31,10 +31,31 @@
       .replaceAll("<", "&lt;")
       .replaceAll(">", "&gt;");
 
+  const parseDateValue = (value) => {
+    if (!value) return Number.NaN;
+    if (value instanceof Date) return value.getTime();
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+    if (typeof value === "object") {
+      const seconds = Number(value._seconds ?? value.seconds);
+      const nanos = Number(value._nanoseconds ?? value.nanoseconds ?? 0);
+      if (Number.isFinite(seconds)) return seconds * 1000 + Math.floor(nanos / 1e6);
+    }
+    const dt = new Date(value);
+    return dt.getTime();
+  };
+
   const fmt = (value) => {
     if (!value) return "-";
-    const dt = new Date(value);
-    return Number.isNaN(dt.getTime()) ? String(value) : dt.toLocaleString();
+    const ms = parseDateValue(value);
+    return Number.isNaN(ms) ? String(value) : new Date(ms).toLocaleString();
+  };
+
+  const formatMathText = (value) => escapeHtml(value).replace(/\n/g, "<br>");
+
+  const typesetMath = (targets) => {
+    if (window.MathJax?.typesetPromise) {
+      window.MathJax.typesetPromise(targets || undefined).catch(() => {});
+    }
   };
 
   const getToken = async () => {
@@ -458,15 +479,20 @@
             <p class="font-bold">${escapeHtml(r.issueType || "Issue")} <span class="text-xs text-slate-500">(${escapeHtml(
           r.status || "pending"
         )})</span></p>
-            <p class="text-xs text-slate-500">UID: ${escapeHtml(r.uid || "-")} | ${escapeHtml(fmt(
-          r.createdAt
-        ))} | ${escapeHtml(r.page || "-")}</p>
-            <p class="text-sm mt-1 whitespace-pre-wrap">${escapeHtml(r.message || "-")}</p>
+            <div class="mt-2 grid gap-1 text-xs text-slate-500 md:grid-cols-2">
+              <p><span class="font-semibold text-slate-600">Reported:</span> ${escapeHtml(fmt(r.createdAt || r.clientCreatedAt))}</p>
+              <p><span class="font-semibold text-slate-600">Page:</span> ${escapeHtml(r.page || "-")}</p>
+              <p><span class="font-semibold text-slate-600">UID:</span> ${escapeHtml(r.uid || "-")}</p>
+              <p><span class="font-semibold text-slate-600">Email:</span> ${escapeHtml(r.email || "-")}</p>
+              <p><span class="font-semibold text-slate-600">Username:</span> ${escapeHtml(r.username || "-")}</p>
+              <p><span class="font-semibold text-slate-600">Name:</span> ${escapeHtml(r.fullName || "-")}</p>
+            </div>
+            <p class="text-sm mt-2 whitespace-pre-wrap">${formatMathText(r.message || "-")}</p>
             <div class="mt-2 rounded-xl border border-slate-200 bg-slate-50 p-2 text-xs text-slate-600 space-y-1">
               <p><span class="font-semibold">Question ID:</span> ${escapeHtml(r.itemId || "-")}</p>
-              <p><span class="font-semibold">Prompt:</span> ${escapeHtml(r.prompt || "-")}</p>
-              <p><span class="font-semibold">Expected:</span> ${escapeHtml(r.expectedAnswer || "-")}</p>
-              <p><span class="font-semibold">Student answer:</span> ${escapeHtml(r.userResponse || "-")}</p>
+              <p><span class="font-semibold">Prompt:</span> ${formatMathText(r.prompt || "-")}</p>
+              <p><span class="font-semibold">Expected:</span> ${formatMathText(r.expectedAnswer || "-")}</p>
+              <p><span class="font-semibold">Student answer:</span> ${formatMathText(r.userResponse || "-")}</p>
             </div>
             <textarea class="report-note mt-2 w-full rounded-xl border border-slate-300 bg-white px-2 py-1.5 text-sm" data-id="${escapeHtml(
               r.id || ""
@@ -495,6 +521,7 @@
     if (state.activeReportId && !state.reports.some((entry) => String(entry.id) === String(state.activeReportId))) {
       closeOverrideEditor();
     }
+    typesetMath([el("reportsList")]);
   };
 
   const loadReports = async () => {

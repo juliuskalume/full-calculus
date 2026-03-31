@@ -28,6 +28,15 @@
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     
     <!-- MathJax -->
+    <script>
+      window.MathJax = {
+        tex: {
+          inlineMath: [["$", "$"], ["\\(", "\\)"]],
+          displayMath: [["$$", "$$"], ["\\[", "\\]"]],
+          processEscapes: true,
+        },
+      };
+    </script>
     <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <!-- Blue Theme -->
@@ -562,11 +571,14 @@
         const access = getReportAccessState();
         if (!access.allowed) return null;
         const user = window.FCAuth.getCurrentUser();
+        const localOnboarding = window.FCAuth?.exportLocalState?.()?.onboarding || {};
         const answer = currentItem?.answer?.value;
         const answerText = answer == null ? "" : String(answer);
         return {
           uid: user.uid,
           email: user.email || "",
+          username: String(localOnboarding.username || user.displayName || "").trim(),
+          fullName: String(localOnboarding.fullName || "").trim(),
           issueType: String(reportType?.value || "other"),
           message: String(reportDetails?.value || "").trim(),
           page: "active-lesson",
