@@ -18,6 +18,7 @@ const DEFAULT_TIMEZONE = "Etc/UTC";
 const DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile";
 const AI_SOLUTIONS_COLLECTION = "ai_step_solutions";
 const QUESTION_OVERRIDES_COLLECTION = "question_overrides";
+const PARAMS_MIGRATION_REV = "2026-04-02-runtime-refresh";
 
 const getRuntimeConfig = () => {
   const publicKey = String(WEBPUSH_PUBLIC_KEY.value() || process.env.WEBPUSH_PUBLIC_KEY || "").trim();
@@ -319,7 +320,7 @@ const requestGroqSolution = async ({ prompt, correctAnswer, userAnswer, runtimeC
 
 exports.sendLearningReminder = functions.pubsub
   .schedule("0 18 * * 2,5")
-  .timeZone(getRuntimeConfig().timeZone)
+  .timeZone(process.env.WEBPUSH_TIMEZONE || DEFAULT_TIMEZONE)
   .onRun(async () => {
     const runtimeConfig = getRuntimeConfig();
     const payload = {
@@ -437,7 +438,7 @@ exports.sendTestPush = functions.https.onRequest(async (req, res) => {
 
 exports.rotateLeaguesWeekly = functions.pubsub
   .schedule("5 0 * * 1")
-  .timeZone(getRuntimeConfig().timeZone)
+  .timeZone(process.env.WEBPUSH_TIMEZONE || DEFAULT_TIMEZONE)
   .onRun(async () => {
     const db = admin.firestore();
     const metaRef = db.collection("leaderboard_meta").doc("rotation");
