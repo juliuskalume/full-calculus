@@ -64,20 +64,32 @@
     return lines.join("\n").trim();
   };
 
+  const normalizeEscapedMathText = (value) => {
+    let text = String(value || "");
+    if (!text) return "";
+    text = text.replace(/\\n/g, "\n");
+    for (let i = 0; i < 4; i += 1) {
+      const next = text.replace(/\\\\(?=[()[\]A-Za-z])/g, "\\");
+      if (next === text) break;
+      text = next;
+    }
+    return text.trim();
+  };
+
   const normalizeSolution = (payload) => {
-    const rawSolution = String(payload?.solution || "").trim();
+    const rawSolution = normalizeEscapedMathText(payload?.solution || "");
     const parsedFromSolution = parseMaybeJson(rawSolution);
     const looksJsonLike = /^[\s`]*\{/.test(rawSolution);
     const parsedText = buildTextFromObject(parsedFromSolution);
     const solution = parsedText || (looksJsonLike ? "" : rawSolution);
-    const finalAnswer = String(payload?.finalAnswer || "").trim();
-    const tip = String(payload?.tip || "").trim();
+    const finalAnswer = normalizeEscapedMathText(payload?.finalAnswer || "");
+    const tip = normalizeEscapedMathText(payload?.tip || "");
     const sourceSteps = Array.isArray(payload?.steps)
       ? payload.steps
       : Array.isArray(parsedFromSolution?.steps)
       ? parsedFromSolution.steps
       : [];
-    const steps = sourceSteps.map((step) => String(step || "").trim()).filter(Boolean).slice(0, 10);
+    const steps = sourceSteps.map((step) => normalizeEscapedMathText(step || "")).filter(Boolean).slice(0, 10);
 
     const text = solution || [
       ...steps.map((step, idx) => `${idx + 1}) ${step}`),

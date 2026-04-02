@@ -96,7 +96,7 @@
         </div>
 
         <!-- Hearts -->
-        <div class="flex items-center gap-1 px-2 py-1 rounded-lg bg-red-500/10 border border-red-500/20">
+        <div class="hidden items-center gap-1 px-2 py-1 rounded-lg bg-red-500/10 border border-red-500/20" aria-hidden="true">
           <span class="material-symbols-outlined text-red-500 text-sm">favorite</span>
           <span id="hearts" class="text-red-500 font-bold text-sm">0</span>
         </div>
@@ -265,18 +265,6 @@
     let awaitingAnswer = true;
     let mathTypesetTries = 0;
 
-    if (window.FC?.get) {
-      const meta = FC.get();
-      if ((meta.lives ?? 0) <= 0) {
-        try {
-          localStorage.setItem("fc_show_hearts_modal", "1");
-        } catch {
-          // ignore
-        }
-        window.location.href = "path.html";
-      }
-    }
-
     function escapeHtml(value) {
       return String(value ?? "")
         .replace(/&/g, "&amp;")
@@ -297,8 +285,31 @@
         .replace(/>=/g, "\\ge ");
     }
 
+    function normalizeEscapedMathText(value) {
+      let text = String(value ?? "");
+      if (!text) return "";
+      text = text.replace(/\\n/g, "\n");
+      for (let i = 0; i < 4; i += 1) {
+        const next = text.replace(/\\\\(?=[()[\]A-Za-z])/g, "\\");
+        if (next === text) break;
+        text = next;
+      }
+      return text;
+    }
+
+    function stripMathDelimiters(value) {
+      return normalizeEscapedMathText(value)
+        .replace(/\\\(([\s\S]*?)\\\)/g, "$1")
+        .replace(/\\\[([\s\S]*?)\\\]/g, "$1")
+        .replace(/\$\$([\s\S]*?)\$\$/g, "$1")
+        .replace(/\$([^$\n]+)\$/g, "$1")
+        .replace(/\\to\b/g, "→")
+        .replace(/\\le\b/g, "≤")
+        .replace(/\\ge\b/g, "≥");
+    }
+
     function autoWrapMathText(value) {
-      const raw = String(value ?? "");
+      const raw = normalizeEscapedMathText(value);
       if (!raw) return "";
 
       const protectedSegments = [];
@@ -377,12 +388,22 @@
 
     function typesetMath(targets) {
       if (window.MathJax?.typesetPromise) {
-        window.MathJax.typesetPromise(targets || undefined).catch(() => {});
+        window.MathJax.typesetPromise(targets || undefined).catch(() => {
+          (targets || []).forEach((target) => {
+            if (!target) return;
+            target.innerHTML = stripMathDelimiters(target.innerHTML);
+          });
+        });
         return;
       }
       if (mathTypesetTries < 10) {
         mathTypesetTries += 1;
         setTimeout(() => typesetMath(targets), 200);
+      } else {
+        (targets || []).forEach((target) => {
+          if (!target) return;
+          target.innerHTML = stripMathDelimiters(target.innerHTML);
+        });
       }
     }
 
@@ -487,6 +508,25 @@
       });
     }
 
+    function renderChoiceReference(item) {
+      choicesContainer.innerHTML = "";
+      choicesContainer.classList.remove("hidden");
+      const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      item.choices.forEach((choice, idx) => {
+        const letter = letters[idx] || String(idx + 1);
+        const card = document.createElement("div");
+        card.className =
+          "w-full p-4 rounded-xl bg-white dark:bg-surfaceDark border-2 border-borderLight dark:border-borderDark flex items-center";
+        card.innerHTML = `
+          <div class="flex items-center justify-center size-9 rounded-lg border-2 border-borderLight dark:border-borderDark text-gray-500 mr-4">
+            <span class="text-sm font-bold">${letter}</span>
+          </div>
+          <span class="text-lg font-medium">${formatMathText(choice)}</span>
+        `;
+        choicesContainer.appendChild(card);
+      });
+    }
+
     function renderInput(item) {
       inputContainer.classList.remove("hidden");
       choicesContainer.classList.add("hidden");
@@ -505,14 +545,21 @@
           currentResponse = answerTextArea.value;
         };
       } else {
+        if (item.type === "mcq" && Array.isArray(item.choices) && item.choices.length) {
+          renderChoiceReference(item);
+          answerHint.textContent = "Type the option letter or the full answer.";
+        } else {
+          answerHint.textContent =
+            item.type === "expression"
+              ? "Use parentheses when a whole numerator or denominator must stay together."
+              : "Fractions and decimals are both accepted.";
+        }
         answerInput.classList.remove("hidden");
-        answerHint.textContent =
-          item.type === "expression"
-            ? "Use parentheses when a whole numerator or denominator must stay together."
-            : "Fractions and decimals are both accepted.";
         answerInput.oninput = () => {
           currentResponse = answerInput.value;
-          renderInputPreview(item, currentResponse);
+          if (item.type === "numeric" || item.type === "expression") {
+            renderInputPreview(item, currentResponse);
+          }
         };
       }
     }
@@ -538,11 +585,7 @@
       questionText.innerHTML = formatMathText(currentItem.prompt || "Question");
 
       resetInputs();
-      if (currentItem.type === "mcq") {
-        renderChoices(currentItem);
-      } else {
-        renderInput(currentItem);
-      }
+      renderInput(currentItem);
 
       updateProgress();
       updateHeader();
@@ -603,14 +646,6 @@
               }`;
               typesetMath([feedbackText]);
             });
-        }
-        if (window.FC?.loseLife) {
-          const beforeLives = FC.get()?.lives ?? 0;
-          FC.loseLife();
-          const afterLives = FC.get()?.lives ?? 0;
-          if (afterLives === 0 && beforeLives > 0 && window.FCSound?.play) {
-            FCSound.play("lives", { volume: 0.5 });
-          }
         }
       }
       typesetMath([feedbackText]);

@@ -1,5 +1,6 @@
 const HEART_MAX = 5;
 const HEART_REFILL_MIN = 5;
+const HEARTS_ENABLED = false;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const META_SYNC_PENDING_KEY = "fc_meta_sync_pending";
 
@@ -100,11 +101,10 @@ window.FC = {
 
   loseLife() {
     const s = this.get();
-    if (s.lives > 0) {
-      s.lives = Math.max(0, s.lives - 1);
-      if (s.lives < HEART_MAX) s.lastHeartTime = Date.now();
-      this.set(s);
-    }
+    s.lives = HEART_MAX;
+    s.lastHeartTime = Date.now();
+    this.set(s);
+    return s;
   },
 
   refillLives() {
@@ -116,15 +116,10 @@ window.FC = {
   },
 
   _refillHearts(s) {
-    if (s.lives >= HEART_MAX) return s;
-    const now = Date.now();
-    const elapsedMin = Math.floor((now - s.lastHeartTime) / 60000);
-    const heartsToAdd = Math.floor(elapsedMin / HEART_REFILL_MIN);
-    if (heartsToAdd <= 0) return s;
-
-    s.lives = Math.min(HEART_MAX, s.lives + heartsToAdd);
-    s.lastHeartTime += heartsToAdd * HEART_REFILL_MIN * 60000;
-    if (s.lives >= HEART_MAX) s.lastHeartTime = now;
+    if (!HEARTS_ENABLED || s.lives !== HEART_MAX) {
+      s.lives = HEART_MAX;
+      s.lastHeartTime = Date.now();
+    }
     return s;
   },
 

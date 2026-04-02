@@ -23,6 +23,7 @@
 
 - `numeric` items validate with `allowVariable: false`
 - `expression` items validate with `allowVariable: true`
+- `mcq` items accept typed full-answer text and the option letter/number
 - 3-5 sample points are used and singularities are skipped safely
 - if too few valid samples remain, the candidate is treated as not equivalent
 
@@ -37,4 +38,5 @@
 
 ```bash
 node tests/math-validation.test.js
+node tests/engine-grade.test.js
 ```

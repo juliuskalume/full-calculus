@@ -109,7 +109,7 @@
           <span class="text-yellow-500 font-bold text-lg" id="xpVal">450</span>
         </div>
 
-        <div class="flex items-center gap-1.5">
+        <div class="hidden items-center gap-1.5" aria-hidden="true">
           <span class="material-symbols-outlined text-red-500 fill-1 text-[24px]" style="font-variation-settings: 'FILL' 1"
             >favorite</span
           >
@@ -370,79 +370,12 @@
           document.getElementById("xpVal").textContent = String(meta.xp);
           document.getElementById("livesVal").textContent = String(meta.lives);
         })();
-        const updateLivesUI = () => {
-          const meta = FC.get();
-          const livesEl = document.getElementById("livesVal");
-          if (livesEl) livesEl.textContent = String(meta.lives ?? 0);
-        };
+        try {
+          localStorage.removeItem("fc_show_hearts_modal");
+        } catch {
+          // ignore
+        }
 
-        const heartsOverlay = document.getElementById("heartsOverlay");
-        const heartsStatus = document.getElementById("heartsStatus");
-        const buyHeartsBtn = document.getElementById("buyHeartsBtn");
-        const closeHeartsBtn = document.getElementById("closeHeartsBtn");
-        const HEART_XP_COST = 500;
-        let pendingStart = null;
-
-        const showHeartsOverlay = (startData) => {
-          pendingStart = startData || null;
-          if (!heartsOverlay) return;
-          heartsOverlay.classList.remove("hidden");
-          document.body.classList.add("overflow-hidden");
-          if (heartsStatus) {
-            heartsStatus.textContent = "Hearts refill automatically every 5 minutes.";
-          }
-          updateBuyHeartsButton();
-        };
-
-        const hideHeartsOverlay = () => {
-          heartsOverlay?.classList.add("hidden");
-          document.body.classList.remove("overflow-hidden");
-        };
-
-        const updateBuyHeartsButton = () => {
-          if (!buyHeartsBtn) return;
-          const xp = Number(FC.get().xp || 0);
-          const canBuy = xp >= HEART_XP_COST;
-          buyHeartsBtn.disabled = !canBuy;
-          buyHeartsBtn.classList.toggle("opacity-50", !canBuy);
-          buyHeartsBtn.classList.toggle("cursor-not-allowed", !canBuy);
-        };
-
-        buyHeartsBtn?.addEventListener("click", () => {
-          const meta = FC.get();
-          const xp = Number(meta.xp || 0);
-          if (xp < HEART_XP_COST) {
-            if (heartsStatus) heartsStatus.textContent = "You need 500 XP to refill your hearts.";
-            updateBuyHeartsButton();
-            return;
-          }
-          if (window.FC?.addXP) {
-            FC.addXP(-HEART_XP_COST);
-          } else {
-            meta.xp = Math.max(0, xp - HEART_XP_COST);
-            FC.set(meta);
-          }
-          if (window.FC?.refillLives) {
-            FC.refillLives();
-          } else {
-            meta.lives = 5;
-            meta.lastHeartTime = Date.now();
-            FC.set(meta);
-          }
-          updateLivesUI();
-          const xpEl = document.getElementById("xpVal");
-          if (xpEl) xpEl.textContent = String(FC.get().xp ?? 0);
-          if (window.FCAuth?.syncToRemote) {
-            window.FCAuth.syncToRemote().catch(() => {});
-          }
-          hideHeartsOverlay();
-          if (pendingStart && (FC.get().lives ?? 0) > 0) {
-            if (pendingStart.type === "lesson") startLessonFromPending(pendingStart);
-            if (pendingStart.type === "test") startTestFromPending(pendingStart);
-          }
-        });
-
-        closeHeartsBtn?.addEventListener("click", () => hideHeartsOverlay());
 
         const startLessonFromPending = (pending) => {
           if (!pending || pending.type !== "lesson") return false;
@@ -481,17 +414,6 @@
           window.location.href = "unit-test.html";
           return true;
         };
-
-        (function maybeShowHeartsModal() {
-          try {
-            const flag = localStorage.getItem("fc_show_hearts_modal");
-            if (flag !== "1") return;
-            localStorage.removeItem("fc_show_hearts_modal");
-            showHeartsOverlay(null);
-          } catch {
-            // ignore
-          }
-        })();
 
       // ✅ Read onboarding profile info saved by account.html (fc_state)
       (function () {
@@ -835,16 +757,6 @@
                   : scroller.scrollTop;
                 const returnData = { page: "path.html", scrollTop, mode: needsWindowScroll ? "window" : "container" };
 
-                if ((FC.get().lives ?? 0) <= 0) {
-                  showHeartsOverlay({
-                    type: "lesson",
-                    sectionId,
-                    mode: "lesson",
-                    return: returnData,
-                  });
-                  return;
-                }
-
                 setLessonReturn(returnData.page, returnData.scrollTop, returnData.mode);
                 const session = FCEngine.createSession({
                   mode: "lesson",
@@ -870,14 +782,6 @@
                 const allDone =
                   chapterSections.length > 0 && chapterSections.every((s) => FCProgress.isSectionCompleted(s.id));
                 if (!allDone) return;
-
-                if ((FC.get().lives ?? 0) <= 0) {
-                  showHeartsOverlay({
-                    type: "test",
-                    testId,
-                  });
-                  return;
-                }
 
                 const test = FCEngine.createTestSession(testId);
                 if (!test) return;

@@ -146,7 +146,7 @@
           </div>
 
           <div
-            class="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-surface-dark rounded-full border border-slate-200 dark:border-slate-700 shadow-sm">
+            class="hidden items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-surface-dark rounded-full border border-slate-200 dark:border-slate-700 shadow-sm" aria-hidden="true">
             <span class="material-symbols-outlined text-red-500 text-[18px]">favorite</span>
             <span class="text-sm font-extrabold text-red-500" id="livesChip">0</span>
             <span class="text-xs font-bold text-slate-400">lives</span>
@@ -463,7 +463,7 @@
     // Hydrate from FC state
     (function hydrate() {
       // XP/streak/lives live in fc_meta (state.js)
-      const meta = window.FC?.get ? FC.get() : { xp: 0, streak: 0, lives: 0 };
+      const meta = window.FC?.get ? FC.get() : { xp: 0, streak: 0 };
 
       // name/avatar live in fc_state (app.js onboarding)
       let s = {};
@@ -495,7 +495,6 @@
       // chips/cards from meta (fc_meta)
       document.getElementById("xpChip").textContent = String(meta.xp ?? 0);
       document.getElementById("streakChip").textContent = String(meta.streak ?? 0);
-      document.getElementById("livesChip").textContent = String(meta.lives ?? 0);
 
       document.getElementById("xpVal").textContent = String(meta.xp ?? 0);
       document.getElementById("streakVal").textContent = String(meta.streak ?? 0);

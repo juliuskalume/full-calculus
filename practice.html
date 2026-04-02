@@ -499,13 +499,11 @@
     <script>
       // Header meta
       (function () {
-        const meta = window.FC?.get ? FC.get() : { streak: 0, xp: 0, lives: 0 };
+        const meta = window.FC?.get ? FC.get() : { streak: 0, xp: 0 };
         const streakEl = document.getElementById("streakVal");
         const xpEl = document.getElementById("xpVal");
-        const livesEl = document.getElementById("livesVal");
         if (streakEl) streakEl.textContent = String(meta.streak ?? 0);
         if (xpEl) xpEl.textContent = String(meta.xp ?? 0);
-        if (livesEl) livesEl.textContent = String(meta.lives ?? 0);
       })();
 
       function loadPrefs() {

@@ -315,6 +315,14 @@ window.FCEngine = (function () {
     return String(text || "").trim().toLowerCase();
   }
 
+  function normalizeLooseText(text) {
+    return normalizeText(text)
+      .replace(/[\u2019']/g, "")
+      .replace(/[^a-z0-9]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
   function normalizeExpression(expr) {
     if (window.FCMathValidation?.normalizeExpression) {
       return window.FCMathValidation.normalizeExpression(expr);
@@ -354,8 +362,21 @@ window.FCEngine = (function () {
     }
 
     if (item.type === "mcq") {
-      const candidates = [answer, ...(item.answer?.equivalences || [])].map((v) => normalizeText(v)).filter(Boolean);
-      const correct = candidates.includes(normalizeText(response));
+      const normalizedResponse = normalizeText(response);
+      const normalizedLooseResponse = normalizeLooseText(response);
+      const candidates = [answer, ...(item.answer?.equivalences || [])].filter(Boolean);
+      const normalizedCandidates = candidates.map((v) => normalizeText(v)).filter(Boolean);
+      const normalizedLooseCandidates = candidates.map((v) => normalizeLooseText(v)).filter(Boolean);
+      const choiceIndex = Array.isArray(item.choices)
+        ? item.choices.findIndex((choice) => normalizeText(choice) === normalizeText(answer))
+        : -1;
+      const letter = choiceIndex >= 0 ? String.fromCharCode(65 + choiceIndex).toLowerCase() : "";
+      const number = choiceIndex >= 0 ? String(choiceIndex + 1) : "";
+      const correct =
+        normalizedCandidates.includes(normalizedResponse) ||
+        normalizedLooseCandidates.includes(normalizedLooseResponse) ||
+        (!!letter && normalizedResponse === letter) ||
+        (!!number && normalizedResponse === number);
       return { correct, score: correct ? 1 : 0, mode: "mcq" };
     }
 
