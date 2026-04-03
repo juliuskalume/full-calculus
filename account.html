@@ -115,11 +115,14 @@
               <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
             </button>
 
-            <div
+            <button
+              id="avatarCameraBtn"
+              type="button"
+              aria-label="Choose profile picture from camera icon"
               class="absolute -bottom-2 -right-2 bg-white dark:bg-gray-800 p-2 rounded-full shadow-lg z-20 flex items-center justify-center border border-gray-100 dark:border-gray-700"
             >
               <span class="material-symbols-outlined text-primary text-2xl">photo_camera</span>
-            </div>
+            </button>
 
           </div>
         </div>
@@ -376,6 +379,7 @@
 
       // --- Avatar picker (saves to fc_state.avatarUrl) ---
       const avatarBtn = document.getElementById("avatarBtn");
+      const avatarCameraBtn = document.getElementById("avatarCameraBtn");
       const avatarPreview = document.getElementById("avatarPreview");
       const avatarPickerWrap = document.getElementById("avatarPickerWrap");
       const avatarOptions = Array.from(document.querySelectorAll(".avatar-option"));
@@ -413,9 +417,12 @@
         });
       })();
 
-      avatarBtn?.addEventListener("click", () => {
+      const toggleAvatarPicker = () => {
         avatarPickerWrap?.classList.toggle("hidden");
-      });
+      };
+
+      avatarBtn?.addEventListener("click", toggleAvatarPicker);
+      avatarCameraBtn?.addEventListener("click", toggleAvatarPicker);
 
       avatarOptions.forEach((btn) => {
         btn.addEventListener("click", () => {
