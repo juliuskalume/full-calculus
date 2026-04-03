@@ -252,7 +252,8 @@ const requestGroqSolution = async ({ prompt, correctAnswer, userAnswer, runtimeC
 
   const systemPrompt =
     "You are a precise calculus tutor. Return valid JSON only with keys: summary, steps, finalAnswer, tip. " +
-    "Keep steps concise, practical, and aligned to the exact question.";
+    "Write normal English sentences. Wrap every mathematical expression with inline LaTeX delimiters like \\\\(x = 2\\\\). " +
+    "Do not place ordinary prose inside math delimiters. Keep spacing natural and readable.";
   const userPrompt = [
     "Question:",
     prompt || "",
@@ -263,7 +264,9 @@ const requestGroqSolution = async ({ prompt, correctAnswer, userAnswer, runtimeC
     "Student answer:",
     userAnswer || "",
     "",
-    "Give step-by-step correction. Use plain text. If relevant, include math notation.",
+    "Give step-by-step correction.",
+    "Use concise prose and wrap any math with inline delimiters only.",
+    "Example: Substitute \\\\(x = 2\\\\) into \\\\(x + 3\\\\) to get \\\\(5\\\\).",
   ].join("\n");
 
   const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {

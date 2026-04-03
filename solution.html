@@ -171,25 +171,62 @@
           .replace(/>=/g, "\\ge ");
       }
 
+      function normalizeEscapedMathText(value) {
+        let text = String(value ?? "");
+        if (!text) return "";
+        text = text.replace(/\\n/g, "\n");
+        for (let i = 0; i < 4; i += 1) {
+          const next = text.replace(/\\\\(?=[()[\]A-Za-z$])/g, "\\");
+          if (next === text) break;
+          text = next;
+        }
+        return text
+          .replace(/\\\(\s*\n+\s*/g, "\\(")
+          .replace(/\s*\n+\s*\\\)/g, "\\)")
+          .replace(/\\\[\s*\n+\s*/g, "\\[")
+          .replace(/\s*\n+\s*\\\]/g, "\\]")
+          .trim();
+      }
+
       function protectMathSegments(text) {
         const segments = [];
-        const protectedText = String(text || "").replace(/(\\\([\\s\\S]*?\\\)|\\\[[\\s\\S]*?\\\]|\\\$\\$[\\s\\S]*?\\\$\\$|\\$[^$\\n]+\\$)/g, (match) => {
-          const token = `@@MATH${segments.length}@@`;
-          segments.push(match);
-          return token;
-        });
+        const protectedText = String(text || "").replace(
+          /(\\\([\s\S]*?\\\)|\\\[[\s\S]*?\\\]|\$\$[\s\S]*?\$\$|\$[^$\n]+\$)/g,
+          (match) => {
+            const token = `@@MATH${segments.length}@@`;
+            segments.push(match);
+            return token;
+          }
+        );
         return { protectedText, segments };
       }
 
+      function shouldWrapMath(expr) {
+        const compact = String(expr || "").trim();
+        if (!compact) return false;
+        if (/@@MATH\d+@@/.test(compact)) return false;
+        const proseStripped = compact.replace(/\b(?:sin|cos|tan|sec|csc|cot|sqrt|log|ln|exp|lim)\b/gi, "");
+        if (/[A-Za-z]{2,}\s+[A-Za-z]{2,}/.test(proseStripped)) return false;
+        return /[=<>^*/+-]/.test(compact) || /\([^()\n]*[A-Za-z0-9][^()\n]*\)/.test(compact);
+      }
+
       function autoWrapMathText(value) {
-        const normalized = normalizeMathFragment(value);
+        const normalized = normalizeEscapedMathText(normalizeMathFragment(value));
         const { protectedText, segments } = protectMathSegments(normalized);
         const lines = protectedText.split(/\n/);
         const processed = lines.map((line) => {
           let working = line;
           working = working.replace(
-            /(^|[\s(,:;])((?:[A-Za-z]+\([^()\n]+\)|[A-Za-z]+(?:\s*[\^*/+-]\s*[A-Za-z0-9()./-]+)+|[A-Za-z0-9()./-]+\s*=\s*[A-Za-z0-9()./^*+\- ]+|x\s*(?:<|>|\\le|\\ge)\s*[-A-Za-z0-9()./^*+\- ]+))/g,
-            (match, prefix, expr) => `${prefix}\\(${expr.trim()}\\)`
+            /(^|[\s(,:;])((?:[A-Za-z](?:\([^()\n]*\))?|[-+]?\d+(?:\.\d+)?|\([^()\n]*\))\s*(?:=|<|>|\\le|\\ge|\\to)\s*(?:[A-Za-z](?:\([^()\n]*\))?|[-+]?\d+(?:\.\d+)?|[A-Za-z0-9().+\-*/^]+))/g,
+            (match, prefix, expr) => (shouldWrapMath(expr) ? `${prefix}\\(${expr.trim()}\\)` : match)
+          );
+          working = working.replace(
+            /(^|[\s,;:])(\([^()\n]*[A-Za-z0-9][^()\n]*\))(?=$|[\s),.;:])/g,
+            (match, prefix, expr) => (shouldWrapMath(expr) ? `${prefix}\\(${expr}\\)` : match)
+          );
+          working = working.replace(
+            /(^|[\s(,:;])((?:[A-Za-z](?:\([^()\n]*\))?|[-+]?\d+(?:\.\d+)?)(?:\s*[\^*/+-]\s*(?:[A-Za-z](?:\([^()\n]*\))?|[-+]?\d+(?:\.\d+)?|\([^()\n]*\)))+)(?=$|[\s),.;:])/g,
+            (match, prefix, expr) => (shouldWrapMath(expr) ? `${prefix}\\(${expr.trim()}\\)` : match)
           );
           return working.replace(/@@MATH(\d+)@@/g, (_, index) => segments[Number(index)] || "");
         });
@@ -200,11 +237,21 @@
         return escapeHtml(autoWrapMathText(value)).replace(/\n/g, "<br>");
       }
 
-      async function typesetMath(nodes) {
-        if (!window.MathJax?.typesetPromise) return;
+      async function typesetMath(nodes, retries = 12) {
         const targets = (nodes || []).filter(Boolean);
         if (!targets.length) return;
+        if (!window.MathJax?.typesetPromise) {
+          if (retries > 0) {
+            setTimeout(() => {
+              typesetMath(targets, retries - 1).catch(() => {});
+            }, 250);
+          }
+          return;
+        }
         try {
+          if (window.MathJax?.startup?.promise) {
+            await window.MathJax.startup.promise;
+          }
           await window.MathJax.typesetPromise(targets);
         } catch {
           // ignore
@@ -225,7 +272,7 @@
         userAnswerEl.innerHTML = formatMathText(payload?.userAnswer || "No answer recorded.");
         correctAnswerEl.innerHTML = formatMathText(String(item?.answer?.value ?? "Unavailable"));
         renderFallback(item);
-        typesetMath([questionPromptEl, userAnswerEl, correctAnswerEl, fallbackTextEl]);
+        typesetMath([questionPromptEl, userAnswerEl, correctAnswerEl, fallbackTextEl]).catch(() => {});
       }
 
       async function loadSolution() {
@@ -288,6 +335,10 @@
         retryBtn.classList.add("hidden");
         solutionStatusEl.textContent = "Retrying AI feedback";
         loadSolution().catch(() => {});
+      });
+
+      window.addEventListener("load", () => {
+        typesetMath([questionPromptEl, userAnswerEl, correctAnswerEl, fallbackTextEl, solutionBodyEl]).catch(() => {});
       });
 
       loadSolution().catch(() => {});
