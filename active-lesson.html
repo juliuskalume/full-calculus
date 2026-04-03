@@ -93,6 +93,15 @@
       .sheetHidden { transform: translateY(110%); }
       .sheetShown { transform: translateY(0); }
       .sheetAnim { transition: transform 260ms ease; }
+
+      #choicesContainer label {
+        display: block;
+        cursor: pointer;
+      }
+      #choicesContainer label .choiceCard,
+      #choicesContainer label .choiceCard * {
+        pointer-events: none;
+      }
     </style>
     <script src="theme.js"></script>
     <script src="sound.js"></script>

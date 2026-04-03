@@ -68,6 +68,34 @@
         font-family: var(--fc-font-heading);
         font-weight: 700;
       }
+      #questionPrompt mjx-container:not([display="true"]),
+      #userAnswer mjx-container:not([display="true"]),
+      #correctAnswer mjx-container:not([display="true"]),
+      #fallbackText mjx-container:not([display="true"]),
+      #solutionBody mjx-container:not([display="true"]) {
+        display: inline !important;
+        white-space: normal !important;
+        vertical-align: baseline !important;
+        margin: 0 0.02em;
+      }
+      #questionPrompt mjx-container:not([display="true"]) > svg,
+      #userAnswer mjx-container:not([display="true"]) > svg,
+      #correctAnswer mjx-container:not([display="true"]) > svg,
+      #fallbackText mjx-container:not([display="true"]) > svg,
+      #solutionBody mjx-container:not([display="true"]) > svg {
+        display: inline !important;
+        vertical-align: -0.1em;
+      }
+      #questionPrompt mjx-container[display="true"],
+      #userAnswer mjx-container[display="true"],
+      #correctAnswer mjx-container[display="true"],
+      #fallbackText mjx-container[display="true"],
+      #solutionBody mjx-container[display="true"] {
+        display: block !important;
+        max-width: 100%;
+        overflow-x: auto;
+        white-space: normal !important;
+      }
     </style>
     <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
   </head>
