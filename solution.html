@@ -205,6 +205,9 @@
           text = next;
         }
         return text
+          .replace(/\\\[/g, "\\(")
+          .replace(/\\\]/g, "\\)")
+          .replace(/\$\$([\s\S]*?)\$\$/g, "\\($1\\)")
           .replace(/\\\(\s*\n+\s*/g, "\\(")
           .replace(/\s*\n+\s*\\\)/g, "\\)")
           .replace(/\\\[\s*\n+\s*/g, "\\[")
@@ -266,26 +269,22 @@
 
         if (!lines.length) return "";
 
-        const parts = [];
-        let paragraph = "";
-        const flushParagraph = () => {
-          if (!paragraph) return;
-          parts.push(escapeHtml(paragraph));
-          paragraph = "";
+        const blocks = [];
+        let currentBlock = "";
+        const flushBlock = () => {
+          if (!currentBlock) return;
+          blocks.push(escapeHtml(currentBlock));
+          currentBlock = "";
         };
 
         lines.forEach((line) => {
-          const isStructured = /^\d+\)/.test(line) || /^(Final answer|Tip):/i.test(line);
-          if (isStructured) {
-            flushParagraph();
-            parts.push(escapeHtml(line));
-            return;
-          }
-          paragraph = paragraph ? `${paragraph} ${line}` : line;
+          const startsNewBlock = /^\d+\)/.test(line) || /^(Final answer|Tip):/i.test(line);
+          if (startsNewBlock) flushBlock();
+          currentBlock = currentBlock ? `${currentBlock} ${line}` : line;
         });
 
-        flushParagraph();
-        return parts.join("<br>");
+        flushBlock();
+        return blocks.join("<br><br>");
       }
 
       async function typesetMath(nodes, retries = 12) {

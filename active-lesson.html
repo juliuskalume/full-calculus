@@ -887,6 +887,8 @@
 
       function renderChoices(item) {
         choicesContainer.innerHTML = "";
+        choicesContainer.classList.remove("hidden");
+        inputContainer.classList.add("hidden");
         const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         item.choices.forEach((choice, idx) => {
           const letter = letters[idx] || String(idx + 1);
@@ -911,6 +913,11 @@
             if (locked) return;
             currentResponse = choice;
             checkBtn.disabled = false;
+          });
+          label.addEventListener("click", () => {
+            if (locked) return;
+            input.checked = true;
+            input.dispatchEvent(new Event("change", { bubbles: true }));
           });
           choicesContainer.appendChild(label);
         });
@@ -992,7 +999,7 @@
         questionTitle.innerHTML = formatMathText(currentItem.prompt || "Question");
         if (currentItem.type === "mcq") {
           questionHint.innerHTML = formatMathText(
-            (currentItem.hints && currentItem.hints[0]) || "Type the option letter or the full answer."
+            (currentItem.hints && currentItem.hints[0]) || "Select the correct answer."
           );
         } else if (currentItem.type === "expression") {
           questionHint.innerHTML = formatMathText(
@@ -1008,7 +1015,11 @@
 
         if (visualCard) visualCard.classList.add("hidden");
 
-        renderInput(currentItem);
+        if (currentItem.type === "mcq" && Array.isArray(currentItem.choices) && currentItem.choices.length) {
+          renderChoices(currentItem);
+        } else {
+          renderInput(currentItem);
+        }
 
         resetState();
         updateProgress();

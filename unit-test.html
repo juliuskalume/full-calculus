@@ -504,6 +504,10 @@
         input.addEventListener("change", () => {
           currentResponse = choice;
         });
+        label.addEventListener("click", () => {
+          input.checked = true;
+          input.dispatchEvent(new Event("change", { bubbles: true }));
+        });
         choicesContainer.appendChild(label);
       });
     }
@@ -585,7 +589,12 @@
       questionText.innerHTML = formatMathText(currentItem.prompt || "Question");
 
       resetInputs();
-      renderInput(currentItem);
+      if (currentItem.type === "mcq" && Array.isArray(currentItem.choices) && currentItem.choices.length) {
+        answerHint.textContent = "Select the correct answer.";
+        renderChoices(currentItem);
+      } else {
+        renderInput(currentItem);
+      }
 
       updateProgress();
       updateHeader();
