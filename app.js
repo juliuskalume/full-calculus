@@ -224,8 +224,46 @@ function initNotifyPage() {
   const off = document.getElementById("notifyOff");
   const current = document.getElementById("notifyCurrent");
 
+  const selectedClasses = [
+    "bg-primary",
+    "hover:bg-primary-dark",
+    "text-text-main",
+    "shadow-[0_4px_0_0_#0bbd54]",
+    "border-primary",
+  ];
+  const applyNotifySelection = (enabled) => {
+    if (on) {
+      on.classList.toggle("border-2", !enabled);
+      on.classList.toggle("border-gray-200", !enabled);
+      on.classList.toggle("dark:border-gray-700", !enabled);
+      on.classList.toggle("bg-white", !enabled);
+      on.classList.toggle("dark:bg-gray-900", !enabled);
+      on.classList.toggle("text-gray-700", !enabled);
+      on.classList.toggle("dark:text-gray-200", !enabled);
+      on.classList.toggle("shadow-[0_4px_0_0_rgba(229,231,235,1)]", !enabled);
+      on.classList.toggle("dark:shadow-[0_4px_0_0_rgba(55,65,81,1)]", !enabled);
+      selectedClasses.forEach((className) => on.classList.toggle(className, enabled));
+      on.setAttribute("aria-pressed", enabled ? "true" : "false");
+    }
+
+    if (off) {
+      off.classList.toggle("border-2", enabled);
+      off.classList.toggle("border-gray-200", enabled);
+      off.classList.toggle("dark:border-gray-700", enabled);
+      off.classList.toggle("bg-white", enabled);
+      off.classList.toggle("dark:bg-gray-900", enabled);
+      off.classList.toggle("text-gray-700", enabled);
+      off.classList.toggle("dark:text-gray-200", enabled);
+      off.classList.toggle("shadow-[0_4px_0_0_rgba(229,231,235,1)]", enabled);
+      off.classList.toggle("dark:shadow-[0_4px_0_0_rgba(55,65,81,1)]", enabled);
+      selectedClasses.forEach((className) => off.classList.toggle(className, !enabled));
+      off.setAttribute("aria-pressed", enabled ? "false" : "true");
+    }
+  };
+
   const updateUI = (val) => {
     if (current) current.textContent = val ? "on" : "off";
+    applyNotifySelection(!!val);
   };
 
   if (s.notifications == null) {
