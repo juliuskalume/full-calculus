@@ -258,7 +258,34 @@
       }
 
       function formatMathText(value) {
-        return escapeHtml(autoWrapMathText(value)).replace(/\n/g, "<br>");
+        const normalized = autoWrapMathText(value);
+        const lines = String(normalized || "")
+          .split(/\n+/)
+          .map((line) => line.trim())
+          .filter(Boolean);
+
+        if (!lines.length) return "";
+
+        const parts = [];
+        let paragraph = "";
+        const flushParagraph = () => {
+          if (!paragraph) return;
+          parts.push(escapeHtml(paragraph));
+          paragraph = "";
+        };
+
+        lines.forEach((line) => {
+          const isStructured = /^\d+\)/.test(line) || /^(Final answer|Tip):/i.test(line);
+          if (isStructured) {
+            flushParagraph();
+            parts.push(escapeHtml(line));
+            return;
+          }
+          paragraph = paragraph ? `${paragraph} ${line}` : line;
+        });
+
+        flushParagraph();
+        return parts.join("<br>");
       }
 
       async function typesetMath(nodes, retries = 12) {
