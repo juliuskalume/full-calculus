@@ -90,6 +90,28 @@
     return lines.join("\n").trim();
   };
 
+  const extractLeadingSummary = (value) => {
+    const lines = String(value || "")
+      .split(/\n+/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+    const summaryLines = [];
+    for (const line of lines) {
+      if (/^\d+\)/.test(line) || /^(Final answer|Tip):/i.test(line)) break;
+      summaryLines.push(line);
+    }
+    return summaryLines.join(" ").trim();
+  };
+
+  const buildStructuredText = ({ summary = "", steps = [], finalAnswer = "", tip = "" } = {}) => {
+    const lines = [];
+    if (summary) lines.push(summary);
+    steps.forEach((step, idx) => lines.push(`${idx + 1}) ${step}`));
+    if (finalAnswer) lines.push(`Final answer: ${finalAnswer}`);
+    if (tip) lines.push(`Tip: ${tip}`);
+    return lines.join("\n").trim();
+  };
+
   const normalizeEscapedMathText = (value) => {
     let text = String(value || "");
     if (!text) return "";
@@ -108,6 +130,7 @@
     const looksJsonLike = /^[\s`]*\{/.test(rawSolution);
     const parsedText = buildTextFromObject(parsedFromSolution);
     const solution = parsedText || (looksJsonLike ? "" : rawSolution);
+    const summary = normalizeEscapedMathText(payload?.summary || parsedFromSolution?.summary || extractLeadingSummary(solution));
     const finalAnswer = normalizeEscapedMathText(payload?.finalAnswer || "");
     const tip = normalizeEscapedMathText(payload?.tip || "");
     const sourceSteps = Array.isArray(payload?.steps)
@@ -116,21 +139,21 @@
       ? parsedFromSolution.steps
       : [];
     const steps = sourceSteps.map((step) => normalizeEscapedMathText(step || "")).filter(Boolean).slice(0, 10);
+    const structuredText = buildStructuredText({ summary, steps, finalAnswer, tip });
+    const hasNumberedSteps = /^\s*(?:\d+\)|Step\s*\d+)/mi.test(solution);
 
-    const text = solution || [
-      ...steps.map((step, idx) => `${idx + 1}) ${step}`),
-      finalAnswer ? `Final answer: ${finalAnswer}` : "",
-      tip ? `Tip: ${tip}` : "",
-    ]
-      .filter(Boolean)
-      .join("\n")
-      .trim() || "Check your arithmetic and signs, then try again step by step.";
+    const text =
+      (solution && (hasNumberedSteps || (!steps.length && !finalAnswer && !tip && !summary)) ? solution : "") ||
+      structuredText ||
+      solution ||
+      "Check your arithmetic and signs, then try again step by step.";
 
     return {
       solution: text,
       steps,
       finalAnswer,
       tip,
+      summary,
     };
   };
 

@@ -315,6 +315,45 @@
         return blocks.join("<br><br>");
       }
 
+      function extractLeadingSummary(value) {
+        const lines = String(value || "")
+          .split(/\n+/)
+          .map((line) => line.trim())
+          .filter(Boolean);
+        const summaryLines = [];
+        for (const line of lines) {
+          if (/^\d+\)/.test(line) || /^(Final answer|Tip):/i.test(line)) break;
+          summaryLines.push(line);
+        }
+        return summaryLines.join(" ").trim();
+      }
+
+      function buildSolutionText(result, item) {
+        const rawSolution = String(result?.solution || "").trim();
+        const aiSteps = Array.isArray(result?.steps)
+          ? result.steps.map((step) => String(step || "").trim()).filter(Boolean)
+          : [];
+        const fallbackSteps = Array.isArray(item?.solutionSteps)
+          ? item.solutionSteps.map((step) => String(step || "").trim()).filter(Boolean)
+          : [];
+        const steps = aiSteps.length ? aiSteps : fallbackSteps;
+        const summary = String(result?.summary || extractLeadingSummary(rawSolution)).trim();
+        const finalAnswer = String(result?.finalAnswer || "").trim();
+        const tip = String(result?.tip || "").trim();
+        const rawHasSteps = /^\s*(?:\d+\)|Step\s*\d+)/mi.test(rawSolution);
+
+        if (rawSolution && (rawHasSteps || (!steps.length && !finalAnswer && !tip && !summary))) {
+          return rawSolution;
+        }
+
+        const lines = [];
+        if (summary) lines.push(summary);
+        steps.forEach((step, idx) => lines.push(`${idx + 1}) ${step}`));
+        if (finalAnswer) lines.push(`Final answer: ${finalAnswer}`);
+        if (tip) lines.push(`Tip: ${tip}`);
+        return lines.join("\n").trim() || rawSolution;
+      }
+
       async function typesetMath(nodes, retries = 12) {
         const targets = (nodes || []).filter(Boolean);
         if (!targets.length) return;
@@ -368,7 +407,7 @@
             userAnswer: requestPayload.userAnswer,
             context: "active-lesson-solution",
           });
-          const text = String(result?.solution || "").trim();
+          const text = buildSolutionText(result, requestPayload?.item);
           if (!text) throw new Error("Empty solution.");
           solutionBodyEl.innerHTML = formatMathText(text);
           solutionBodyEl.classList.remove("hidden");

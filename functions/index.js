@@ -251,6 +251,19 @@ const buildSolutionText = (modelPayload) => {
   };
 };
 
+const extractLeadingSummary = (value) => {
+  const lines = String(value || "")
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const summaryLines = [];
+  for (const line of lines) {
+    if (/^\d+\)/.test(line) || /^(Final answer|Tip):/i.test(line)) break;
+    summaryLines.push(line);
+  }
+  return summaryLines.join(" ").trim();
+};
+
 const normalizeTutorVoice = (value) => {
   let text = String(value || "").trim();
   if (!text) return "";
@@ -292,6 +305,9 @@ const normalizeStoredSolution = (record) => {
 
   const text =
     (parsedNormalized && parsedNormalized.text) ||
+    ((fromFields.steps.length || fromFields.finalAnswer || fromFields.tip || fromFields.summary)
+      ? fromFields.text
+      : "") ||
     normalizeTutorVoice(trimForModel(data.solution || "", 8000)) ||
     fromFields.text ||
     "";
@@ -304,7 +320,8 @@ const normalizeStoredSolution = (record) => {
   const summary =
     (parsedNormalized && parsedNormalized.summary) ||
     fromFields.summary ||
-    trimForModel(data.summary || "", 400);
+    trimForModel(data.summary || "", 400) ||
+    extractLeadingSummary(data.solution || "");
 
   return {
     solution: text,
@@ -324,6 +341,7 @@ const requestGroqSolution = async ({ prompt, correctAnswer, userAnswer, runtimeC
 
   const systemPrompt =
     "You are a precise calculus tutor. Return valid JSON only with keys: summary, steps, finalAnswer, tip. " +
+    "The steps field must be a JSON array with 2 to 5 short, concrete correction steps. Never leave steps empty. " +
     "Write normal English sentences. Wrap every mathematical expression with inline LaTeX delimiters like \\\\(x = 2\\\\). " +
     "Do not place ordinary prose inside math delimiters. Keep spacing natural and readable. " +
     "Address the learner directly in second person. Say 'your answer' and 'you', never 'the student' or 'the learner'. " +
@@ -339,6 +357,7 @@ const requestGroqSolution = async ({ prompt, correctAnswer, userAnswer, runtimeC
     userAnswer || "",
     "",
     "Give step-by-step correction.",
+    "Even if the problem is simple, include at least 2 explicit steps in the steps array.",
     "Use concise prose and wrap any math with inline delimiters only.",
     "Example: Substitute \\\\(x = 2\\\\) into \\\\(x + 3\\\\) to get \\\\(5\\\\).",
   ].join("\n");
@@ -714,6 +733,7 @@ exports.getStepSolution = functions.https.onRequest(async (req, res) => {
       cached: false,
       questionId,
       solution: normalizedGenerated.solution,
+      summary: normalizedGenerated.summary,
       steps: normalizedGenerated.steps,
       finalAnswer: normalizedGenerated.finalAnswer,
       tip: normalizedGenerated.tip,
