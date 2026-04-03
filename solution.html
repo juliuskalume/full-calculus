@@ -40,6 +40,35 @@
         },
       };
     </script>
+    <style>
+      @font-face {
+        font-family: "DIN Next Rounded";
+        src: url("fonts/DINNextRounded-Regular.woff2") format("woff2"),
+             url("fonts/DINNextRounded-Regular.woff") format("woff");
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "Feather Bold";
+        src: url("fonts/Feather-Bold.woff2") format("woff2"),
+             url("fonts/Feather-Bold.woff") format("woff");
+        font-weight: 700;
+        font-style: normal;
+        font-display: swap;
+      }
+      :root {
+        --fc-font-body: "DIN Next Rounded", "Arial Rounded MT Bold", "Arial Rounded MT", Arial, sans-serif;
+        --fc-font-heading: "Feather Bold", "DIN Next Rounded", "Arial Rounded MT Bold", "Arial Rounded MT", Arial, sans-serif;
+      }
+      body {
+        font-family: var(--fc-font-body);
+      }
+      .heading-font {
+        font-family: var(--fc-font-heading);
+        font-weight: 700;
+      }
+    </style>
     <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
   </head>
   <body class="min-h-screen bg-bg-main text-white antialiased">
@@ -58,7 +87,7 @@
 
       <section class="rounded-3xl bg-surface-dark p-5 shadow-[0_10px_30px_rgba(0,0,0,0.18)]">
         <div class="mb-4 flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-[0.24em] text-white/60">
-          <span class="rounded-full bg-white/10 px-3 py-1">Question</span>
+          <span class="heading-font rounded-full bg-white/10 px-3 py-1">Question</span>
           <span id="solutionStatus" class="hidden rounded-full bg-primary/20 px-3 py-1 text-primary"></span>
         </div>
 
@@ -66,11 +95,11 @@
 
         <div class="mt-5 grid gap-3 sm:grid-cols-2">
           <div class="rounded-2xl bg-white/5 p-4">
-            <p class="mb-2 text-xs font-bold uppercase tracking-[0.24em] text-white/55">Your answer</p>
+            <p class="heading-font mb-2 text-xs font-bold uppercase tracking-[0.24em] text-white/55">Your answer</p>
             <div id="userAnswer" class="text-base font-semibold text-white/90"></div>
           </div>
           <div class="rounded-2xl bg-white/5 p-4">
-            <p class="mb-2 text-xs font-bold uppercase tracking-[0.24em] text-white/55">Correct answer</p>
+            <p class="heading-font mb-2 text-xs font-bold uppercase tracking-[0.24em] text-white/55">Correct answer</p>
             <div id="correctAnswer" class="text-base font-semibold text-white/90"></div>
           </div>
         </div>
@@ -82,7 +111,7 @@
             <span class="material-symbols-outlined">psychology</span>
           </div>
           <div>
-            <p class="text-xs font-bold uppercase tracking-[0.24em] text-slate-500">AI explanation</p>
+            <p class="heading-font text-xs font-bold uppercase tracking-[0.24em] text-slate-500">AI explanation</p>
           </div>
         </div>
 
@@ -90,7 +119,7 @@
           <div class="flex items-center gap-3">
             <div class="h-10 w-10 animate-spin rounded-full border-4 border-primary/20 border-t-primary"></div>
             <div>
-              <p class="font-bold text-slate-900">Generating detailed feedback...</p>
+              <p class="heading-font text-slate-900">Generating detailed feedback...</p>
               <p class="text-sm text-slate-500">This fetches a fresh explanation for the question you missed.</p>
             </div>
           </div>
@@ -103,7 +132,7 @@
         <article id="solutionBody" class="mt-4 hidden rounded-2xl border border-slate-200 bg-white px-5 py-5 leading-8"></article>
 
         <div id="errorState" class="mt-4 hidden rounded-2xl border border-rose-200 bg-rose-50 px-4 py-4 text-rose-700">
-          <p class="font-bold">Detailed feedback is unavailable right now.</p>
+          <p class="heading-font">Detailed feedback is unavailable right now.</p>
           <p class="mt-1 text-sm">You can continue the lesson and try again later.</p>
         </div>
       </section>
@@ -112,14 +141,14 @@
         <button
           id="continueBtn"
           type="button"
-          class="w-full rounded-full bg-primary px-6 py-4 text-lg font-extrabold text-white shadow-[0_6px_0_0_#1498d8] transition active:translate-y-[3px] active:shadow-[0_3px_0_0_#1498d8]"
+          class="heading-font w-full rounded-full bg-primary px-6 py-4 text-lg font-extrabold text-white shadow-[0_6px_0_0_#1498d8] transition active:translate-y-[3px] active:shadow-[0_3px_0_0_#1498d8]"
         >
           Continue lesson
         </button>
         <button
           id="retryBtn"
           type="button"
-          class="rounded-full border-2 border-white/25 px-6 py-4 text-sm font-bold uppercase tracking-[0.18em] text-white/85 hidden"
+          class="heading-font rounded-full border-2 border-white/25 px-6 py-4 text-sm font-bold uppercase tracking-[0.18em] text-white/85 hidden"
         >
           Retry AI
         </button>
