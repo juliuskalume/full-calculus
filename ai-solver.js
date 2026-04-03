@@ -1,31 +1,11 @@
 (function () {
-  const LOCAL_CACHE_KEY = "fc_ai_solution_cache_v1";
-  const MAX_LOCAL_CACHE = 200;
+  const LEGACY_LOCAL_CACHE_KEY = "fc_ai_solution_cache_v1";
 
-  const safeParse = (raw, fallback) => {
-    try {
-      const parsed = JSON.parse(raw);
-      return parsed && typeof parsed === "object" ? parsed : fallback;
-    } catch {
-      return fallback;
-    }
-  };
-
-  const readLocalCache = () => {
-    try {
-      return safeParse(localStorage.getItem(LOCAL_CACHE_KEY), {});
-    } catch {
-      return {};
-    }
-  };
-
-  const writeLocalCache = (cache) => {
-    try {
-      localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(cache));
-    } catch {
-      // ignore
-    }
-  };
+  try {
+    localStorage.removeItem(LEGACY_LOCAL_CACHE_KEY);
+  } catch {
+    // ignore
+  }
 
   const parseMaybeJson = (value) => {
     const raw = String(value || "").trim();
@@ -128,44 +108,12 @@
     return {};
   };
 
-  const setCacheEntry = (questionId, value) => {
-    const cache = readLocalCache();
-    cache[questionId] = {
-      ...normalizeSolution(value),
-      cachedAt: Date.now(),
-    };
-
-    const keys = Object.keys(cache);
-    if (keys.length > MAX_LOCAL_CACHE) {
-      keys
-        .sort((a, b) => Number(cache[a]?.cachedAt || 0) - Number(cache[b]?.cachedAt || 0))
-        .slice(0, keys.length - MAX_LOCAL_CACHE)
-        .forEach((key) => {
-          delete cache[key];
-        });
-    }
-    writeLocalCache(cache);
-    return cache[questionId];
-  };
-
-  const getCacheEntry = (questionId) => {
-    const cache = readLocalCache();
-    const entry = cache[questionId];
-    if (!entry) return null;
-    return normalizeSolution(entry);
-  };
-
   const getStepSolution = async ({ item, userAnswer = "", context = "lesson" } = {}) => {
     const questionId = String(item?.id || "").trim();
     const prompt = String(item?.prompt || "").trim();
     const correctAnswer = String(item?.answer?.value ?? "").trim();
     if (!questionId || !prompt) {
       throw new Error("Invalid question payload.");
-    }
-
-    const local = getCacheEntry(questionId);
-    if (local?.solution) {
-      return { ...local, cached: true, source: "local" };
     }
 
     const endpoint = getEndpoint();
@@ -204,11 +152,10 @@
       throw new Error("AI solver returned an empty solution.");
     }
 
-    const stored = setCacheEntry(questionId, normalized);
     return {
-      ...stored,
-      cached: !!data.cached,
-      source: data.cached ? "remote-cache" : "groq",
+      ...normalized,
+      cached: false,
+      source: "groq",
     };
   };
 

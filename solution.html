@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Full Calculus - Detailed Feedback</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#1cb0f6",
+              "primary-dark": "#1498d8",
+              "bg-main": "#102114",
+              "surface-dark": "#192b1f",
+              "surface-card": "#223427",
+            },
+            borderRadius: {
+              xl: "1rem",
+              "2xl": "1.5rem",
+              "3xl": "2rem",
+            },
+          },
+        },
+      };
+    </script>
+    <script>
+      window.MathJax = {
+        tex: {
+          inlineMath: [
+            ["\\(", "\\)"],
+            ["$", "$"],
+          ],
+          displayMath: [["\\[", "\\]"]],
+        },
+        svg: {
+          fontCache: "global",
+        },
+      };
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+  </head>
+  <body class="min-h-screen bg-bg-main text-white antialiased">
+    <main class="mx-auto flex min-h-screen w-full max-w-[900px] flex-col px-4 pb-8 pt-5 sm:px-6">
+      <header class="mb-5 flex items-center justify-between gap-3">
+        <button
+          id="backBtn"
+          type="button"
+          class="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-white transition hover:bg-white/15"
+          aria-label="Back"
+        >
+          <span class="material-symbols-outlined">arrow_back</span>
+        </button>
+        <div class="text-right">
+          <p class="text-xs font-semibold uppercase tracking-[0.28em] text-white/60">Detailed feedback</p>
+          <h1 class="text-xl font-extrabold sm:text-2xl">Step-by-step solution</h1>
+        </div>
+      </header>
+
+      <section class="rounded-3xl bg-surface-dark p-5 shadow-[0_10px_30px_rgba(0,0,0,0.18)]">
+        <div class="mb-4 flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-[0.24em] text-white/60">
+          <span class="rounded-full bg-white/10 px-3 py-1">Question</span>
+          <span id="solutionStatus" class="rounded-full bg-primary/20 px-3 py-1 text-primary">Loading AI feedback</span>
+        </div>
+
+        <div id="questionPrompt" class="text-lg font-semibold leading-relaxed text-white"></div>
+
+        <div class="mt-5 grid gap-3 sm:grid-cols-2">
+          <div class="rounded-2xl bg-white/5 p-4">
+            <p class="mb-2 text-xs font-bold uppercase tracking-[0.24em] text-white/55">Your answer</p>
+            <div id="userAnswer" class="text-base font-semibold text-white/90"></div>
+          </div>
+          <div class="rounded-2xl bg-white/5 p-4">
+            <p class="mb-2 text-xs font-bold uppercase tracking-[0.24em] text-white/55">Correct answer</p>
+            <div id="correctAnswer" class="text-base font-semibold text-white/90"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-5 flex-1 rounded-3xl bg-white p-5 text-slate-900 shadow-[0_18px_40px_rgba(0,0,0,0.24)]">
+        <div class="mb-4 flex items-center gap-3">
+          <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/15 text-primary">
+            <span class="material-symbols-outlined">psychology</span>
+          </div>
+          <div>
+            <p class="text-xs font-bold uppercase tracking-[0.24em] text-slate-500">AI explanation</p>
+            <h2 class="text-xl font-extrabold text-slate-900">Why the answer works</h2>
+          </div>
+        </div>
+
+        <div id="loadingState" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-5">
+          <div class="flex items-center gap-3">
+            <div class="h-10 w-10 animate-spin rounded-full border-4 border-primary/20 border-t-primary"></div>
+            <div>
+              <p class="font-bold text-slate-900">Generating detailed feedback...</p>
+              <p class="text-sm text-slate-500">This fetches a fresh explanation for the question you missed.</p>
+            </div>
+          </div>
+        </div>
+
+        <div id="fallbackCard" class="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-amber-900 hidden">
+          <p class="text-xs font-bold uppercase tracking-[0.24em] text-amber-700">Initial feedback</p>
+          <div id="fallbackText" class="mt-2 text-sm font-medium leading-7"></div>
+        </div>
+
+        <article id="solutionBody" class="mt-4 hidden rounded-2xl border border-slate-200 bg-white px-5 py-5 leading-8"></article>
+
+        <div id="errorState" class="mt-4 hidden rounded-2xl border border-rose-200 bg-rose-50 px-4 py-4 text-rose-700">
+          <p class="font-bold">Detailed feedback is unavailable right now.</p>
+          <p class="mt-1 text-sm">You can continue the lesson and try again later.</p>
+        </div>
+      </section>
+
+      <footer class="mt-5 grid gap-3 sm:grid-cols-[1fr_auto]">
+        <button
+          id="continueBtn"
+          type="button"
+          class="w-full rounded-full bg-primary px-6 py-4 text-lg font-extrabold text-white shadow-[0_6px_0_0_#1498d8] transition active:translate-y-[3px] active:shadow-[0_3px_0_0_#1498d8]"
+        >
+          Continue lesson
+        </button>
+        <button
+          id="retryBtn"
+          type="button"
+          class="rounded-full border-2 border-white/25 px-6 py-4 text-sm font-bold uppercase tracking-[0.18em] text-white/85 hidden"
+        >
+          Retry AI
+        </button>
+      </footer>
+    </main>
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+    <script src="firebase-config.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="auth.js"></script>
+    <script src="solution-request.js"></script>
+    <script src="ai-solver.js"></script>
+    <script>
+      const backBtn = document.getElementById("backBtn");
+      const continueBtn = document.getElementById("continueBtn");
+      const retryBtn = document.getElementById("retryBtn");
+      const questionPromptEl = document.getElementById("questionPrompt");
+      const userAnswerEl = document.getElementById("userAnswer");
+      const correctAnswerEl = document.getElementById("correctAnswer");
+      const loadingStateEl = document.getElementById("loadingState");
+      const solutionBodyEl = document.getElementById("solutionBody");
+      const fallbackCardEl = document.getElementById("fallbackCard");
+      const fallbackTextEl = document.getElementById("fallbackText");
+      const errorStateEl = document.getElementById("errorState");
+      const solutionStatusEl = document.getElementById("solutionStatus");
+
+      const requestPayload = window.FCSolutionRequest?.getRequest?.() || null;
+
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function normalizeMathFragment(value) {
+        return String(value || "")
+          .replace(/->/g, "\\to ")
+          .replace(/<=/g, "\\le ")
+          .replace(/>=/g, "\\ge ");
+      }
+
+      function protectMathSegments(text) {
+        const segments = [];
+        const protectedText = String(text || "").replace(/(\\\([\\s\\S]*?\\\)|\\\[[\\s\\S]*?\\\]|\\\$\\$[\\s\\S]*?\\\$\\$|\\$[^$\\n]+\\$)/g, (match) => {
+          const token = `@@MATH${segments.length}@@`;
+          segments.push(match);
+          return token;
+        });
+        return { protectedText, segments };
+      }
+
+      function autoWrapMathText(value) {
+        const normalized = normalizeMathFragment(value);
+        const { protectedText, segments } = protectMathSegments(normalized);
+        const lines = protectedText.split(/\n/);
+        const processed = lines.map((line) => {
+          let working = line;
+          working = working.replace(
+            /(^|[\s(,:;])((?:[A-Za-z]+\([^()\n]+\)|[A-Za-z]+(?:\s*[\^*/+-]\s*[A-Za-z0-9()./-]+)+|[A-Za-z0-9()./-]+\s*=\s*[A-Za-z0-9()./^*+\- ]+|x\s*(?:<|>|\\le|\\ge)\s*[-A-Za-z0-9()./^*+\- ]+))/g,
+            (match, prefix, expr) => `${prefix}\\(${expr.trim()}\\)`
+          );
+          return working.replace(/@@MATH(\d+)@@/g, (_, index) => segments[Number(index)] || "");
+        });
+        return processed.join("\n");
+      }
+
+      function formatMathText(value) {
+        return escapeHtml(autoWrapMathText(value)).replace(/\n/g, "<br>");
+      }
+
+      async function typesetMath(nodes) {
+        if (!window.MathJax?.typesetPromise) return;
+        const targets = (nodes || []).filter(Boolean);
+        if (!targets.length) return;
+        try {
+          await window.MathJax.typesetPromise(targets);
+        } catch {
+          // ignore
+        }
+      }
+
+      function renderFallback(item) {
+        const firstStep = String(item?.solutionSteps?.[0] || "").trim();
+        const initial = String(item?.wrongResponse || firstStep || "").trim();
+        if (!initial) return;
+        fallbackTextEl.innerHTML = formatMathText(initial);
+        fallbackCardEl.classList.remove("hidden");
+      }
+
+      function renderRequest(payload) {
+        const item = payload?.item || {};
+        questionPromptEl.innerHTML = formatMathText(item.prompt || "Question unavailable.");
+        userAnswerEl.innerHTML = formatMathText(payload?.userAnswer || "No answer recorded.");
+        correctAnswerEl.innerHTML = formatMathText(String(item?.answer?.value ?? "Unavailable"));
+        renderFallback(item);
+        typesetMath([questionPromptEl, userAnswerEl, correctAnswerEl, fallbackTextEl]);
+      }
+
+      async function loadSolution() {
+        if (!requestPayload?.item?.id) {
+          solutionStatusEl.textContent = "No question selected";
+          loadingStateEl.classList.add("hidden");
+          errorStateEl.classList.remove("hidden");
+          return;
+        }
+
+        renderRequest(requestPayload);
+        try {
+          const result = await window.FCAI.getStepSolution({
+            item: requestPayload.item,
+            userAnswer: requestPayload.userAnswer,
+            context: "active-lesson-solution",
+          });
+          const text = String(result?.solution || "").trim();
+          if (!text) throw new Error("Empty solution.");
+          solutionBodyEl.innerHTML = formatMathText(text);
+          solutionBodyEl.classList.remove("hidden");
+          solutionStatusEl.textContent = "Fresh AI feedback";
+          loadingStateEl.classList.add("hidden");
+          errorStateEl.classList.add("hidden");
+          retryBtn.classList.add("hidden");
+          await typesetMath([solutionBodyEl]);
+        } catch {
+          loadingStateEl.classList.add("hidden");
+          errorStateEl.classList.remove("hidden");
+          retryBtn.classList.remove("hidden");
+          solutionStatusEl.textContent = "Using initial feedback";
+        }
+      }
+
+      function continueLesson() {
+        if (requestPayload?.sessionId && requestPayload?.itemId) {
+          window.FCSolutionRequest?.setResume?.({
+            source: "active-lesson",
+            sessionId: requestPayload.sessionId,
+            itemId: requestPayload.itemId,
+            action: "advance",
+            returnUrl: requestPayload.returnUrl || "active-lesson.html",
+          });
+        }
+        window.FCSolutionRequest?.clearRequest?.();
+        window.location.href = requestPayload?.returnUrl || "active-lesson.html";
+      }
+
+      backBtn.addEventListener("click", () => {
+        window.location.href = requestPayload?.returnUrl || "active-lesson.html";
+      });
+
+      continueBtn.addEventListener("click", () => {
+        continueLesson();
+      });
+
+      retryBtn.addEventListener("click", () => {
+        loadingStateEl.classList.remove("hidden");
+        errorStateEl.classList.add("hidden");
+        retryBtn.classList.add("hidden");
+        solutionStatusEl.textContent = "Retrying AI feedback";
+        loadSolution().catch(() => {});
+      });
+
+      loadSolution().catch(() => {});
+    </script>
+  </body>
+</html>

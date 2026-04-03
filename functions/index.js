@@ -16,7 +16,6 @@ const GROQ_MODEL = defineString("GROQ_MODEL");
 const DEFAULT_VAPID_SUBJECT = "mailto:juliuskalume906@gmail.com";
 const DEFAULT_TIMEZONE = "Etc/UTC";
 const DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile";
-const AI_SOLUTIONS_COLLECTION = "ai_step_solutions";
 const QUESTION_OVERRIDES_COLLECTION = "question_overrides";
 const PARAMS_MIGRATION_REV = "2026-04-02-runtime-refresh";
 
@@ -612,37 +611,6 @@ exports.getStepSolution = functions.https.onRequest(async (req, res) => {
       return;
     }
 
-    const docRef = admin.firestore().collection(AI_SOLUTIONS_COLLECTION).doc(questionId);
-    const existing = await docRef.get();
-    if (existing.exists) {
-      const data = existing.data() || {};
-      const normalized = normalizeStoredSolution(data);
-      if (normalized.solution && normalized.solution !== String(data.solution || "")) {
-        await docRef.set(
-          {
-            solution: normalized.solution,
-            summary: normalized.summary || "",
-            steps: normalized.steps || [],
-            finalAnswer: normalized.finalAnswer || "",
-            tip: normalized.tip || "",
-            updatedAt: new Date().toISOString(),
-          },
-          { merge: true }
-        );
-      }
-      res.status(200).json({
-        ok: true,
-        cached: true,
-        questionId,
-        solution: normalized.solution,
-        steps: normalized.steps,
-        finalAnswer: normalized.finalAnswer,
-        tip: normalized.tip,
-        model: String(data.model || ""),
-      });
-      return;
-    }
-
     const runtimeConfig = getRuntimeConfig();
     if (!runtimeConfig.groqApiKey) {
       res.status(503).json({ ok: false, error: "AI solver is not configured." });
@@ -656,44 +624,23 @@ exports.getStepSolution = functions.https.onRequest(async (req, res) => {
       runtimeConfig,
     });
 
-    const nowIso = new Date().toISOString();
-    const record = {
-      questionId,
-      prompt,
-      correctAnswer,
-      questionType,
-      sectionId,
+    const normalizedGenerated = normalizeStoredSolution({
       solution: generated.text || "",
       summary: generated.summary || "",
       steps: Array.isArray(generated.steps) ? generated.steps : [],
       finalAnswer: generated.finalAnswer || "",
       tip: generated.tip || "",
-      raw: generated.raw || generated.text,
-      model: generated.model || runtimeConfig.groqModel || DEFAULT_GROQ_MODEL,
-      createdAt: nowIso,
-      updatedAt: nowIso,
-      requests: 1,
-    };
-    const normalizedGenerated = normalizeStoredSolution(record);
-    const mergedRecord = {
-      ...record,
-      solution: normalizedGenerated.solution || record.solution,
-      summary: normalizedGenerated.summary || record.summary,
-      steps: normalizedGenerated.steps || record.steps,
-      finalAnswer: normalizedGenerated.finalAnswer || record.finalAnswer,
-      tip: normalizedGenerated.tip || record.tip,
-    };
-    await docRef.set(mergedRecord, { merge: true });
+    });
 
     res.status(200).json({
       ok: true,
       cached: false,
       questionId,
-      solution: mergedRecord.solution,
-      steps: mergedRecord.steps,
-      finalAnswer: mergedRecord.finalAnswer,
-      tip: mergedRecord.tip,
-      model: mergedRecord.model,
+      solution: normalizedGenerated.solution,
+      steps: normalizedGenerated.steps,
+      finalAnswer: normalizedGenerated.finalAnswer,
+      tip: normalizedGenerated.tip,
+      model: generated.model || runtimeConfig.groqModel || DEFAULT_GROQ_MODEL,
     });
   } catch (err) {
     console.error("getStepSolution error", err);

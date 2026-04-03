@@ -1,4 +1,4 @@
-const STATIC_CACHE = "fc-static-v7";
+const STATIC_CACHE = "fc-static-v8";
 const RUNTIME_CACHE = "fc-runtime-v2";
 const IMAGE_CACHE = "fc-images-v1";
 
@@ -7,6 +7,7 @@ const PRECACHE_URLS = [
   "login.html",
   "path.html",
   "active-lesson.html",
+  "solution.html",
   "unit-test.html",
   "unit-test-pass.html",
   "unit-test-fail.html",
@@ -25,6 +26,7 @@ const PRECACHE_URLS = [
   "state.js",
   "progress.js",
   "auth.js",
+  "solution-request.js",
   "firebase-config.js",
   "engine.js",
   "content.js",
