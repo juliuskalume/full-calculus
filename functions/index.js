@@ -183,14 +183,14 @@ const parseGroqJson = (rawContent) => {
 
 const buildSolutionText = (modelPayload) => {
   const data = modelPayload && typeof modelPayload === "object" ? modelPayload : {};
-  const summary = trimForModel(data.summary || data.intro || "", 400);
+  const summary = normalizeTutorVoice(trimForModel(data.summary || data.intro || "", 400));
   const stepsRaw = Array.isArray(data.steps) ? data.steps : [];
   const steps = stepsRaw
-    .map((step) => trimForModel(step, 400))
+    .map((step) => normalizeTutorVoice(trimForModel(step, 400)))
     .filter(Boolean)
     .slice(0, 8);
-  const finalAnswer = trimForModel(data.finalAnswer || data.answer || "", 250);
-  const tip = trimForModel(data.tip || data.commonMistake || "", 300);
+  const finalAnswer = normalizeTutorVoice(trimForModel(data.finalAnswer || data.answer || "", 250));
+  const tip = normalizeTutorVoice(trimForModel(data.tip || data.commonMistake || "", 300));
 
   const lines = [];
   if (summary) lines.push(summary);
@@ -207,6 +207,34 @@ const buildSolutionText = (modelPayload) => {
   };
 };
 
+const normalizeTutorVoice = (value) => {
+  let text = String(value || "").trim();
+  if (!text) return "";
+
+  const replacements = [
+    [/\bthe student's answer\b/gi, "your answer"],
+    [/\bthe student answer\b/gi, "your answer"],
+    [/\bstudent's answer\b/gi, "your answer"],
+    [/\bthe learner's answer\b/gi, "your answer"],
+    [/\blearner's answer\b/gi, "your answer"],
+    [/\btheir answer\b/gi, "your answer"],
+    [/\bthe student's work\b/gi, "your work"],
+    [/\bthe learner's work\b/gi, "your work"],
+    [/\bthe student\b/gi, "you"],
+    [/\bthe learner\b/gi, "you"],
+    [/\bthe user\b/gi, "you"],
+    [/\byou is\b/gi, "you are"],
+    [/\byou was\b/gi, "you were"],
+    [/\byou has\b/gi, "you have"],
+  ];
+
+  replacements.forEach(([pattern, replacement]) => {
+    text = text.replace(pattern, replacement);
+  });
+
+  return text;
+};
+
 const normalizeStoredSolution = (record) => {
   const data = record && typeof record === "object" ? record : {};
   const maybeParsed = parseGroqJson(data.solution || data.raw || "");
@@ -220,7 +248,7 @@ const normalizeStoredSolution = (record) => {
 
   const text =
     (parsedNormalized && parsedNormalized.text) ||
-    trimForModel(data.solution || "", 8000) ||
+    normalizeTutorVoice(trimForModel(data.solution || "", 8000)) ||
     fromFields.text ||
     "";
   const steps = (parsedNormalized && parsedNormalized.steps?.length ? parsedNormalized.steps : fromFields.steps) || [];
@@ -253,7 +281,8 @@ const requestGroqSolution = async ({ prompt, correctAnswer, userAnswer, runtimeC
   const systemPrompt =
     "You are a precise calculus tutor. Return valid JSON only with keys: summary, steps, finalAnswer, tip. " +
     "Write normal English sentences. Wrap every mathematical expression with inline LaTeX delimiters like \\\\(x = 2\\\\). " +
-    "Do not place ordinary prose inside math delimiters. Keep spacing natural and readable.";
+    "Do not place ordinary prose inside math delimiters. Keep spacing natural and readable. " +
+    "Address the learner directly in second person. Say 'your answer' and 'you', never 'the student' or 'the learner'.";
   const userPrompt = [
     "Question:",
     prompt || "",
