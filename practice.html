@@ -387,23 +387,6 @@
           </div>
         </div>
 
-        <!-- Further Practice Questions -->
-        <div class="mt-8 mb-4">
-          <div class="flex items-center justify-between gap-3 mb-4">
-            <div>
-              <h3 class="text-lg font-bold text-slate-800 dark:text-white">Further Practice Questions</h3>
-            </div>
-            <div
-              class="hidden sm:flex items-center gap-1.5 rounded-full bg-sky-50 dark:bg-sky-900/20 px-3 py-1.5 text-xs font-bold text-sky-600 dark:text-sky-300"
-            >
-              <span class="material-symbols-outlined text-[18px]">library_books</span>
-              <span id="furtherPracticeCount">0 sets</span>
-            </div>
-          </div>
-
-          <div id="furtherPracticeSets" class="grid grid-cols-1 gap-3"></div>
-        </div>
-
         <!-- Placement Tests -->
         <div class="mt-8 mb-4">
           <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-4">Placement Tests</h3>
@@ -596,46 +579,8 @@
         if (el) el.textContent = String(count);
       }
 
-      const furtherPracticeSets = (window.FCContentData && window.FCContentData.pdfPracticeSets) || [];
-
-      function renderFurtherPracticeSets() {
-        const container = document.getElementById("furtherPracticeSets");
-        if (!container) return;
-        const countEl = document.getElementById("furtherPracticeCount");
-        if (countEl) countEl.textContent = `${furtherPracticeSets.length} sets`;
-        container.innerHTML = furtherPracticeSets
-          .map(
-            (set) => `
-              <button
-                type="button"
-                class="press bg-white dark:bg-surface-dark p-4 rounded-2xl border-2 border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden text-left"
-                data-further-practice="${set.id}"
-              >
-                <div class="absolute inset-y-0 right-0 w-28 bg-gradient-to-l from-slate-50 dark:from-slate-900/50 to-transparent"></div>
-                <div class="relative z-10 flex items-center justify-between gap-4">
-                  <div class="flex items-center gap-3 min-w-0">
-                    <div class="w-12 h-12 rounded-xl flex items-center justify-center ${set.accentBg} ${set.accentText} shrink-0">
-                      <span class="material-symbols-outlined">${set.icon}</span>
-                    </div>
-                    <div class="min-w-0">
-                      <p class="font-bold text-slate-800 dark:text-white leading-tight">${set.title}</p>
-                    </div>
-                  </div>
-                  <span
-                    class="shrink-0 rounded-xl ${set.buttonClass} text-white font-bold text-xs px-3 py-2 transition-all"
-                  >
-                    Start
-                  </span>
-                </div>
-              </button>
-            `
-          )
-          .join("");
-      }
-
       renderDaily();
       updateMistakes();
-      renderFurtherPracticeSets();
       updateTopicCard(
         ["limits.intro", "limits.one_sided", "limits.laws", "limits.algebraic"],
         "limitsLevelText",
@@ -747,23 +692,6 @@
           xpPerCorrect: 8,
         });
       });
-      document.getElementById("furtherPracticeSets")?.addEventListener("click", (event) => {
-        const btn = event.target.closest("[data-further-practice]");
-        if (!btn) return;
-        const setId = btn.getAttribute("data-further-practice");
-        const set = furtherPracticeSets.find((entry) => entry.id === setId);
-        if (!set) return;
-        startSession({
-          mode: "practice",
-          sectionId: set.sectionId || null,
-          itemIds: set.itemIds || [],
-          count: (set.itemIds || []).length,
-          preserveOrder: true,
-          types: ["mcq"],
-          xpPerCorrect: 8,
-        });
-      });
-
       function updatePlacementCards() {
         const progress = window.FCProgress?.get ? FCProgress.get() : { completedTests: {} };
         const completedTests = progress.completedTests || {};
