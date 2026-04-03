@@ -7,11 +7,54 @@
     // ignore
   }
 
-  const parseMaybeJson = (value) => {
+  const stripMarkdownCodeFence = (value) => {
     const raw = String(value || "").trim();
+    if (!raw) return "";
+    const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    return (fenced ? fenced[1] : raw).trim();
+  };
+
+  const decodeJsonLikeString = (value) =>
+    String(value || "")
+      .replace(/\\"/g, '"')
+      .replace(/\\\\/g, "\\")
+      .replace(/\\n/g, "\n")
+      .trim();
+
+  const extractGroqFields = (value) => {
+    const raw = stripMarkdownCodeFence(value);
     if (!raw) return null;
-    const fromBlock = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
-    const candidate = fromBlock ? fromBlock[1].trim() : raw;
+
+    const extractField = (fieldName) => {
+      const pattern = new RegExp(
+        `"${fieldName}"\\s*:\\s*"([\\s\\S]*?)"(?=\\s*,\\s*"\\w+"\\s*:|\\s*})`,
+        "i"
+      );
+      const match = raw.match(pattern);
+      return match ? decodeJsonLikeString(match[1]) : "";
+    };
+
+    const stepsMatch = raw.match(/"steps"\s*:\s*\[([\s\S]*?)\](?=\s*,\s*"\w+"\s*:|\s*})/i);
+    const steps = stepsMatch
+      ? Array.from(stepsMatch[1].matchAll(/"([\s\S]*?)"/g))
+          .map((match) => decodeJsonLikeString(match[1]))
+          .filter(Boolean)
+      : [];
+
+    const extracted = {
+      summary: extractField("summary") || extractField("intro"),
+      steps,
+      finalAnswer: extractField("finalAnswer") || extractField("answer"),
+      tip: extractField("tip") || extractField("commonMistake"),
+    };
+
+    return extracted.summary || extracted.steps.length || extracted.finalAnswer || extracted.tip ? extracted : null;
+  };
+
+  const parseMaybeJson = (value) => {
+    const raw = stripMarkdownCodeFence(value);
+    if (!raw) return null;
+    const candidate = raw;
     const parseDirect = (text) => {
       try {
         const parsed = JSON.parse(text);
@@ -24,8 +67,11 @@
     if (direct) return direct;
     const first = candidate.indexOf("{");
     const last = candidate.lastIndexOf("}");
-    if (first < 0 || last <= first) return null;
-    return parseDirect(candidate.slice(first, last + 1));
+    if (first >= 0 && last > first) {
+      const parsedSlice = parseDirect(candidate.slice(first, last + 1));
+      if (parsedSlice) return parsedSlice;
+    }
+    return extractGroqFields(candidate);
   };
 
   const buildTextFromObject = (obj) => {

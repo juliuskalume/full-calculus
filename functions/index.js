@@ -164,8 +164,52 @@ const trimForModel = (value, maxLen) =>
     .trim()
     .slice(0, maxLen);
 
+const stripMarkdownCodeFence = (value) => {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  return (fenced ? fenced[1] : text).trim();
+};
+
+const decodeJsonLikeString = (value) =>
+  String(value || "")
+    .replace(/\\"/g, '"')
+    .replace(/\\\\/g, "\\")
+    .replace(/\\n/g, "\n")
+    .trim();
+
+const extractGroqFields = (rawContent) => {
+  const text = stripMarkdownCodeFence(rawContent);
+  if (!text) return null;
+
+  const extractField = (fieldName) => {
+    const pattern = new RegExp(
+      `"${fieldName}"\\s*:\\s*"([\\s\\S]*?)"(?=\\s*,\\s*"\\w+"\\s*:|\\s*})`,
+      "i"
+    );
+    const match = text.match(pattern);
+    return match ? decodeJsonLikeString(match[1]) : "";
+  };
+
+  const stepsMatch = text.match(/"steps"\s*:\s*\[([\s\S]*?)\](?=\s*,\s*"\w+"\s*:|\s*})/i);
+  const steps = stepsMatch
+    ? Array.from(stepsMatch[1].matchAll(/"([\s\S]*?)"/g))
+        .map((match) => decodeJsonLikeString(match[1]))
+        .filter(Boolean)
+    : [];
+
+  const extracted = {
+    summary: extractField("summary") || extractField("intro"),
+    steps,
+    finalAnswer: extractField("finalAnswer") || extractField("answer"),
+    tip: extractField("tip") || extractField("commonMistake"),
+  };
+
+  return extracted.summary || extracted.steps.length || extracted.finalAnswer || extracted.tip ? extracted : null;
+};
+
 const parseGroqJson = (rawContent) => {
-  const text = String(rawContent || "").trim();
+  const text = stripMarkdownCodeFence(rawContent);
   if (!text) return null;
   try {
     return JSON.parse(text);
@@ -176,7 +220,7 @@ const parseGroqJson = (rawContent) => {
     try {
       return JSON.parse(text.slice(start, end + 1));
     } catch (innerErr) {
-      return null;
+      return extractGroqFields(text);
     }
   }
 };
@@ -282,7 +326,8 @@ const requestGroqSolution = async ({ prompt, correctAnswer, userAnswer, runtimeC
     "You are a precise calculus tutor. Return valid JSON only with keys: summary, steps, finalAnswer, tip. " +
     "Write normal English sentences. Wrap every mathematical expression with inline LaTeX delimiters like \\\\(x = 2\\\\). " +
     "Do not place ordinary prose inside math delimiters. Keep spacing natural and readable. " +
-    "Address the learner directly in second person. Say 'your answer' and 'you', never 'the student' or 'the learner'.";
+    "Address the learner directly in second person. Say 'your answer' and 'you', never 'the student' or 'the learner'. " +
+    "Do not wrap the JSON in markdown code fences.";
   const userPrompt = [
     "Question:",
     prompt || "",
