@@ -46,24 +46,24 @@
   </head>
   <body class="text-slate-900 min-h-screen">
     <header class="sticky top-0 z-20 border-b border-sky-200/60 bg-gradient-to-r from-sky-50/95 to-cyan-50/95 backdrop-blur-md">
-      <div class="max-w-[1880px] mx-auto px-4 py-3 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-sky-500 text-white flex items-center justify-center shadow-lg shadow-sky-300/60">
+      <div class="max-w-[1880px] mx-auto px-3 sm:px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex min-w-0 items-center gap-3">
+          <div class="w-10 h-10 shrink-0 rounded-xl bg-sky-500 text-white flex items-center justify-center shadow-lg shadow-sky-300/60">
             <span class="material-symbols-outlined">admin_panel_settings</span>
           </div>
-          <div>
-            <h1 class="text-lg md:text-xl font-extrabold tracking-tight">Full Calculus Admin</h1>
+          <div class="min-w-0">
+            <h1 class="text-lg md:text-xl font-extrabold tracking-tight truncate">Full Calculus Admin</h1>
             <p class="text-xs text-slate-600">Users, support, moderation, notifications</p>
           </div>
         </div>
-        <div class="flex items-center gap-2">
-          <span id="adminEmail" class="hidden text-xs md:text-sm text-slate-600 font-semibold"></span>
-          <button id="signOutBtn" class="hidden px-3 py-2 rounded-xl bg-white/90 border border-sky-200 text-sm font-semibold hover:bg-sky-50 transition-colors">Sign out</button>
+        <div class="flex min-w-0 items-center gap-2">
+          <span id="adminEmail" class="hidden max-w-[58vw] truncate text-xs md:text-sm text-slate-600 font-semibold"></span>
+          <button id="signOutBtn" class="hidden shrink-0 px-3 py-2 rounded-xl bg-white/90 border border-sky-200 text-sm font-semibold hover:bg-sky-50 transition-colors">Sign out</button>
         </div>
       </div>
     </header>
 
-    <main class="max-w-[1880px] mx-auto p-4 md:p-6">
+    <main class="max-w-[1880px] mx-auto p-3 sm:p-4 md:p-6">
       <section id="authCard" class="card max-w-md mx-auto rounded-3xl border border-sky-100 p-6 shadow-xl shadow-sky-100/70">
         <div class="flex items-center gap-2 mb-3">
           <span class="material-symbols-outlined text-sky-600">lock_person</span>
@@ -78,14 +78,14 @@
 
       <section id="app" class="hidden">
         <div class="grid xl:grid-cols-[250px_minmax(0,1fr)] gap-4 md:gap-5">
-          <aside class="card rounded-3xl border border-sky-100 p-3 h-fit sticky top-24 shadow-lg shadow-sky-100/60">
+          <aside class="card rounded-3xl border border-sky-100 p-3 h-fit xl:sticky xl:top-24 shadow-lg shadow-sky-100/60">
             <p class="px-2 pt-1 pb-2 text-xs uppercase tracking-wide font-bold text-slate-500">Sections</p>
-            <nav class="space-y-2">
-              <button class="tab w-full text-left px-3 py-2.5 rounded-xl bg-sky-100 text-sky-700 font-bold flex items-center gap-2" data-tab="dashboard"><span class="material-symbols-outlined text-base">dashboard</span>Dashboard</button>
-              <button class="tab w-full text-left px-3 py-2.5 rounded-xl hover:bg-slate-100 font-semibold flex items-center gap-2" data-tab="users"><span class="material-symbols-outlined text-base">group</span>Users</button>
-              <button class="tab w-full text-left px-3 py-2.5 rounded-xl hover:bg-slate-100 font-semibold flex items-center gap-2" data-tab="deletions"><span class="material-symbols-outlined text-base">delete</span>Deletion Requests</button>
-              <button class="tab w-full text-left px-3 py-2.5 rounded-xl hover:bg-slate-100 font-semibold flex items-center gap-2" data-tab="reports"><span class="material-symbols-outlined text-base">report</span>Problem Reports</button>
-              <button class="tab w-full text-left px-3 py-2.5 rounded-xl hover:bg-slate-100 font-semibold flex items-center gap-2" data-tab="notifications"><span class="material-symbols-outlined text-base">campaign</span>Notifications</button>
+            <nav class="flex gap-2 overflow-x-auto pb-1 xl:block xl:space-y-2 xl:overflow-visible xl:pb-0">
+              <button class="tab shrink-0 xl:w-full text-left px-3 py-2.5 rounded-xl bg-sky-100 text-sky-700 font-bold flex items-center gap-2" data-tab="dashboard"><span class="material-symbols-outlined text-base">dashboard</span>Dashboard</button>
+              <button class="tab shrink-0 xl:w-full text-left px-3 py-2.5 rounded-xl hover:bg-slate-100 font-semibold flex items-center gap-2" data-tab="users"><span class="material-symbols-outlined text-base">group</span>Users</button>
+              <button class="tab shrink-0 xl:w-full text-left px-3 py-2.5 rounded-xl hover:bg-slate-100 font-semibold flex items-center gap-2" data-tab="deletions"><span class="material-symbols-outlined text-base">delete</span>Deletion Requests</button>
+              <button class="tab shrink-0 xl:w-full text-left px-3 py-2.5 rounded-xl hover:bg-slate-100 font-semibold flex items-center gap-2" data-tab="reports"><span class="material-symbols-outlined text-base">report</span>Problem Reports</button>
+              <button class="tab shrink-0 xl:w-full text-left px-3 py-2.5 rounded-xl hover:bg-slate-100 font-semibold flex items-center gap-2" data-tab="notifications"><span class="material-symbols-outlined text-base">campaign</span>Notifications</button>
             </nav>
           </aside>
 
@@ -100,8 +100,8 @@
             </section>
 
             <section id="users" class="panel card rounded-3xl border border-sky-100 p-4 md:p-5 shadow-lg shadow-sky-100/60">
-              <div class="flex flex-wrap gap-2 mb-3">
-                <input id="userQuery" type="text" placeholder="Search email, username, uid..." class="flex-1 min-w-[220px] rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-sky-400 focus:ring-sky-400" />
+              <div class="grid gap-2 mb-3 sm:flex sm:flex-wrap">
+                <input id="userQuery" type="text" placeholder="Search email, username, uid..." class="w-full sm:flex-1 sm:min-w-[220px] rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-sky-400 focus:ring-sky-400" />
                 <button id="usersLoad" class="px-3 py-2 rounded-xl bg-sky-500 hover:bg-sky-600 text-white text-sm font-bold transition-colors">Load</button>
                 <button id="usersNext" class="px-3 py-2 rounded-xl border border-sky-200 bg-white text-sm font-semibold hover:bg-sky-50">Next</button>
                 <button id="usersExport" class="px-3 py-2 rounded-xl border border-sky-200 bg-white text-sm font-semibold hover:bg-sky-50">Export CSV</button>
@@ -115,7 +115,7 @@
             </section>
 
             <section id="deletions" class="panel card rounded-3xl border border-sky-100 p-4 md:p-5 shadow-lg shadow-sky-100/60">
-              <div class="flex flex-wrap gap-2 mb-3">
+              <div class="grid gap-2 mb-3 sm:flex sm:flex-wrap">
                 <select id="deletionsFilter" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-sky-400 focus:ring-sky-400">
                   <option value="">All</option>
                   <option value="pending">Pending</option>
@@ -131,7 +131,7 @@
             </section>
 
             <section id="reports" class="panel card rounded-3xl border border-sky-100 p-4 md:p-5 shadow-lg shadow-sky-100/60">
-              <div class="flex flex-wrap gap-2 mb-3">
+              <div class="grid gap-2 mb-3 sm:flex sm:flex-wrap">
                 <select id="reportsFilter" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-sky-400 focus:ring-sky-400">
                   <option value="">All</option>
                   <option value="pending">Pending</option>

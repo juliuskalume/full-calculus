@@ -171,21 +171,93 @@
     URL.revokeObjectURL(url);
   };
 
+  const STATUS_META = {
+    pending: {
+      label: "Pending",
+      badge: "bg-amber-100 text-amber-800 ring-amber-300",
+      card: "border-amber-200 bg-amber-50/70",
+    },
+    in_review: {
+      label: "In review",
+      badge: "bg-sky-100 text-sky-800 ring-sky-300",
+      card: "border-sky-200 bg-sky-50/70",
+    },
+    resolved: {
+      label: "Resolved",
+      badge: "bg-emerald-100 text-emerald-800 ring-emerald-300",
+      card: "border-emerald-200 bg-emerald-50/70",
+    },
+    closed: {
+      label: "Closed",
+      badge: "bg-slate-200 text-slate-800 ring-slate-300",
+      card: "border-slate-300 bg-slate-50",
+    },
+    denied: {
+      label: "Denied",
+      badge: "bg-rose-100 text-rose-800 ring-rose-300",
+      card: "border-rose-200 bg-rose-50/70",
+    },
+    deleted: {
+      label: "Deleted",
+      badge: "bg-red-100 text-red-800 ring-red-300",
+      card: "border-red-200 bg-red-50/70",
+    },
+    completed: {
+      label: "Completed",
+      badge: "bg-indigo-100 text-indigo-800 ring-indigo-300",
+      card: "border-indigo-200 bg-indigo-50/70",
+    },
+    active: {
+      label: "Active",
+      badge: "bg-emerald-100 text-emerald-800 ring-emerald-300",
+      card: "border-emerald-200 bg-emerald-50/70",
+    },
+    inactive: {
+      label: "Inactive",
+      badge: "bg-slate-200 text-slate-800 ring-slate-300",
+      card: "border-slate-300 bg-slate-50",
+    },
+  };
+
+  const statusKey = (value, fallback = "pending") =>
+    String(value || fallback)
+      .trim()
+      .toLowerCase()
+      .replace(/[\s-]+/g, "_");
+
+  const statusLabel = (value, fallback = "pending") => {
+    const key = statusKey(value, fallback);
+    return STATUS_META[key]?.label || key.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+  };
+
+  const statusBadge = (value, fallback = "pending") => {
+    const key = statusKey(value, fallback);
+    const meta = STATUS_META[key] || STATUS_META.pending;
+    return `<span class="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wide ring-1 ${meta.badge}">${escapeHtml(
+      statusLabel(key, fallback)
+    )}</span>`;
+  };
+
+  const statusCardClass = (value, fallback = "pending") => {
+    const key = statusKey(value, fallback);
+    return STATUS_META[key]?.card || STATUS_META.pending.card;
+  };
+
   const renderDashboard = (stats) => {
     const cards = [
-      ["Users", stats.users],
-      ["Pending deletions", stats.pendingDeletionRequests],
-      ["Pending reports", stats.pendingProblemReports],
-      ["Total reports", stats.totalProblemReports],
-      ["Web push subs", stats.pushSubscriptions],
-      ["FCM tokens", stats.fcmTokens],
+      ["Users", stats.users, "border-sky-100 from-white to-sky-50 text-sky-700"],
+      ["Pending deletions", stats.pendingDeletionRequests, "border-amber-200 from-white to-amber-50 text-amber-700"],
+      ["Pending reports", stats.pendingProblemReports, "border-rose-200 from-white to-rose-50 text-rose-700"],
+      ["Total reports", stats.totalProblemReports, "border-violet-200 from-white to-violet-50 text-violet-700"],
+      ["Web push subs", stats.pushSubscriptions, "border-emerald-200 from-white to-emerald-50 text-emerald-700"],
+      ["FCM tokens", stats.fcmTokens, "border-indigo-200 from-white to-indigo-50 text-indigo-700"],
     ];
     el("dashboardCards").innerHTML = cards
       .map(
-        ([label, value]) => `
-          <div class="rounded-2xl border border-sky-100 bg-gradient-to-br from-white to-sky-50 p-3 shadow-sm">
+        ([label, value, tone]) => `
+          <div class="rounded-2xl border bg-gradient-to-br p-3 shadow-sm ${tone}">
             <p class="text-xs text-slate-500">${escapeHtml(label)}</p>
-            <p class="text-2xl font-extrabold">${Number(value) || 0}</p>
+            <p class="text-2xl font-extrabold text-current">${Number(value) || 0}</p>
           </div>
         `
       )
@@ -299,15 +371,21 @@
     state.deletions = Array.isArray(items) ? items : [];
     el("deletionsList").innerHTML = state.deletions
       .map(
-        (r) => `
-          <article class="rounded-2xl border border-sky-100 bg-white p-3 shadow-sm">
-            <p class="font-bold">${escapeHtml(r.email || "-")}</p>
-            <p class="text-xs text-slate-500">UID: ${escapeHtml(r.uid || "-")} | ${escapeHtml(
-          r.status || "pending"
-        )} | ${escapeHtml(fmt(r.createdAt))}</p>
+        (r) => {
+          const currentStatus = statusKey(r.status, "pending");
+          return `
+          <article class="rounded-2xl border p-3 shadow-sm ${statusCardClass(currentStatus)}">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div class="min-w-0">
+                <p class="font-bold break-words">${escapeHtml(r.email || "-")}</p>
+                <p class="text-xs text-slate-500 break-all">UID: ${escapeHtml(r.uid || "-")}</p>
+              </div>
+              ${statusBadge(currentStatus)}
+            </div>
+            <p class="mt-1 text-xs text-slate-500">${escapeHtml(fmt(r.createdAt))}</p>
             <p class="text-sm mt-1">Reason: <span class="text-slate-500">${escapeHtml(r.reason || "-")}</span></p>
             <p class="text-sm">Details: <span class="text-slate-500">${escapeHtml(r.details || "-")}</span></p>
-            <div class="mt-2 flex flex-wrap gap-2">
+            <div class="mt-3 grid gap-2 sm:flex sm:flex-wrap">
               <button class="dr px-2.5 py-1.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold" data-id="${escapeHtml(
                 r.id || ""
               )}" data-action="approve_delete">Approve & delete</button>
@@ -319,7 +397,8 @@
               )}" data-action="complete">Complete</button>
             </div>
           </article>
-        `
+        `;
+        }
       )
       .join("");
   };
@@ -478,11 +557,13 @@
     el("reportsList").innerHTML = state.reports
       .map((r) => {
         const hasItem = !!String(r.itemId || "").trim();
+        const currentStatus = statusKey(r.status, "pending");
         return `
-          <article class="rounded-2xl border border-sky-100 bg-white p-3 shadow-sm">
-            <p class="font-bold">${escapeHtml(r.issueType || "Issue")} <span class="text-xs text-slate-500">(${escapeHtml(
-          r.status || "pending"
-        )})</span></p>
+          <article class="rounded-2xl border p-3 shadow-sm ${statusCardClass(currentStatus)}">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <p class="font-bold">${escapeHtml(r.issueType || "Issue")}</p>
+              ${statusBadge(currentStatus)}
+            </div>
             <div class="mt-2 grid gap-1 text-xs text-slate-500 md:grid-cols-2">
               <p><span class="font-semibold text-slate-600">Reported:</span> ${escapeHtml(fmt(r.createdAt || r.clientCreatedAt))}</p>
               <p><span class="font-semibold text-slate-600">Page:</span> ${escapeHtml(r.page || "-")}</p>
@@ -501,11 +582,11 @@
             <textarea class="report-note mt-2 w-full rounded-xl border border-slate-300 bg-white px-2 py-1.5 text-sm" data-id="${escapeHtml(
               r.id || ""
             )}" rows="2" placeholder="Admin note">${escapeHtml(r.adminNote || "")}</textarea>
-            <div class="mt-2 flex flex-wrap gap-2">
-              <button class="report-action px-2.5 py-1.5 rounded-xl border border-sky-200 bg-white hover:bg-sky-50 text-xs font-semibold" data-id="${escapeHtml(
+            <div class="mt-3 grid gap-2 sm:flex sm:flex-wrap">
+              <button class="report-action px-2.5 py-1.5 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold" data-id="${escapeHtml(
                 r.id || ""
               )}" data-status="pending">Pending</button>
-              <button class="report-action px-2.5 py-1.5 rounded-xl border border-sky-200 bg-white hover:bg-sky-50 text-xs font-semibold" data-id="${escapeHtml(
+              <button class="report-action px-2.5 py-1.5 rounded-xl border border-sky-300 bg-sky-50 hover:bg-sky-100 text-sky-800 text-xs font-bold" data-id="${escapeHtml(
                 r.id || ""
               )}" data-status="in_review">In review</button>
               <button class="report-action px-2.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold" data-id="${escapeHtml(
@@ -567,16 +648,19 @@
     state.notifications = Array.isArray(items) ? items : [];
     el("notifyList").innerHTML = state.notifications
       .map(
-        (n) => `
-          <article class="rounded-2xl border border-sky-100 bg-white p-3 shadow-sm">
-            <p class="font-bold">${escapeHtml(n.title || "-")} <span class="text-xs text-slate-500">(${
-          n.active ? "active" : "inactive"
-        })</span></p>
+        (n) => {
+          const currentStatus = n.active ? "active" : "inactive";
+          return `
+          <article class="rounded-2xl border p-3 shadow-sm ${statusCardClass(currentStatus, "inactive")}">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <p class="font-bold break-words">${escapeHtml(n.title || "-")}</p>
+              ${statusBadge(currentStatus, "inactive")}
+            </div>
             <p class="text-sm text-slate-500">${escapeHtml(n.body || "-")}</p>
             <p class="text-xs text-slate-500 mt-1">${escapeHtml(n.targetType || "-")} ${escapeHtml(
           n.targetUid || ""
         )} | ${escapeHtml(n.url || "path.html")} | ${escapeHtml(fmt(n.createdAt))}</p>
-            <div class="mt-2 flex flex-wrap gap-2">
+            <div class="mt-3 grid gap-2 sm:flex sm:flex-wrap">
               <button class="notification-action px-2.5 py-1.5 rounded-xl border border-sky-200 bg-white hover:bg-sky-50 text-xs font-semibold" data-id="${escapeHtml(
                 n.id || ""
               )}" data-action="activate">Activate</button>
@@ -588,7 +672,8 @@
               )}" data-action="delete">Delete</button>
             </div>
           </article>
-        `
+        `;
+        }
       )
       .join("");
   };
