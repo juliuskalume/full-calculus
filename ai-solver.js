@@ -231,7 +231,12 @@
         data = result.data;
         if (response.ok && data?.ok) break;
         lastError = new Error(String(data?.error || `HTTP ${response.status}`).trim() || "AI solver request failed.");
-        if (idx < endpoints.length - 1 && [404, 502, 503, 504].includes(response.status)) continue;
+        const canFallback =
+          idx < endpoints.length - 1 &&
+          (endpoint === "/api/getStepSolution" ? response.status === 404 : [404, 502, 503, 504].includes(response.status));
+        if (canFallback) {
+          continue;
+        }
         break;
       } catch (err) {
         lastError = err;

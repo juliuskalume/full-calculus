@@ -1,8 +1,19 @@
 {
   "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "https://us-central1-full-calculus.cloudfunctions.net/:path*"
-    }
+    { "source": "/api/adminDashboard", "destination": "https://us-central1-full-calculus.cloudfunctions.net/adminDashboard" },
+    { "source": "/api/adminListUsers", "destination": "https://us-central1-full-calculus.cloudfunctions.net/adminListUsers" },
+    { "source": "/api/adminApplyUserAction", "destination": "https://us-central1-full-calculus.cloudfunctions.net/adminApplyUserAction" },
+    { "source": "/api/adminUserAction", "destination": "https://us-central1-full-calculus.cloudfunctions.net/adminUserAction" },
+    { "source": "/api/listAccountDeletionRequests", "destination": "https://us-central1-full-calculus.cloudfunctions.net/listAccountDeletionRequests" },
+    { "source": "/api/processAccountDeletion", "destination": "https://us-central1-full-calculus.cloudfunctions.net/processAccountDeletion" },
+    { "source": "/api/adminListProblemReports", "destination": "https://us-central1-full-calculus.cloudfunctions.net/adminListProblemReports" },
+    { "source": "/api/adminUpdateProblemReport", "destination": "https://us-central1-full-calculus.cloudfunctions.net/adminUpdateProblemReport" },
+    { "source": "/api/getQuestionOverride", "destination": "https://us-central1-full-calculus.cloudfunctions.net/getQuestionOverride" },
+    { "source": "/api/adminGetQuestionOverride", "destination": "https://us-central1-full-calculus.cloudfunctions.net/adminGetQuestionOverride" },
+    { "source": "/api/adminUpsertQuestionOverride", "destination": "https://us-central1-full-calculus.cloudfunctions.net/adminUpsertQuestionOverride" },
+    { "source": "/api/adminSendNotification", "destination": "https://us-central1-full-calculus.cloudfunctions.net/adminSendNotification" },
+    { "source": "/api/adminListNotifications", "destination": "https://us-central1-full-calculus.cloudfunctions.net/adminListNotifications" },
+    { "source": "/api/adminUpdateNotification", "destination": "https://us-central1-full-calculus.cloudfunctions.net/adminUpdateNotification" },
+    { "source": "/api/getInAppNotifications", "destination": "https://us-central1-full-calculus.cloudfunctions.net/getInAppNotifications" }
   ]
 }
