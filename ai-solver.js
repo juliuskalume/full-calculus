@@ -21,6 +21,14 @@
       .replace(/\\n/g, "\n")
       .trim();
 
+  const repairLatexEscapes = (value) =>
+    String(value || "")
+      .replace(/\f\s*rac/g, "\\frac")
+      .replace(/(^|[^\\A-Za-z])rac(?=\s*\{)/g, "$1\\frac")
+      .replace(/\t\s*o\b/g, "\\to")
+      .replace(/\t\s*heta\b/g, "\\theta")
+      .replace(/\t\s*imes\b/g, "\\times");
+
   const extractGroqFields = (value) => {
     const raw = stripMarkdownCodeFence(value);
     if (!raw) return null;
@@ -115,13 +123,14 @@
   const normalizeEscapedMathText = (value) => {
     let text = String(value || "");
     if (!text) return "";
+    text = repairLatexEscapes(text);
     text = text.replace(/\\n/g, "\n");
     for (let i = 0; i < 4; i += 1) {
       const next = text.replace(/\\\\(?=[()[\]A-Za-z])/g, "\\");
       if (next === text) break;
       text = next;
     }
-    return text.trim();
+    return repairLatexEscapes(text).trim();
   };
 
   const normalizeSolution = (payload) => {

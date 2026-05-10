@@ -25,6 +25,14 @@ const decodeJsonLikeString = (value) =>
     .replace(/\\n/g, "\n")
     .trim();
 
+const repairLatexEscapes = (value) =>
+  String(value || "")
+    .replace(/\f\s*rac/g, "\\frac")
+    .replace(/(^|[^\\A-Za-z])rac(?=\s*\{)/g, "$1\\frac")
+    .replace(/\t\s*o\b/g, "\\to")
+    .replace(/\t\s*heta\b/g, "\\theta")
+    .replace(/\t\s*imes\b/g, "\\times");
+
 const extractGroqFields = (rawContent) => {
   const text = stripMarkdownCodeFence(rawContent);
   if (!text) return null;
@@ -100,13 +108,13 @@ const normalizeTutorVoice = (value) => {
 
 const buildSolutionText = (modelPayload) => {
   const data = modelPayload && typeof modelPayload === "object" ? modelPayload : {};
-  const summary = normalizeTutorVoice(trimForModel(data.summary || data.intro || "", 400));
+  const summary = normalizeTutorVoice(repairLatexEscapes(trimForModel(data.summary || data.intro || "", 400)));
   const steps = (Array.isArray(data.steps) ? data.steps : [])
-    .map((step) => normalizeTutorVoice(trimForModel(step, 400)))
+    .map((step) => normalizeTutorVoice(repairLatexEscapes(trimForModel(step, 400))))
     .filter(Boolean)
     .slice(0, 8);
-  const finalAnswer = normalizeTutorVoice(trimForModel(data.finalAnswer || data.answer || "", 250));
-  const tip = normalizeTutorVoice(trimForModel(data.tip || data.commonMistake || "", 300));
+  const finalAnswer = normalizeTutorVoice(repairLatexEscapes(trimForModel(data.finalAnswer || data.answer || "", 250)));
+  const tip = normalizeTutorVoice(repairLatexEscapes(trimForModel(data.tip || data.commonMistake || "", 300)));
 
   const lines = [];
   if (summary) lines.push(summary);

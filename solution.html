@@ -223,9 +223,19 @@
           .replace(/>=/g, "\\ge ");
       }
 
+      function repairLatexEscapes(value) {
+        return String(value || "")
+          .replace(/\f\s*rac/g, "\\frac")
+          .replace(/(^|[^\\A-Za-z])rac(?=\s*\{)/g, "$1\\frac")
+          .replace(/\t\s*o\b/g, "\\to")
+          .replace(/\t\s*heta\b/g, "\\theta")
+          .replace(/\t\s*imes\b/g, "\\times");
+      }
+
       function normalizeEscapedMathText(value) {
         let text = String(value ?? "");
         if (!text) return "";
+        text = repairLatexEscapes(text);
         text = text.replace(/\\n/g, "\n");
         for (let i = 0; i < 4; i += 1) {
           const next = text.replace(/\\\\(?=[()[\]A-Za-z$])/g, "\\");
@@ -240,6 +250,7 @@
           .replace(/\s*\n+\s*\\\)/g, "\\)")
           .replace(/\\\[\s*\n+\s*/g, "\\[")
           .replace(/\s*\n+\s*\\\]/g, "\\]")
+          .replace(/([\s(])rac(?=\s*\{)/g, "$1\\frac")
           .trim();
       }
 
