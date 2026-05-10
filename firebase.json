@@ -9,8 +9,11 @@
     "public": ".",
     "ignore": [
       "firebase.json",
+      "firebase-debug.log",
       "**/.*",
       "**/node_modules/**",
+      "android-pwa/**",
+      "full-discrete/android-pwa/**",
       "functions/**"
     ],
     "rewrites": [
@@ -28,6 +31,7 @@
       { "source": "/api/adminSendNotification", "function": "adminSendNotification" },
       { "source": "/api/adminListNotifications", "function": "adminListNotifications" },
       { "source": "/api/adminUpdateNotification", "function": "adminUpdateNotification" },
+      { "source": "/api/getStepSolution", "function": "getStepSolution" },
       { "source": "/api/getInAppNotifications", "function": "getInAppNotifications" }
     ]
   }

@@ -124,9 +124,6 @@
             <span class="material-symbols-outlined text-primary text-3xl" id="leagueIcon">diamond</span>
             <h1 id="leagueName" class="text-xl font-extrabold tracking-tight">League</h1>
           </div>
-          <p id="leagueSubtitle" class="text-slate-500 dark:text-slate-400 text-sm font-medium">
-            Top 5 promote · 16-20 demotion zone
-          </p>
 
           <!-- User meta chips -->
           <div class="mt-3 flex items-center gap-2">
@@ -436,11 +433,6 @@
         const subtitleEl = document.getElementById("leagueSubtitle");
         if (iconEl) iconEl.textContent = league.icon || "diamond";
         if (nameEl) nameEl.textContent = league.name;
-        if (subtitleEl) {
-          subtitleEl.textContent = league.next
-            ? `Top 5 promote to ${league.next.name} - 16-20 demotion zone`
-            : "Top 5 stay - 16-20 demotion zone";
-        }
       };
 
       const timeLeftInWeek = () => {

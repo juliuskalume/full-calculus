@@ -157,11 +157,13 @@
     };
   };
 
-  const getEndpoint = () => {
+  const getEndpointCandidates = () => {
     const explicit = String(window.FC_AI_SOLVER_ENDPOINT || "").trim();
-    if (explicit) return explicit;
     const projectId = String(window.FC_FIREBASE_CONFIG?.projectId || "full-calculus").trim();
-    return `https://us-central1-${projectId}.cloudfunctions.net/getStepSolution`;
+    const remote = `https://us-central1-${projectId}.cloudfunctions.net/getStepSolution`;
+    return ["/api/getStepSolution", explicit, remote].filter(
+      (endpoint, idx, list) => endpoint && list.indexOf(endpoint) === idx
+    );
   };
 
   const getAuthHeaders = async () => {
@@ -185,35 +187,60 @@
       throw new Error("Invalid question payload.");
     }
 
-    const endpoint = getEndpoint();
     const headers = {
       "Content-Type": "application/json",
       ...(await getAuthHeaders()),
     };
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        questionId,
-        prompt,
-        correctAnswer,
-        userAnswer: String(userAnswer || "").slice(0, 1200),
-        questionType: String(item?.type || ""),
-        sectionId: String(item?.sectionId || ""),
-        context: String(context || "lesson"),
-      }),
+
+    const requestBody = JSON.stringify({
+      questionId,
+      prompt,
+      correctAnswer,
+      userAnswer: String(userAnswer || "").slice(0, 1200),
+      questionType: String(item?.type || ""),
+      sectionId: String(item?.sectionId || ""),
+      context: String(context || "lesson"),
     });
 
+    const requestEndpoint = async (endpoint) => {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers,
+        body: requestBody,
+      });
+
+      let data = {};
+      try {
+        data = await response.json();
+      } catch {
+        data = {};
+      }
+
+      return { response, data };
+    };
+
+    let response;
     let data = {};
-    try {
-      data = await response.json();
-    } catch {
-      data = {};
+    let lastError = null;
+    const endpoints = getEndpointCandidates();
+    for (let idx = 0; idx < endpoints.length; idx += 1) {
+      const endpoint = endpoints[idx];
+      try {
+        const result = await requestEndpoint(endpoint);
+        response = result.response;
+        data = result.data;
+        if (response.ok && data?.ok) break;
+        lastError = new Error(String(data?.error || `HTTP ${response.status}`).trim() || "AI solver request failed.");
+        if (idx < endpoints.length - 1 && [404, 502, 503, 504].includes(response.status)) continue;
+        break;
+      } catch (err) {
+        lastError = err;
+        if (idx >= endpoints.length - 1) throw err;
+      }
     }
 
-    if (!response.ok || !data?.ok) {
-      const message = String(data?.error || `HTTP ${response.status}`).trim();
-      throw new Error(message || "AI solver request failed.");
+    if (!response || !response.ok || !data?.ok) {
+      throw lastError || new Error("AI solver request failed.");
     }
 
     const normalized = normalizeSolution(data);
