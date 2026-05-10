@@ -118,7 +118,11 @@
     } catch {
       data = null;
     }
-    if (!res.ok) throw new Error((data && data.message) || text || `Request failed (${res.status})`);
+    if (!res.ok) {
+      const err = new Error((data && data.message) || text || `Request failed (${res.status})`);
+      err.status = res.status;
+      throw err;
+    }
     return data;
   };
 
@@ -807,8 +811,16 @@
     try {
       await api("adminDashboard");
     } catch (err) {
-      await auth.signOut();
-      setMsg("authMsg", "This account is not authorized for admin access.", "error");
+      if (err?.status === 401 || err?.status === 403 || /not authorized|invalid auth token|missing auth token/i.test(err?.message || "")) {
+        await auth.signOut();
+        setMsg("authMsg", "This account is not authorized for admin access.", "error");
+      } else {
+        setMsg(
+          "authMsg",
+          "Admin service is unavailable right now. Check Firebase Functions billing/deployment, then reload.",
+          "error"
+        );
+      }
       return;
     }
 
