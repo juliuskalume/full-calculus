@@ -243,6 +243,41 @@
           .trim();
       }
 
+      function stripInvalidMathSyntax(expr) {
+        let text = String(expr || "").trim();
+        if (!text) return "";
+        text = text
+          .replace(/&amp;/g, "")
+          .replace(/&/g, "")
+          .replace(/\\left\s*/g, "")
+          .replace(/\\right\s*/g, "")
+          .replace(/\\displaystyle\s*/g, "")
+          .replace(/\\tag\{[^{}]*\}/g, "")
+          .replace(/\\begin\{(?:align\*?|equation\*?|gather\*?)\}/g, "\\begin{aligned}")
+          .replace(/\\end\{(?:align\*?|equation\*?|gather\*?)\}/g, "\\end{aligned}")
+          .replace(/\s+/g, " ")
+          .trim();
+
+        const openBraces = (text.match(/\{/g) || []).length;
+        const closeBraces = (text.match(/\}/g) || []).length;
+        if (openBraces !== closeBraces) {
+          return text.replace(/[{}]/g, "");
+        }
+        return text;
+      }
+
+      function unwrapUnsafeMathSegments(text) {
+        return String(text || "").replace(/\\\(([\s\S]*?)\\\)|\\\[([\s\S]*?)\\\]|\$\$([\s\S]*?)\$\$|\$([^$\n]+)\$/g, (match, inline, display, dollars, single) => {
+          const expr = stripInvalidMathSyntax(inline ?? display ?? dollars ?? single ?? "");
+          if (!expr) return "";
+          const proseStripped = expr.replace(/\\(?:sin|cos|tan|sec|csc|cot|sqrt|log|ln|exp|lim|frac|cdot|to|le|ge|infty|pi|theta|alpha|beta|gamma)\b/g, "");
+          const wordCount = (proseStripped.match(/[A-Za-z]{3,}/g) || []).length;
+          const hasMathSignal = /[=<>^_*/+\-]|\d|\\[A-Za-z]+/.test(expr);
+          if (wordCount > 5 && !hasMathSignal) return expr;
+          return `\\(${expr}\\)`;
+        });
+      }
+
       function protectMathSegments(text) {
         const segments = [];
         const protectedText = String(text || "").replace(
@@ -266,7 +301,7 @@
       }
 
       function autoWrapMathText(value) {
-        const normalized = normalizeEscapedMathText(normalizeMathFragment(value));
+        const normalized = unwrapUnsafeMathSegments(normalizeEscapedMathText(normalizeMathFragment(value)));
         const { protectedText, segments } = protectMathSegments(normalized);
         const lines = protectedText.split(/\n/);
         const processed = lines.map((line) => {
@@ -370,8 +405,22 @@
             await window.MathJax.startup.promise;
           }
           await window.MathJax.typesetPromise(targets);
+          targets.forEach((node) => {
+            node.querySelectorAll("mjx-merror").forEach((errNode) => {
+              const source = errNode.closest("mjx-container")?.getAttribute("jax") || "";
+              errNode.textContent = source || "";
+              errNode.style.color = "inherit";
+              errNode.style.backgroundColor = "transparent";
+              errNode.style.border = "0";
+              errNode.style.padding = "0";
+            });
+          });
         } catch {
-          // ignore
+          targets.forEach((node) => {
+            node.querySelectorAll("mjx-merror").forEach((errNode) => {
+              errNode.textContent = "";
+            });
+          });
         }
       }
 

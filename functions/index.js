@@ -344,6 +344,7 @@ const requestGroqSolution = async ({ prompt, correctAnswer, userAnswer, runtimeC
     "The steps field must be a JSON array with 2 to 5 short, concrete correction steps. Never leave steps empty. " +
     "Write normal English sentences. Wrap every mathematical expression with inline LaTeX delimiters like \\\\(x = 2\\\\). " +
     "Do not place ordinary prose inside math delimiters. Keep spacing natural and readable. " +
+    "Use only simple inline TeX. Do not use display math, align environments, equation environments, \\left, \\right, or table syntax. " +
     "Address the learner directly in second person. Say 'your answer' and 'you', never 'the student' or 'the learner'. " +
     "Do not wrap the JSON in markdown code fences.";
   const userPrompt = [
