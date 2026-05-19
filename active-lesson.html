@@ -959,7 +959,7 @@
         textAnswer.classList.add("hidden");
         textAnswer.value = "";
         textAreaAnswer.value = "";
-        textAnswer.inputMode = item.type === "numeric" ? "decimal" : "text";
+        textAnswer.inputMode = "text";
         textAnswer.placeholder = item.type === "numeric" ? "Enter a value" : "Type your answer";
         currentResponse = "";
         clearInputPreview();
