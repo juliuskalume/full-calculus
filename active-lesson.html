@@ -845,6 +845,10 @@
       }
 
       function openDetailedSolution() {
+        if (!window.FCAuth?.getCurrentUser?.()) {
+          window.location.href = "login.html";
+          return;
+        }
         if (!session || !currentItem || !window.FCSolutionRequest?.setRequest) return;
         const saved = window.FCSolutionRequest.setRequest({
           source: "active-lesson",
@@ -1083,6 +1087,12 @@
           const firstStep = currentItem.solutionSteps?.[0] || "Review the steps and try the next one.";
           const fallbackExplanation = String(currentItem?.wrongResponse || firstStep || "").trim();
           wrongExplanation.innerHTML = formatFeedbackMathText(fallbackExplanation || "Review the steps and try again.");
+          if (detailedFeedbackBtn) {
+            const signedIn = Boolean(window.FCAuth?.getCurrentUser?.());
+            detailedFeedbackBtn.disabled = !signedIn;
+            detailedFeedbackBtn.classList.toggle("opacity-60", !signedIn);
+            detailedFeedbackBtn.title = signedIn ? "" : "Sign in to access AI detailed feedback.";
+          }
           markWrongAnswer();
         }
 

@@ -204,6 +204,11 @@
       const fallbackTextEl = document.getElementById("fallbackText");
       const errorStateEl = document.getElementById("errorState");
       const solutionStatusEl = document.getElementById("solutionStatus");
+      const signedInUser = window.FCAuth?.getCurrentUser?.() || null;
+      if (!signedInUser) {
+        window.FCSolutionRequest?.clearRequest?.();
+        window.location.replace("login.html");
+      }
 
       const requestPayload = window.FCSolutionRequest?.getRequest?.() || null;
 
