@@ -204,13 +204,37 @@
       const fallbackTextEl = document.getElementById("fallbackText");
       const errorStateEl = document.getElementById("errorState");
       const solutionStatusEl = document.getElementById("solutionStatus");
-      const signedInUser = window.FCAuth?.getCurrentUser?.() || null;
-      if (!signedInUser) {
-        window.FCSolutionRequest?.clearRequest?.();
-        window.location.replace("login.html");
-      }
-
       const requestPayload = window.FCSolutionRequest?.getRequest?.() || null;
+
+      function waitForSignedInUser(timeoutMs = 3500) {
+        const current = window.FCAuth?.getCurrentUser?.();
+        if (current) return Promise.resolve(current);
+
+        return new Promise((resolve) => {
+          let settled = false;
+          let unsubscribe = null;
+          const finish = (user) => {
+            if (settled) return;
+            settled = true;
+            if (typeof unsubscribe === "function") unsubscribe();
+            resolve(user || null);
+          };
+
+          if (window.FCAuth?.enabled && typeof window.FCAuth.onAuthStateChanged === "function") {
+            try {
+              unsubscribe = window.FCAuth.onAuthStateChanged(() => {
+                finish(window.FCAuth?.getCurrentUser?.() || null);
+              });
+            } catch {
+              // Fall back to the timeout below.
+            }
+          }
+
+          setTimeout(() => {
+            finish(window.FCAuth?.getCurrentUser?.() || null);
+          }, timeoutMs);
+        });
+      }
 
       function escapeHtml(value) {
         return String(value ?? "")
@@ -458,6 +482,12 @@
       }
 
       async function loadSolution() {
+        const signedInUser = await waitForSignedInUser();
+        if (!signedInUser) {
+          window.location.replace("login.html");
+          return;
+        }
+
         if (!requestPayload?.item?.id) {
           solutionStatusEl.textContent = "";
           loadingStateEl.classList.add("hidden");

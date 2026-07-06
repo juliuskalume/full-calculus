@@ -844,8 +844,38 @@
         return true;
       }
 
-      function openDetailedSolution() {
-        if (!window.FCAuth?.getCurrentUser?.()) {
+      function waitForSignedInUser(timeoutMs = 3500) {
+        const current = window.FCAuth?.getCurrentUser?.();
+        if (current) return Promise.resolve(current);
+
+        return new Promise((resolve) => {
+          let settled = false;
+          let unsubscribe = null;
+          const finish = (user) => {
+            if (settled) return;
+            settled = true;
+            if (typeof unsubscribe === "function") unsubscribe();
+            resolve(user || null);
+          };
+
+          if (window.FCAuth?.enabled && typeof window.FCAuth.onAuthStateChanged === "function") {
+            try {
+              unsubscribe = window.FCAuth.onAuthStateChanged(() => {
+                finish(window.FCAuth?.getCurrentUser?.() || null);
+              });
+            } catch {
+              // Fall back to the timeout below.
+            }
+          }
+
+          setTimeout(() => {
+            finish(window.FCAuth?.getCurrentUser?.() || null);
+          }, timeoutMs);
+        });
+      }
+
+      async function openDetailedSolution() {
+        if (!(await waitForSignedInUser())) {
           window.location.href = "login.html";
           return;
         }
@@ -1194,7 +1224,7 @@
       });
 
       detailedFeedbackBtn?.addEventListener("click", () => {
-        openDetailedSolution();
+        openDetailedSolution().catch(() => {});
       });
 
       reportBtn.addEventListener("click", () => {
