@@ -5,14 +5,14 @@ plugins {
 
 android {
   namespace "com.fullcalculus.app"
-  compileSdk 35
+  compileSdk 36
 
   defaultConfig {
     applicationId "com.fullcalculus.app"
     minSdk 21
-    targetSdk 35
-    versionCode 10
-    versionName "1.0.9"
+    targetSdk 36
+    versionCode 12
+    versionName "1.0.11"
   }
 
   signingConfigs {
