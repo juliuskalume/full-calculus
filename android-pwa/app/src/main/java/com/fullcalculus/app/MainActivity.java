@@ -36,6 +36,12 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.FullScreenContentCallback;
+import com.google.android.gms.ads.LoadAdError;
+import com.google.android.gms.ads.MobileAds;
+import com.google.android.gms.ads.interstitial.InterstitialAd;
+import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
 import com.google.firebase.messaging.FirebaseMessaging;
 
 import org.json.JSONObject;
@@ -54,6 +60,7 @@ public class MainActivity extends AppCompatActivity {
   private static final String KEY_FCM_TOKEN = "fcm_token";
   private static final String KEY_FCM_DEVICE = "fcm_device_id";
   private static final String KEY_NOTIF_PROMPTED = "notifPrompted";
+  private InterstitialAd interstitialAd;
 
   @SuppressLint("SetJavaScriptEnabled")
   @Override
@@ -67,6 +74,7 @@ public class MainActivity extends AppCompatActivity {
     webView = findViewById(R.id.webview);
     webView.addJavascriptInterface(new AuthBridge(), "AndroidAuth");
     webView.addJavascriptInterface(new FcmBridge(), "AndroidFcm");
+    webView.addJavascriptInterface(new AdsBridge(), "AndroidAds");
     WebSettings settings = webView.getSettings();
     settings.setJavaScriptEnabled(true);
     settings.setDomStorageEnabled(true);
@@ -149,6 +157,7 @@ public class MainActivity extends AppCompatActivity {
     );
 
     initFcm();
+    initAds();
     maybePromptNotifications();
 
     if (isOnline()) {
@@ -164,6 +173,79 @@ public class MainActivity extends AppCompatActivity {
 
   private void initFcm() {
     fetchFcmToken();
+  }
+
+  private void initAds() {
+    try {
+      MobileAds.initialize(this);
+      loadInterstitial();
+    } catch (Exception ignored) {
+      // ignore
+    }
+  }
+
+  private void loadInterstitial() {
+    try {
+      AdRequest request = new AdRequest.Builder().build();
+      InterstitialAd.load(
+          this,
+          getString(R.string.admob_interstitial_id),
+          request,
+          new InterstitialAdLoadCallback() {
+            @Override
+            public void onAdLoaded(@NonNull InterstitialAd ad) {
+              interstitialAd = ad;
+            }
+
+            @Override
+            public void onAdFailedToLoad(@NonNull LoadAdError error) {
+              interstitialAd = null;
+            }
+          }
+      );
+    } catch (Exception ignored) {
+      interstitialAd = null;
+    }
+  }
+
+  private String toAbsoluteUrl(String nextUrl) {
+    if (nextUrl == null || nextUrl.isEmpty()) return getString(R.string.launch_url);
+    if (nextUrl.startsWith("http://") || nextUrl.startsWith("https://") || nextUrl.startsWith("file://")) {
+      return nextUrl;
+    }
+    String base = getString(R.string.launch_url);
+    if (!base.endsWith("/")) base = base + "/";
+    String trimmed = nextUrl.startsWith("/") ? nextUrl.substring(1) : nextUrl;
+    return base + trimmed;
+  }
+
+  private void navigateAfterAd(String nextUrl) {
+    String url = toAbsoluteUrl(nextUrl);
+    runOnUiThread(() -> webView.loadUrl(url));
+  }
+
+  private void showInterstitial(String nextUrl) {
+    if (interstitialAd == null) {
+      navigateAfterAd(nextUrl);
+      loadInterstitial();
+      return;
+    }
+    interstitialAd.setFullScreenContentCallback(new FullScreenContentCallback() {
+      @Override
+      public void onAdDismissedFullScreenContent() {
+        interstitialAd = null;
+        loadInterstitial();
+        navigateAfterAd(nextUrl);
+      }
+
+      @Override
+      public void onAdFailedToShowFullScreenContent(@NonNull com.google.android.gms.ads.AdError adError) {
+        interstitialAd = null;
+        loadInterstitial();
+        navigateAfterAd(nextUrl);
+      }
+    });
+    interstitialAd.show(this);
   }
 
   private void applySystemBars() {
@@ -525,6 +607,14 @@ public class MainActivity extends AppCompatActivity {
     @SuppressWarnings("unused")
     public void requestPermission() {
       runOnUiThread(() -> requestNotificationPermission());
+    }
+  }
+
+  private class AdsBridge {
+    @JavascriptInterface
+    @SuppressWarnings("unused")
+    public void showAd(String type, String nextUrl) {
+      runOnUiThread(() -> showInterstitial(nextUrl));
     }
   }
 }

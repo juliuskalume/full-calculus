@@ -889,6 +889,10 @@
           returnUrl: "active-lesson.html",
         });
         if (!saved) return;
+        if (window.AndroidAds?.showAd) {
+          window.AndroidAds.showAd("interstitial", "solution.html");
+          return;
+        }
         window.location.href = "solution.html";
       }
 
@@ -1183,6 +1187,10 @@
         });
 
         FCEngine.clearSession();
+        if (session.mode === "lesson" && window.AndroidAds?.showAd) {
+          window.AndroidAds.showAd("interstitial", "lesson-complete.html");
+          return;
+        }
         window.location.href = "lesson-complete.html";
       }
 
