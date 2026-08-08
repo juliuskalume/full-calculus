@@ -32,6 +32,51 @@
     }
   };
 
+
+  const learnedContentReplacements = {
+    ja: [
+      ["Definition", "定義"], ["Informal", "直感的な"], ["Important Notes", "重要な注意"], ["Important", "重要"], ["Notes", "ノート"], ["Limit", "極限"], ["Limits", "極限"], ["Continuity", "連続性"], ["Derivative", "導関数"], ["Derivatives", "導関数"], ["Integral", "積分"], ["Integrals", "積分"], ["Applications", "応用"], ["Functions", "関数"], ["Function", "関数"], ["Vectors", "ベクトル"], ["Vector", "ベクトル"], ["Series", "級数"], ["Sequences", "数列"], ["Power", "べき"], ["Polar Coordinates", "極座標"], ["Parametric Equations", "媒介変数方程式"],
+      ["Compute", "計算する"], ["Evaluate", "評価する"], ["Differentiate", "微分する"], ["Find", "求める"], ["Explain", "説明する"], ["Describe", "説明する"], ["Estimate", "推定する"], ["Apply", "適用する"], ["Use", "使用する"], ["Simplify", "簡単にする"], ["Select the correct answer.", "正しい答えを選んでください。"], ["Type the value.", "値を入力してください。"], ["Type an equivalent expression.", "同値な式を入力してください。"], ["Write a short explanation.", "短い説明を書いてください。"],
+      ["Correct", "正しい"], ["Incorrect", "正しくない"], ["True", "真"], ["False", "偽"], ["undefined", "未定義"], ["does not exist", "存在しない"], ["exists", "存在する"], ["approaches", "近づく"], ["from the left", "左から"], ["from the right", "右から"], ["the graph", "グラフ"], ["the value", "値"], ["answer", "答え"], ["all real numbers", "すべての実数"], ["none", "なし"]
+    ],
+    es: [
+      ["Definition", "Definición"], ["Informal", "Informal"], ["Important Notes", "Notas importantes"], ["Important", "Importante"], ["Notes", "Notas"], ["Limit", "Límite"], ["Limits", "Límites"], ["Continuity", "continuidad"], ["Derivative", "Derivada"], ["Derivatives", "Derivadas"], ["Integral", "Integral"], ["Integrals", "Integrales"], ["Applications", "Aplicaciones"], ["Functions", "Funciones"], ["Function", "Función"], ["Vectors", "Vectores"], ["Vector", "Vector"], ["Series", "Series"], ["Sequences", "Sucesiones"], ["Power", "potencias"], ["Polar Coordinates", "Coordenadas polares"], ["Parametric Equations", "Ecuaciones paramétricas"],
+      ["Compute", "Calcula"], ["Evaluate", "Evalúa"], ["Differentiate", "Deriva"], ["Find", "Encuentra"], ["Explain", "Explica"], ["Describe", "Describe"], ["Estimate", "Estima"], ["Apply", "Aplica"], ["Use", "Usa"], ["Simplify", "Simplifica"], ["Select the correct answer.", "Selecciona la respuesta correcta."], ["Type the value.", "Escribe el valor."], ["Type an equivalent expression.", "Escribe una expresión equivalente."], ["Write a short explanation.", "Escribe una explicación breve."],
+      ["Correct", "Correcto"], ["Incorrect", "Incorrecto"], ["True", "Verdadero"], ["False", "Falso"], ["undefined", "indefinido"], ["does not exist", "no existe"], ["exists", "existe"], ["approaches", "se aproxima a"], ["from the left", "por la izquierda"], ["from the right", "por la derecha"], ["the graph", "la gráfica"], ["the value", "el valor"], ["answer", "respuesta"], ["all real numbers", "todos los números reales"], ["none", "ninguno"]
+    ],
+    tr: [
+      ["Definition", "Tanım"], ["Informal", "Sezgisel"], ["Important Notes", "Önemli notlar"], ["Important", "Önemli"], ["Notes", "Notlar"], ["Limit", "Limit"], ["Limits", "Limitler"], ["Continuity", "süreklilik"], ["Derivative", "Türev"], ["Derivatives", "Türevler"], ["Integral", "İntegral"], ["Integrals", "İntegraller"], ["Applications", "Uygulamalar"], ["Functions", "Fonksiyonlar"], ["Function", "Fonksiyon"], ["Vectors", "Vektörler"], ["Vector", "Vektör"], ["Series", "Seriler"], ["Sequences", "Diziler"], ["Power", "kuvvet"], ["Polar Coordinates", "Kutupsal koordinatlar"], ["Parametric Equations", "Parametrik denklemler"],
+      ["Compute", "Hesapla"], ["Evaluate", "Değerlendir"], ["Differentiate", "Türevini al"], ["Find", "Bul"], ["Explain", "Açıkla"], ["Describe", "Açıkla"], ["Estimate", "Tahmin et"], ["Apply", "Uygula"], ["Use", "Kullan"], ["Simplify", "Sadeleştir"], ["Select the correct answer.", "Doğru cevabı seç."], ["Type the value.", "Değeri yaz."], ["Type an equivalent expression.", "Eşdeğer bir ifade yaz."], ["Write a short explanation.", "Kısa bir açıklama yaz."],
+      ["Correct", "Doğru"], ["Incorrect", "Yanlış"], ["True", "Doğru"], ["False", "Yanlış"], ["undefined", "tanımsız"], ["does not exist", "yoktur"], ["exists", "vardır"], ["approaches", "yaklaşır"], ["from the left", "soldan"], ["from the right", "sağdan"], ["the graph", "grafik"], ["the value", "değer"], ["answer", "cevap"], ["all real numbers", "tüm gerçek sayılar"], ["none", "hiçbiri"]
+    ]
+  };
+
+  const escapeRegExp = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  function translateLearnedContent(text) {
+    let source = t(text);
+    const lang = getLanguage();
+    if (lang === "en") return source;
+    const replacements = learnedContentReplacements[lang] || [];
+    return String(source).split(/(<[^>]+>|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)|\$\$[\s\S]*?\$\$|\$[^$]*\$)/g).map((part) => {
+      if (!part || /^<[^>]+>$/.test(part) || /^\\[\[(]/.test(part) || /^\$/.test(part)) return part;
+      return replacements.reduce((out, [from, to]) => out.replace(new RegExp(`\\b${escapeRegExp(from)}\\b`, "gi"), to), part);
+    }).join("");
+  }
+
+  const LOCALIZED_CONTENT_KEYS = new Set(["title", "subtitle", "description", "body", "prompt", "finalAnswer", "explanation", "pdfLabel", "feedback", "label"]);
+  function localizeContentObject(value) {
+    if (Array.isArray(value)) return value.map((entry) => localizeContentObject(entry));
+    if (!value || typeof value !== "object") return typeof value === "string" ? translateLearnedContent(value) : value;
+    const next = { ...value };
+    Object.keys(next).forEach((key) => {
+      if (LOCALIZED_CONTENT_KEYS.has(key) && typeof next[key] === "string") next[key] = translateLearnedContent(next[key]);
+      else if (["learningObjectives", "hints", "choices", "steps", "equivalences"].includes(key) && Array.isArray(next[key])) next[key] = next[key].map((entry) => typeof entry === "string" ? translateLearnedContent(entry) : localizeContentObject(entry));
+      else if (key === "answer" && next.type === "mcq") next[key] = localizeContentObject(next[key]);
+      else if (key === "contentBlocks" && Array.isArray(next[key])) next[key] = next[key].map((entry) => localizeContentObject(entry));
+    });
+    return next;
+  }
+
   const getPrefs = () => { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch { return {}; } };
   const savePrefs = (prefs) => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs)); } catch {} };
   const normalize = (lang) => SUPPORTED.includes(String(lang || "").slice(0, 2)) ? String(lang).slice(0, 2) : "en";
@@ -101,7 +146,7 @@
     select.addEventListener("change", (e) => setLanguage(e.target.value));
   }
 
-  window.FCI18n = { SUPPORTED, LANGUAGE_NAMES, getLanguage, setLanguage, t, translateDocument };
+  window.FCI18n = { SUPPORTED, LANGUAGE_NAMES, getLanguage, setLanguage, t, translateLearnedContent, localizeContentObject, translateDocument };
   document.addEventListener("DOMContentLoaded", () => {
     translateDocument();
     addSettingsLanguageControl();

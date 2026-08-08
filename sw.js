@@ -1,4 +1,4 @@
-const STATIC_CACHE = "fc-static-v9";
+const STATIC_CACHE = "fc-static-v10";
 const RUNTIME_CACHE = "fc-runtime-v2";
 const IMAGE_CACHE = "fc-images-v1";
 

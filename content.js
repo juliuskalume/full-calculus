@@ -27,26 +27,30 @@ window.FCContent = (function () {
     testBlueprints: indexById(testBlueprints),
   };
 
+  function localizeContent(value) {
+    return window.FCI18n?.localizeContentObject ? window.FCI18n.localizeContentObject(value) : value;
+  }
+
   function getCourse(id) {
-    return index.courses[id] || null;
+    return localizeContent(index.courses[id] || null);
   }
   function getModule(id) {
-    return index.modules[id] || null;
+    return localizeContent(index.modules[id] || null);
   }
   function getChapter(id) {
-    return index.chapters[id] || null;
+    return localizeContent(index.chapters[id] || null);
   }
   function getSection(id) {
-    return index.sections[id] || null;
+    return localizeContent(index.sections[id] || null);
   }
   function getItem(id) {
-    return index.items[id] || null;
+    return localizeContent(index.items[id] || null);
   }
   function getExample(id) {
-    return index.examples[id] || null;
+    return localizeContent(index.examples[id] || null);
   }
   function getTestBlueprint(id) {
-    return index.testBlueprints[id] || null;
+    return localizeContent(index.testBlueprints[id] || null);
   }
 
   function sortByOrder(list) {
@@ -54,34 +58,34 @@ window.FCContent = (function () {
   }
 
   function getCourseModules(courseId) {
-    return sortByOrder(modules.filter((m) => m.courseId === courseId));
+    return localizeContent(sortByOrder(modules.filter((m) => m.courseId === courseId)));
   }
 
   function getModuleChapters(moduleId) {
-    return sortByOrder(chapters.filter((c) => c.moduleId === moduleId));
+    return localizeContent(sortByOrder(chapters.filter((c) => c.moduleId === moduleId)));
   }
 
   function getChapterSections(chapterId) {
-    return sortByOrder(sections.filter((s) => s.chapterId === chapterId));
+    return localizeContent(sortByOrder(sections.filter((s) => s.chapterId === chapterId)));
   }
 
   function getSectionItems(sectionId) {
-    return items.filter((i) => i.sectionId === sectionId);
+    return localizeContent(items.filter((i) => i.sectionId === sectionId));
   }
 
   function getSectionExamples(sectionId) {
-    return examples.filter((e) => e.sectionId === sectionId);
+    return localizeContent(examples.filter((e) => e.sectionId === sectionId));
   }
 
   function getItemsByTags(tags, difficulty) {
     if (!tags || !tags.length) return [];
     const tagSet = new Set(tags);
     const diffSet = difficulty && difficulty.length ? new Set(difficulty) : null;
-    return items.filter((item) => {
+    return localizeContent(items.filter((item) => {
       if (!item.tags || !item.tags.some((t) => tagSet.has(t))) return false;
       if (diffSet && !diffSet.has(item.difficulty)) return false;
       return true;
-    });
+    }));
   }
 
   function searchSections(query, courseId) {
@@ -98,7 +102,7 @@ window.FCContent = (function () {
           .flatMap((ch) => ch.sections)
       : sections.map((s) => s.id);
 
-    return sectionIds
+    return localizeContent(sectionIds
       .map((id) => getSection(id))
       .filter(Boolean)
       .filter((section) => {
@@ -110,18 +114,18 @@ window.FCContent = (function () {
           .join(" ")
           .toLowerCase();
         return text.includes(q);
-      });
+      }));
   }
 
   return {
     version: VERSION,
-    courses,
-    modules,
-    chapters,
-    sections,
-    items,
-    examples,
-    testBlueprints,
+    get courses() { return localizeContent(courses); },
+    get modules() { return localizeContent(modules); },
+    get chapters() { return localizeContent(chapters); },
+    get sections() { return localizeContent(sections); },
+    get items() { return localizeContent(items); },
+    get examples() { return localizeContent(examples); },
+    get testBlueprints() { return localizeContent(testBlueprints); },
     getCourse,
     getModule,
     getChapter,
