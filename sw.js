@@ -1,4 +1,4 @@
-const STATIC_CACHE = "fc-static-v8";
+const STATIC_CACHE = "fc-static-v9";
 const RUNTIME_CACHE = "fc-runtime-v2";
 const IMAGE_CACHE = "fc-images-v1";
 
@@ -21,6 +21,7 @@ const PRECACHE_URLS = [
   "offline.html",
   "manifest.webmanifest",
   "theme.js",
+  "i18n.js",
   "sound.js",
   "app.js",
   "state.js",
