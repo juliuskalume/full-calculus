@@ -76,7 +76,7 @@ function prevHref(step) {
 function setContinueLabel() {
   const label = document.getElementById("continueLabel");
   if (!label) return;
-  label.textContent = getStep() === "done" ? "Start learning" : "Continue";
+  label.textContent = window.FCI18n?.t(getStep() === "done" ? "Start learning" : "Continue") || (getStep() === "done" ? "Start learning" : "Continue");
 }
 
 function initDarkToggle() {
@@ -262,7 +262,7 @@ function initNotifyPage() {
   };
 
   const updateUI = (val) => {
-    if (current) current.textContent = val ? "on" : "off";
+    if (current) current.textContent = window.FCI18n?.t(val ? "on" : "off") || (val ? "on" : "off");
     applyNotifySelection(!!val);
   };
 
@@ -389,7 +389,7 @@ function initDonePage() {
   setText("sumSkill", s.skill || "—");
   setText("sumGoal", s.goal || "—");
   setText("sumTime", s.minutesPerDay ? `${s.minutesPerDay} min` : "—");
-  setText("sumNotif", s.notifications ? "on" : "off");
+  setText("sumNotif", window.FCI18n?.t(s.notifications ? "on" : "off") || (s.notifications ? "on" : "off"));
   setText("sumName", s.username ? s.username.trim() : s.name ? s.name.trim() : "—");
 }
 
