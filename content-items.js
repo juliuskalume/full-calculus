@@ -3916,7 +3916,7 @@ window.FCContentData = window.FCContentData || {};
     "choices": null,
     "answer": {
       "kind": "number",
-      "value": 0.75,
+      "value": "0.75",
       "tolerance": 0.001
     },
     "hints": [
@@ -3973,7 +3973,7 @@ window.FCContentData = window.FCContentData || {};
     "choices": null,
     "answer": {
       "kind": "number",
-      "value": 2,
+      "value": "2",
       "tolerance": 0.001
     },
     "hints": [
@@ -4030,7 +4030,7 @@ window.FCContentData = window.FCContentData || {};
     "choices": null,
     "answer": {
       "kind": "number",
-      "value": 12,
+      "value": "12",
       "tolerance": 0.001
     },
     "hints": [
@@ -4087,7 +4087,7 @@ window.FCContentData = window.FCContentData || {};
     "choices": null,
     "answer": {
       "kind": "number",
-      "value": 8,
+      "value": "8",
       "tolerance": 0.001
     },
     "hints": [
@@ -4144,7 +4144,7 @@ window.FCContentData = window.FCContentData || {};
     "choices": null,
     "answer": {
       "kind": "number",
-      "value": 9,
+      "value": "9",
       "tolerance": 0.001
     },
     "hints": [
@@ -4201,7 +4201,7 @@ window.FCContentData = window.FCContentData || {};
     "choices": null,
     "answer": {
       "kind": "number",
-      "value": 8,
+      "value": "8",
       "tolerance": 0.01
     },
     "hints": [
@@ -4228,7 +4228,7 @@ window.FCContentData = window.FCContentData || {};
     "choices": null,
     "answer": {
       "kind": "number",
-      "value": 0.4444,
+      "value": "0.4444",
       "tolerance": 0.01
     },
     "hints": [
@@ -4284,7 +4284,7 @@ window.FCContentData = window.FCContentData || {};
     "choices": null,
     "answer": {
       "kind": "number",
-      "value": 3,
+      "value": "3",
       "tolerance": 0.01
     },
     "hints": [
@@ -4369,7 +4369,7 @@ window.FCContentData = window.FCContentData || {};
     "choices": null,
     "answer": {
       "kind": "number",
-      "value": 0.6667,
+      "value": "0.6667",
       "tolerance": 0.01
     },
     "hints": [
@@ -4396,7 +4396,7 @@ window.FCContentData = window.FCContentData || {};
     "choices": null,
     "answer": {
       "kind": "number",
-      "value": 2,
+      "value": "2",
       "tolerance": 0.01
     },
     "hints": [
@@ -4537,7 +4537,7 @@ window.FCContentData = window.FCContentData || {};
     "choices": null,
     "answer": {
       "kind": "number",
-      "value": 4.5826,
+      "value": "4.5826",
       "tolerance": 0.01
     },
     "hints": [
@@ -4622,7 +4622,7 @@ window.FCContentData = window.FCContentData || {};
     "choices": null,
     "answer": {
       "kind": "number",
-      "value": 13,
+      "value": "13",
       "tolerance": 0.01
     },
     "hints": [
@@ -4707,7 +4707,7 @@ window.FCContentData = window.FCContentData || {};
     "choices": null,
     "answer": {
       "kind": "number",
-      "value": 1,
+      "value": "1",
       "tolerance": 0.01
     },
     "hints": [
@@ -4792,7 +4792,7 @@ window.FCContentData = window.FCContentData || {};
     "choices": null,
     "answer": {
       "kind": "number",
-      "value": 1,
+      "value": "1",
       "tolerance": 0.01
     },
     "hints": [
@@ -4877,7 +4877,7 @@ window.FCContentData = window.FCContentData || {};
     "choices": null,
     "answer": {
       "kind": "number",
-      "value": 2,
+      "value": "2",
       "tolerance": 0.01
     },
     "hints": [
@@ -4904,7 +4904,7 @@ window.FCContentData = window.FCContentData || {};
     "choices": null,
     "answer": {
       "kind": "number",
-      "value": 3,
+      "value": "3",
       "tolerance": 0.01
     },
     "hints": [
@@ -4960,7 +4960,7 @@ window.FCContentData = window.FCContentData || {};
     "choices": null,
     "answer": {
       "kind": "number",
-      "value": 5,
+      "value": "5",
       "tolerance": 0.01
     },
     "hints": [
@@ -4987,7 +4987,7 @@ window.FCContentData = window.FCContentData || {};
     "choices": null,
     "answer": {
       "kind": "number",
-      "value": 0.5,
+      "value": "0.5",
       "tolerance": 0.01
     },
     "hints": [
@@ -5043,7 +5043,7 @@ window.FCContentData = window.FCContentData || {};
     "choices": null,
     "answer": {
       "kind": "number",
-      "value": 5,
+      "value": "5",
       "tolerance": 0.01
     },
     "hints": [
@@ -5128,7 +5128,7 @@ window.FCContentData = window.FCContentData || {};
     "choices": null,
     "answer": {
       "kind": "number",
-      "value": 0,
+      "value": "0",
       "tolerance": 0.01
     },
     "hints": [
