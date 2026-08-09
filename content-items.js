@@ -3288,7 +3288,7 @@ window.FCContentData = window.FCContentData || {};
     "choices": null,
     "answer": {
       "kind": "number",
-      "value": 0,
+      "value": "0",
       "tolerance": 0.001
     },
     "hints": [
