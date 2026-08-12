@@ -502,6 +502,18 @@
       if (extra.leagueName) onboarding.leagueName = extra.leagueName;
     }
 
+    const xpValue = Number(local.meta?.xp) || 0;
+    const computedLeagueIndex = Number.isFinite(xpValue) && xpValue > 0
+      ? getLeagueIndexFromXp(xpValue)
+      : Number.isFinite(onboarding.leagueIndex)
+        ? Number(onboarding.leagueIndex)
+        : 0;
+    const clampedLeagueIndex = Math.max(0, Math.min(LEAGUES.length - 1, computedLeagueIndex));
+    const computedLeague = LEAGUES[clampedLeagueIndex] || LEAGUES[0];
+    onboarding.leagueIndex = clampedLeagueIndex;
+    onboarding.leagueId = computedLeague.id;
+    onboarding.leagueName = computedLeague.name;
+
     if (!onboarding.email && user.email) onboarding.email = user.email;
     if (!onboarding.username && onboarding.name) onboarding.username = onboarding.name;
 
@@ -540,15 +552,21 @@
     const onboarding = { ...(local.onboarding || {}) };
     const meta = local.meta || {};
     const streakValue = Number(meta.streak) || 0;
-    let leagueIndex = Number(extra?.leagueIndex ?? onboarding.leagueIndex);
-    if (Number.isFinite(leagueIndex) && leagueIndex >= 0) {
-      if (leagueIndex >= LEAGUES.length) leagueIndex = LEAGUES.length - 1;
-    } else if (streakValue >= 1) {
-      leagueIndex = 0;
-    } else {
-      leagueIndex = -1;
+    const xpValue = Number(meta.xp) || 0;
+    let leagueIndex = Number.isFinite(xpValue) && xpValue > 0
+      ? getLeagueIndexFromXp(xpValue)
+      : Number.isFinite(extra?.leagueIndex)
+        ? Number(extra.leagueIndex)
+        : Number.isFinite(onboarding.leagueIndex)
+          ? Number(onboarding.leagueIndex)
+          : 0;
+    if (leagueIndex >= LEAGUES.length) {
+      leagueIndex = LEAGUES.length - 1;
     }
-    const league = leagueIndex >= 0 ? LEAGUES[leagueIndex] : null;
+    if (leagueIndex < 0) {
+      leagueIndex = 0;
+    }
+    const league = LEAGUES[leagueIndex] || LEAGUES[0];
     const displayName =
       extra?.username ||
       onboarding.username ||
@@ -689,6 +707,16 @@
     { id: "champion", name: "Champion League" },
     { id: "obsidian", name: "Obsidian League" },
   ];
+
+  const LEAGUE_XP_THRESHOLDS = [0, 300, 1200, 3000, 6000, 10000, 15000, 22000, 35000, 50000];
+
+  const getLeagueIndexFromXp = (xp) => {
+    const score = Number(xp) || 0;
+    for (let i = LEAGUE_XP_THRESHOLDS.length - 1; i >= 0; i -= 1) {
+      if (score >= LEAGUE_XP_THRESHOLDS[i]) return i;
+    }
+    return 0;
+  };
 
   const normalizeUsername = (value) =>
     String(value || "")

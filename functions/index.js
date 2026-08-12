@@ -1,4 +1,6 @@
 const functions = require("firebase-functions");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
+const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const admin = require("firebase-admin");
 const { defineString } = require("firebase-functions/params");
 const webpush = require("web-push");
@@ -16,6 +18,7 @@ const GROQ_MODEL = defineString("GROQ_MODEL");
 const DEFAULT_VAPID_SUBJECT = "mailto:juliuskalume906@gmail.com";
 const DEFAULT_TIMEZONE = "Etc/UTC";
 const DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile";
+const DEFAULT_ADMIN_EMAILS = ["skalmistjulius@gmail.com"];
 const QUESTION_OVERRIDES_COLLECTION = "question_overrides";
 const PARAMS_MIGRATION_REV = "2026-04-02-runtime-refresh";
 
@@ -29,10 +32,17 @@ const getRuntimeConfig = () => {
     String(WEBPUSH_TIMEZONE.value() || process.env.WEBPUSH_TIMEZONE || DEFAULT_TIMEZONE).trim() ||
     DEFAULT_TIMEZONE;
   const testKey = String(WEBPUSH_TEST_KEY.value() || process.env.WEBPUSH_TEST_KEY || "").trim();
-  const adminEmails = String(ADMIN_EMAILS_PARAM.value() || process.env.ADMIN_EMAILS || "")
-    .split(",")
-    .map((email) => email.trim().toLowerCase())
-    .filter(Boolean);
+  const adminEmails = Array.from(
+    new Set(
+      [
+        ...String(ADMIN_EMAILS_PARAM.value() || process.env.ADMIN_EMAILS || "")
+          .split(",")
+          .map((email) => email.trim().toLowerCase())
+          .filter(Boolean),
+        ...DEFAULT_ADMIN_EMAILS,
+      ]
+    )
+  );
   const groqApiKey = String(GROQ_API_KEY.value() || process.env.GROQ_API_KEY || "").trim();
   const groqModel =
     String(GROQ_MODEL.value() || process.env.GROQ_MODEL || DEFAULT_GROQ_MODEL).trim() || DEFAULT_GROQ_MODEL;
@@ -422,10 +432,13 @@ const requestGroqSolution = async ({ prompt, correctAnswer, userAnswer, runtimeC
   };
 };
 
-exports.sendLearningReminder = functions.pubsub
-  .schedule("0 18 * * 2,5")
-  .timeZone(process.env.WEBPUSH_TIMEZONE || DEFAULT_TIMEZONE)
-  .onRun(async () => {
+exports.sendLearningReminder = onSchedule(
+  {
+    schedule: "0 18 * * 2,5",
+    timeZone: process.env.WEBPUSH_TIMEZONE || DEFAULT_TIMEZONE,
+    region: "us-central1",
+  },
+  async () => {
     const runtimeConfig = getRuntimeConfig();
     const payload = {
       title: "Time to learn",
@@ -468,7 +481,8 @@ exports.sendLearningReminder = functions.pubsub
       }
     }
     return null;
-  });
+  }
+);
 
 exports.sendTestPush = functions.https.onRequest(async (req, res) => {
   try {
@@ -540,10 +554,13 @@ exports.sendTestPush = functions.https.onRequest(async (req, res) => {
   }
 });
 
-exports.rotateLeaguesWeekly = functions.pubsub
-  .schedule("5 0 * * 1")
-  .timeZone(process.env.WEBPUSH_TIMEZONE || DEFAULT_TIMEZONE)
-  .onRun(async () => {
+exports.rotateLeaguesWeekly = onSchedule(
+  {
+    schedule: "5 0 * * 1",
+    timeZone: process.env.WEBPUSH_TIMEZONE || DEFAULT_TIMEZONE,
+    region: "us-central1",
+  },
+  async () => {
     const db = admin.firestore();
     const metaRef = db.collection("leaderboard_meta").doc("rotation");
     const now = new Date();
@@ -629,12 +646,15 @@ exports.rotateLeaguesWeekly = functions.pubsub
       { merge: true }
     );
     return null;
-  });
+  }
+);
 
-exports.notifyFriendRequest = functions.firestore
-  .document("friendships/{friendId}")
-  .onCreate(async (snap) => {
+exports.notifyFriendRequest = onDocumentCreated(
+  "friendships/{friendId}",
+  async (event) => {
     try {
+      const snap = event.data;
+      if (!snap) return null;
       const data = snap.data() || {};
       if (data.status !== "pending") return null;
       const toUid = String(data.to || "");
@@ -683,7 +703,8 @@ exports.notifyFriendRequest = functions.firestore
       console.error("Friend request notification error", err);
       return null;
     }
-  });
+  }
+);
 
 exports.getStepSolution = functions.https.onRequest(async (req, res) => {
   res.set("Access-Control-Allow-Origin", "*");
@@ -1053,16 +1074,18 @@ const sanitizeQuestionOverride = (data) => {
 
 const countQuery = async (queryRef) => {
   try {
-    const agg = await queryRef.count().get();
-    if (typeof agg?.data === "function") {
-      const data = agg.data();
+    const snap = await queryRef.get();
+    if (snap && typeof snap.size === "number") return snap.size;
+    if (snap && Array.isArray(snap.docs)) return snap.docs.length;
+    if (snap && typeof snap.data === "function") {
+      const data = snap.data();
       if (typeof data?.count === "number") return data.count;
     }
+    return 0;
   } catch (err) {
-    // fall through to full read
+    console.error("countQuery failed", err);
+    return 0;
   }
-  const snap = await queryRef.get();
-  return snap.size;
 };
 
 const fetchPublicProfilesByUid = async (uids) => {

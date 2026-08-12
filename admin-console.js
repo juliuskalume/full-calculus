@@ -1,4 +1,7 @@
 (function () {
+  const ALLOWED_ADMIN_EMAIL = "skalmistjulius@gmail.com";
+  const isAllowedAdminEmail = (email) => String(email || "").trim().toLowerCase() === ALLOWED_ADMIN_EMAIL.toLowerCase();
+
   const cfg = window.FC_FIREBASE_CONFIG || {};
   if (!firebase.apps.length) firebase.initializeApp(cfg);
   const auth = firebase.auth();
@@ -882,6 +885,10 @@
         setMsg("authMsg", "Enter email and password.", "error");
         return;
       }
+      if (!isAllowedAdminEmail(email)) {
+        setMsg("authMsg", "Only skalmistjulius@gmail.com can access this admin console.", "error");
+        return;
+      }
       setMsg("authMsg", "Signing in...");
       try {
         await auth.signInWithEmailAndPassword(email, pass);
@@ -893,6 +900,12 @@
   };
 
   const enterAdmin = async (user) => {
+    if (!user || !isAllowedAdminEmail(user.email)) {
+      await auth.signOut();
+      setMsg("authMsg", "Only skalmistjulius@gmail.com can access this admin console.", "error");
+      return;
+    }
+
     try {
       await api("adminDashboard");
     } catch (err) {
@@ -932,6 +945,15 @@
       el("app").classList.add("hidden");
       el("adminEmail").classList.add("hidden");
       el("signOutBtn").classList.add("hidden");
+      return;
+    }
+    if (!isAllowedAdminEmail(user.email)) {
+      auth.signOut().catch(() => {});
+      el("authCard").classList.remove("hidden");
+      el("app").classList.add("hidden");
+      el("adminEmail").classList.add("hidden");
+      el("signOutBtn").classList.add("hidden");
+      setMsg("authMsg", "Only skalmistjulius@gmail.com can access this admin console.", "error");
       return;
     }
     setMsg("authMsg", "Checking admin access...");

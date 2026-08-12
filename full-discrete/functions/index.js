@@ -24,10 +24,17 @@ const getRuntimeConfig = () => {
     String(WEBPUSH_TIMEZONE.value() || process.env.WEBPUSH_TIMEZONE || DEFAULT_TIMEZONE).trim() ||
     DEFAULT_TIMEZONE;
   const testKey = String(WEBPUSH_TEST_KEY.value() || process.env.WEBPUSH_TEST_KEY || "").trim();
-  const adminEmails = String(ADMIN_EMAILS_PARAM.value() || process.env.ADMIN_EMAILS || "")
-    .split(",")
-    .map((email) => email.trim().toLowerCase())
-    .filter(Boolean);
+  const adminEmails = Array.from(
+    new Set(
+      [
+        ...String(ADMIN_EMAILS_PARAM.value() || process.env.ADMIN_EMAILS || "")
+          .split(",")
+          .map((email) => email.trim().toLowerCase())
+          .filter(Boolean),
+        ...DEFAULT_ADMIN_EMAILS,
+      ]
+    )
+  );
   return { publicKey, privateKey, subject, timeZone, testKey, adminEmails };
 };
 
@@ -667,16 +674,18 @@ const normalizeRoute = (value) => {
 
 const countQuery = async (queryRef) => {
   try {
-    const agg = await queryRef.count().get();
-    if (typeof agg?.data === "function") {
-      const data = agg.data();
+    const snap = await queryRef.get();
+    if (snap && typeof snap.size === "number") return snap.size;
+    if (snap && Array.isArray(snap.docs)) return snap.docs.length;
+    if (snap && typeof snap.data === "function") {
+      const data = snap.data();
       if (typeof data?.count === "number") return data.count;
     }
+    return 0;
   } catch (err) {
-    // fall through to full read
+    console.error("countQuery failed", err);
+    return 0;
   }
-  const snap = await queryRef.get();
-  return snap.size;
 };
 
 const fetchPublicProfilesByUid = async (uids) => {
