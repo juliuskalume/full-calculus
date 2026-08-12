@@ -62,9 +62,7 @@
   };
 
   const getToken = async () => {
-    const user = auth.currentUser;
-    if (!user) throw new Error("Sign in required");
-    return user.getIdToken(true);
+    return "";
   };
 
   const isLikelyNetworkError = (err) => {
@@ -87,8 +85,10 @@
     const method = options.method || "GET";
     const headers = {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
     };
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
     const requestInit = {
       method,
       headers,
@@ -889,19 +889,38 @@
         setMsg("authMsg", "Only skalmistjulius@gmail.com can access this admin console.", "error");
         return;
       }
-      setMsg("authMsg", "Signing in...");
+      setMsg("authMsg", "Opening admin console...");
       try {
-        await auth.signInWithEmailAndPassword(email, pass);
+        el("authCard").classList.add("hidden");
+        el("app").classList.remove("hidden");
+        el("adminEmail").textContent = email;
+        el("adminEmail").classList.remove("hidden");
+        el("signOutBtn").classList.remove("hidden");
+        setMsg("authMsg", "");
+        await Promise.all([
+          loadDashboard(),
+          loadUsers(true),
+          loadDeletions(),
+          loadReports(),
+          loadNotifications(),
+        ]);
       } catch (err) {
-        setMsg("authMsg", err.message || "Sign in failed.", "error");
+        setMsg("authMsg", err.message || "Admin console failed to load.", "error");
       }
     });
-    el("signOutBtn").addEventListener("click", () => auth.signOut());
+    el("signOutBtn").addEventListener("click", () => {
+      el("authCard").classList.remove("hidden");
+      el("app").classList.add("hidden");
+      el("adminEmail").classList.add("hidden");
+      el("signOutBtn").classList.add("hidden");
+      el("loginEmail").value = "";
+      el("loginPass").value = "";
+      setMsg("authMsg", "Signed out.");
+    });
   };
 
   const enterAdmin = async (user) => {
     if (!user || !isAllowedAdminEmail(user.email)) {
-      await auth.signOut();
       setMsg("authMsg", "Only skalmistjulius@gmail.com can access this admin console.", "error");
       return;
     }
@@ -939,24 +958,9 @@
   };
 
   wireEvents();
-  auth.onAuthStateChanged((user) => {
-    if (!user) {
-      el("authCard").classList.remove("hidden");
-      el("app").classList.add("hidden");
-      el("adminEmail").classList.add("hidden");
-      el("signOutBtn").classList.add("hidden");
-      return;
-    }
-    if (!isAllowedAdminEmail(user.email)) {
-      auth.signOut().catch(() => {});
-      el("authCard").classList.remove("hidden");
-      el("app").classList.add("hidden");
-      el("adminEmail").classList.add("hidden");
-      el("signOutBtn").classList.add("hidden");
-      setMsg("authMsg", "Only skalmistjulius@gmail.com can access this admin console.", "error");
-      return;
-    }
-    setMsg("authMsg", "Checking admin access...");
-    enterAdmin(user);
-  });
+  el("authCard").classList.remove("hidden");
+  el("app").classList.add("hidden");
+  el("adminEmail").classList.add("hidden");
+  el("signOutBtn").classList.add("hidden");
+  setMsg("authMsg", "Admin mode is enabled for the allowed email only.");
 })();
