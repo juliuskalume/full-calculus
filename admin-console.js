@@ -62,7 +62,9 @@
   };
 
   const getToken = async () => {
-    return "";
+    const user = auth.currentUser;
+    if (!user) throw new Error("Sign in before accessing the admin console.");
+    return user.getIdToken();
   };
 
   const isLikelyNetworkError = (err) => {
@@ -122,7 +124,11 @@
       data = null;
     }
     if (!res.ok) {
-      const err = new Error((data && data.message) || text || `Request failed (${res.status})`);
+      const message = data?.message || data?.error ||
+        (res.status >= 500
+          ? `Admin service failed (${res.status}). Check Firebase Functions logs and deployment.`
+          : (text && !/^\s*</.test(text) ? text : `Request failed (${res.status})`));
+      const err = new Error(message);
       err.status = res.status;
       throw err;
     }
@@ -891,24 +897,20 @@
       }
       setMsg("authMsg", "Opening admin console...");
       try {
-        el("authCard").classList.add("hidden");
-        el("app").classList.remove("hidden");
-        el("adminEmail").textContent = email;
-        el("adminEmail").classList.remove("hidden");
-        el("signOutBtn").classList.remove("hidden");
-        setMsg("authMsg", "");
-        await Promise.all([
-          loadDashboard(),
-          loadUsers(true),
-          loadDeletions(),
-          loadReports(),
-          loadNotifications(),
-        ]);
+        const credential = await auth.signInWithEmailAndPassword(email, pass);
+        el("loginPass").value = "";
+        await enterAdmin(credential.user);
       } catch (err) {
         setMsg("authMsg", err.message || "Admin console failed to load.", "error");
       }
     });
-    el("signOutBtn").addEventListener("click", () => {
+    el("signOutBtn").addEventListener("click", async () => {
+      try {
+        await auth.signOut();
+      } catch (err) {
+        setMsg("authMsg", "Unable to sign out. Please try again.", "error");
+        return;
+      }
       el("authCard").classList.remove("hidden");
       el("app").classList.add("hidden");
       el("adminEmail").classList.add("hidden");
@@ -962,5 +964,5 @@
   el("app").classList.add("hidden");
   el("adminEmail").classList.add("hidden");
   el("signOutBtn").classList.add("hidden");
-  setMsg("authMsg", "Admin mode is enabled for the allowed email only.");
+  setMsg("authMsg", "Sign in with your authorized Firebase account.");
 })();
